@@ -100,6 +100,12 @@ a { color: inherit; text-decoration: none; }
 .error { font-size: 12.5px; color: var(--danger); margin-top: 10px; min-height: 18px; }
 .gate-foot { margin-top: auto; padding-top: 24px; font-size: 11.5px; color: var(--faint); line-height: 1.7; }
 
+/* 屏幕够高时把登录这块居中，别都堆在顶部 */
+@media (min-height: 720px) {
+  .gate { justify-content: center; }
+  .gate-foot { margin-top: 44px; padding-top: 0; }
+}
+
 .seg {
   display: flex; gap: 4px; background: #E8EDF5; padding: 4px; border-radius: 12px; margin-bottom: 20px;
 }
