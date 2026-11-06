@@ -3,12 +3,20 @@
    照片与定时提醒在下一步接入 */
 
 (function () {
-  const cfg = window.APP_CONFIG;
-  const cloud = WorkBuddyCloud.createWorkBuddyCloud({
+  const cfg = window.APP_CONFIG || {};
+  const sdk = window.WorkBuddyCloud;
+  const cloud = sdk ? sdk.createWorkBuddyCloud({
     endpoint: cfg.endpoint,
     oauthRelayBaseUrl: cfg.oauthRelayBaseUrl,
     publishableKey: cfg.publishableKey
-  });
+  }) : null;
+
+  function withTimeout(promise, ms, label) {
+    return Promise.race([
+      promise,
+      new Promise((_, reject) => setTimeout(() => reject(new Error((label || 'request') + '_timeout')), ms))
+    ]);
+  }
 
   const app = document.getElementById('app');
   const sheetEl = document.getElementById('sheet');
@@ -69,19 +77,39 @@
 
   /* ---------- 启动 ---------- */
   async function boot() {
+    if (!cloud) return renderFatal('核心脚本没加载成功，可能是网络被挡了');
     try {
-      const { data: session } = await cloud.auth.getSession();
+      const { data: session } = await withTimeout(cloud.auth.getSession(), 10000, 'session');
       if (!session) return renderLogin();
       state.session = session;
       await enterApp();
     } catch (err) {
       console.error('[boot]', err);
-      renderLogin('打开失败，请刷新重试');
+      const timedOut = err && /timeout/.test(err.message || '');
+      renderLogin(timedOut ? '连不上服务器，检查一下网络再刷新' : '打开失败，请刷新重试');
     }
   }
 
+  function renderFatal(msg) {
+    app.innerHTML = `
+      <div class="gate">
+        <div class="brand-mark">小</div>
+        <h1>打不开</h1>
+        <p class="sub">${esc(msg)}</p>
+        <button class="btn block" onclick="location.reload()">重新加载</button>
+        <p class="hint">一直这样就把这句话发给我：脚本没加载成功。</p>
+      </div>`;
+  }
+
   async function enterApp() {
-    const { data, error } = await cloud.database.rpc('my_context');
+    let res;
+    try {
+      res = await withTimeout(cloud.database.rpc('my_context'), 12000, 'context');
+    } catch (err) {
+      console.error('[context]', err);
+      return renderLogin('读取身份超时，刷新再试');
+    }
+    const { data, error } = res;
     if (error) {
       console.error('[context]', error);
       return renderLogin('读取身份失败：' + (error.message || '未知错误'));

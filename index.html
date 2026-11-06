@@ -27,8 +27,17 @@
 
   <div id="toast" class="toast" hidden></div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@tencent-ai/workbuddy-cloud-sdk@dev/lib/index.global.js"></script>
+  <script src="vendor/workbuddy-cloud-sdk.js"></script>
   <script src="config.js"></script>
   <script src="app.js"></script>
+  <script>
+    // 兜底：脚本没加载成功时不要一直转圈
+    setTimeout(function () {
+      var b = document.querySelector('.boot');
+      if (!b) return;
+      b.innerHTML = '<p style="font-size:13px;color:#64748B;margin:0 0 12px">加载超过 12 秒，可能是网络卡住了</p>'
+        + '<button onclick="location.reload()" style="height:40px;padding:0 20px;border:none;border-radius:12px;background:#12B5A5;color:#fff;font-size:14px">重新加载</button>';
+    }, 12000);
+  </script>
 </body>
 </html>
