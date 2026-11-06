@@ -480,3 +480,26 @@ textarea.input { height: auto; min-height: 96px; padding: 12px 14px; resize: ver
 }
 @media (max-width: 1279px) { .side { display: none; } }
 @media (max-width: 1023px) { .side { display: none; } }
+
+/* 报告 */
+.kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.kpi { background: #F7FAFF; border: 1px solid #E3EEF8; border-radius: 12px; padding: 12px 14px; }
+.kpi b { display: block; font-size: 20px; font-variant-numeric: tabular-nums; letter-spacing: -.4px; }
+.kpi span { font-size: 11px; color: var(--muted); }
+.summary-box {
+  background: #F7FBFA; border-left: 3px solid var(--brand); border-radius: 0 10px 10px 0;
+  padding: 12px 14px; font-size: 13.5px; line-height: 1.8; white-space: pre-wrap;
+}
+.stat-row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-top: 1px solid #F1F5F9; font-size: 13px; }
+.stat-row:first-of-type { border-top: none; }
+.stat-name { flex: none; width: 88px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stat-bar { flex: 1; height: 6px; border-radius: 3px; background: #EEF2F7; overflow: hidden; }
+.stat-bar i { display: block; height: 100%; background: var(--brand); border-radius: 3px; }
+.stat-val { flex: none; width: 52px; text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); }
+.export-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+@media (max-width: 420px) { .kpis { grid-template-columns: repeat(2, 1fr); } }
+
+/* 手机端底部只保留四个主入口，管理/报告收进「我的」 */
+@media (max-width: 1023px) {
+  .tabbar a[data-nav="admin"], .tabbar a[data-nav="report"] { display: none; }
+}

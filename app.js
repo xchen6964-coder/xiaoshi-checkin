@@ -452,7 +452,7 @@
   }
 
   function renderShell() {
-    const nav = NAV.concat(isAdmin() ? [{ key: 'admin', label: '管理', icon: '⚙' }] : []);
+    const nav = NAV.concat(isAdmin() ? [{ key: 'admin', label: '管理', icon: '⚙' }, { key: 'report', label: '报告', icon: '▦' }] : []);
     app.innerHTML = `
       <div class="shell">
         <nav class="tabbar">
@@ -496,6 +496,7 @@
     if (state.view === 'progress') return renderProgress(view);
     if (state.view === 'me') return renderMe(view);
     if (state.view === 'admin') return renderAdmin(view);
+    if (state.view === 'report') return renderReport(view);
     renderToday(view);
   }
 
@@ -1018,6 +1019,16 @@
         <div class="list-row"><span class="label">外观</span><span class="val">清爽卡片</span></div>
       </div>
 
+      ${isAdmin() ? `
+      <div class="card">
+        <div class="list-row" data-act="go-admin" style="cursor:pointer">
+          <span>管理任务与成员</span><span class="val">›</span>
+        </div>
+        <div class="list-row" data-act="go-report" style="cursor:pointer">
+          <span>报告与导出</span><span class="val">›</span>
+        </div>
+      </div>` : ''}
+
       <button class="btn ghost block" data-act="logout">退出登录</button>
     `;
   }
@@ -1203,6 +1214,387 @@
     renderLogin();
   }
 
+
+  /* ---------- 报告 ---------- */
+  const libCache = {};
+  function loadLib(globalName) {
+    if (window[globalName]) return Promise.resolve();
+    if (libCache[globalName]) return libCache[globalName];
+    const src = globalName === 'XLSX' ? 'vendor/xlsx.full.min.js?v=7' : 'vendor/docx.umd.js?v=7';
+    libCache[globalName] = new Promise((res, rej) => {
+      const el = document.createElement('script');
+      el.src = src;
+      el.onload = () => res();
+      el.onerror = () => rej(new Error('生成库加载失败'));
+      document.head.appendChild(el);
+    });
+    return libCache[globalName];
+  }
+
+  function isoDaysAgo(n) {
+    const d = new Date(Date.now() - n * 86400000);
+    return d.toLocaleDateString('sv-SE', { timeZone: 'Asia/Shanghai' });
+  }
+
+  function reportState() {
+    if (!state.report) {
+      state.report = { range: '7', start: isoDaysAgo(6), end: isoDaysAgo(0), payload: null, summary: '', busy: false, error: '' };
+    }
+    return state.report;
+  }
+
+  function eachDate(start, end) {
+    const out = [];
+    const s = new Date(start + 'T00:00:00+08:00');
+    const e = new Date(end + 'T00:00:00+08:00');
+    for (let t = s.getTime(); t <= e.getTime(); t += 86400000) {
+      out.push(new Date(t).toLocaleDateString('sv-SE', { timeZone: 'Asia/Shanghai' }));
+    }
+    return out;
+  }
+
+  function renderReport(root) {
+    if (!isAdmin()) { root.innerHTML = '<div class="card"><div class="empty"><b>没有权限</b>只有负责人和站长能看报告。</div></div>'; return; }
+    const r = reportState();
+    root.innerHTML = `
+      <div class="topbar">
+        <div><div class="day">负责人 / 站长</div><h1>报告</h1></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h2>时间范围</h2><span class="meta">最长 92 天</span></div>
+        <div class="seg" id="rp-seg" style="margin-bottom:14px">
+          <button data-range="7" class="${r.range === '7' ? 'on' : ''}">最近 7 天</button>
+          <button data-range="month" class="${r.range === 'month' ? 'on' : ''}">本月</button>
+          <button data-range="custom" class="${r.range === 'custom' ? 'on' : ''}">自定义</button>
+        </div>
+        <div class="row-2" id="rp-dates" ${r.range === 'custom' ? '' : 'hidden'}>
+          <input class="input" type="date" id="rp-start" value="${r.start}">
+          <input class="input" type="date" id="rp-end" value="${r.end}">
+        </div>
+        <button class="btn block" data-act="run-report" ${r.busy ? 'disabled' : ''}>${r.busy ? '统计中…' : '生成报告'}</button>
+        ${r.error ? `<div class="error">${esc(r.error)}</div>` : ''}
+      </div>
+
+      <div id="rp-body"></div>
+    `;
+
+    root.querySelectorAll('#rp-seg button').forEach((b) => {
+      b.addEventListener('click', () => {
+        r.range = b.dataset.range;
+        if (r.range === '7') { r.start = isoDaysAgo(6); r.end = isoDaysAgo(0); }
+        if (r.range === 'month') {
+          const now = new Date();
+          const first = new Date(now.getFullYear(), now.getMonth(), 1);
+          r.start = first.toLocaleDateString('sv-SE', { timeZone: 'Asia/Shanghai' });
+          r.end = isoDaysAgo(0);
+        }
+        renderReport(root);
+      });
+    });
+
+    paintReportBody();
+  }
+
+  function paintReportBody() {
+    const box = document.getElementById('rp-body');
+    if (!box) return;
+    const r = reportState();
+    if (!r.payload) {
+      box.innerHTML = `<div class="card"><div class="empty-lg"><div class="e-ico">▦</div><b>还没有报告</b><p>选一个时间段，点「生成报告」。统计完可以导出 HTML、Word、CSV、Excel。</p></div></div>`;
+      return;
+    }
+    const m = r.payload.metrics;
+    box.innerHTML = `
+      <div class="card">
+        <div class="card-head"><h2>${esc(r.start)} ~ ${esc(r.end)}</h2><span class="meta">${m.days} 天 · ${m.members} 人</span></div>
+        <div class="kpis">
+          <div class="kpi"><b>${pctText(m.rateOnTime)}</b><span>按时率</span></div>
+          <div class="kpi"><b>${pctText(m.rateDone)}</b><span>完成率</span></div>
+          <div class="kpi"><b>${m.onTime}</b><span>按时条数</span></div>
+          <div class="kpi"><b>${m.missing}</b><span>未完成</span></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h2>总结</h2>
+          <button class="btn ghost small" data-act="gen-summary" ${r.busy ? 'disabled' : ''}>${r.summary ? '重新生成' : (r.busy ? '生成中…' : '用模型写一段')}</button>
+        </div>
+        ${r.summary ? `<div class="summary-box">${esc(r.summary)}</div>` : '<p class="rail-empty">不生成也能导出，只是文档里少一段文字总结。</p>'}
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h2>成员</h2></div>
+        ${m.perMember.map((x) => `
+          <div class="stat-row">
+            <span class="stat-name">${esc(x.name)}</span>
+            <span class="stat-bar"><i style="width:${Math.round((x.rate || 0) * 100)}%"></i></span>
+            <span class="stat-val">${pctText(x.rate)}</span>
+          </div>`).join('')}
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h2>任务</h2></div>
+        ${m.perTask.map((x) => `
+          <div class="stat-row">
+            <span class="stat-name">${esc(x.title)}</span>
+            <span class="stat-bar"><i style="width:${Math.round((x.rate || 0) * 100)}%"></i></span>
+            <span class="stat-val">${pctText(x.rate)}</span>
+          </div>`).join('')}
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h2>导出</h2><span class="meta">${r.payload.rows.length} 条明细</span></div>
+        <div class="export-grid">
+          <button class="btn ghost small" data-act="export" data-fmt="html">HTML</button>
+          <button class="btn ghost small" data-act="export" data-fmt="docx">Word</button>
+          <button class="btn ghost small" data-act="export" data-fmt="csv">CSV</button>
+          <button class="btn ghost small" data-act="export" data-fmt="xlsx">Excel</button>
+        </div>
+        <p class="hint" style="margin-top:10px">全部在浏览器里生成，不上传服务器。带照片的 HTML 和 Word 会慢几秒。</p>
+      </div>
+    `;
+  }
+
+  function pctText(v) {
+    if (v == null || !isFinite(v)) return '—';
+    return (v * 100).toFixed(1) + '%';
+  }
+
+  async function runReport() {
+    const r = reportState();
+    const startEl = document.getElementById('rp-start');
+    const endEl = document.getElementById('rp-end');
+    if (r.range === 'custom' && startEl && endEl) {
+      r.start = startEl.value || r.start;
+      r.end = endEl.value || r.end;
+    }
+    if (!r.start || !r.end) { r.error = '选一个开始和结束日期'; return; }
+    if (r.start > r.end) { r.error = '开始日期不能晚于结束日期'; return; }
+    const span = Math.round((new Date(r.end) - new Date(r.start)) / 86400000) + 1;
+    if (span > 92) { r.error = '一次最多统计 92 天'; return; }
+
+    r.busy = true; r.error = ''; r.summary = '';
+    renderReport(document.getElementById('view'));
+
+    try {
+      r.payload = await collectReport(r.start, r.end);
+    } catch (err) {
+      console.error('[report]', err);
+      r.error = err.message || '统计失败';
+      r.payload = null;
+    }
+    r.busy = false;
+    renderReport(document.getElementById('view'));
+  }
+
+  async function collectReport(start, end) {
+    const gid = state.group.id;
+    const { data: checkins, error } = await withTimeout(cloud.database
+      .from('checkins').select('*').eq('group_id', gid).gte('date', start).lte('date', end), 20000, 'report');
+    if (error) throw new Error(error.message || '读取打卡失败');
+
+    const rowsRaw = checkins || [];
+    let atts = [];
+    if (rowsRaw.length) {
+      const ids = rowsRaw.map((c) => c.id);
+      const res = await cloud.database.from('attachments').select('id,checkin_id,path').in('checkin_id', ids);
+      atts = res.data || [];
+    }
+    const photoMap = {};
+    atts.forEach((a) => { (photoMap[a.checkin_id] = photoMap[a.checkin_id] || []).push(a.path); });
+
+    const days = eachDate(start, end);
+    const tasks = state.tasks;
+    const members = state.members;
+
+    const key = (u, t, d) => `${u}|${t}|${d}`;
+    const byKey = {};
+    rowsRaw.forEach((c) => { byKey[key(c.user_id, c.task_id || 'custom', c.date)] = c; });
+
+    const perMember = members.map((m) => {
+      const joined = (m.created_at || '').slice(0, 10) || start;
+      const active = days.filter((d) => d >= joined);
+      let on = 0, late = 0, exc = 0;
+      active.forEach((d) => tasks.forEach((t) => {
+        const c = byKey[key(m.id, t.id, d)];
+        if (!c) return;
+        if (c.status === 'excused') exc += 1;
+        else if (c.status === 'late') late += 1;
+        else on += 1;
+      }));
+      const expected = active.length * tasks.length;
+      const done = on + late;
+      return { name: m.nickname, expected, done, late, excused: exc, missing: Math.max(0, expected - done - exc), rate: expected ? done / expected : null };
+    });
+
+    const daysCount = days.length;
+    const perTask = tasks.map((t) => {
+      let on = 0, late = 0, expected = 0;
+      members.forEach((m) => {
+        const joined = (m.created_at || '').slice(0, 10) || start;
+        const active = days.filter((d) => d >= joined).length;
+        expected += active;
+        active && days.forEach((d) => {
+          const c = byKey[key(m.id, t.id, d)];
+          if (!c) return;
+          if (c.status === 'late') late += 1;
+          else if (c.status !== 'excused') on += 1;
+        });
+      });
+      const done = on + late;
+      return { title: t.title, deadline: parseHM(t.deadline_time), expected, done, rate: expected ? done / expected : null };
+    });
+
+    const expected = perMember.reduce((a, x) => a + x.expected, 0);
+    const onTime = rowsRaw.filter((c) => c.status === 'on_time').length;
+    const late = rowsRaw.filter((c) => c.status === 'late').length;
+    const excused = rowsRaw.filter((c) => c.status === 'excused').length;
+    const missing = Math.max(0, expected - onTime - late - excused);
+
+    const taskTitle = (id) => (tasks.find((t) => t.id === id) || {}).title || '';
+    const nameOf = (id) => (members.find((m) => m.id === id) || {}).nickname || '成员';
+
+    const rows = rowsRaw
+      .slice()
+      .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0))
+      .map((c) => ({
+        date: c.date,
+        nickname: nameOf(c.user_id),
+        task: c.task_id ? taskTitle(c.task_id) : (c.title || '小事'),
+        status: c.status,
+        time: timeOf(c.done_at),
+        note: c.note || '',
+        photos: (photoMap[c.id] || []).length,
+        paths: photoMap[c.id] || []
+      }));
+
+    return {
+      meta: {
+        groupName: state.group.name,
+        rangeStart: start,
+        rangeEnd: end,
+        days: daysCount,
+        members: members.length,
+        tasks: tasks.length,
+        generatedAt: new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai', hour12: false })
+      },
+      metrics: { days: daysCount, members: members.length, expected, onTime, late, excused, missing, rateOnTime: expected ? onTime / expected : null, rateDone: expected ? (onTime + late) / expected : null, perMember, perTask },
+      rows
+    };
+  }
+
+  function factsForModel(p) {
+    const m = p.metrics;
+    const lines = [
+      `小组：${p.meta.groupName}`,
+      `区间：${p.meta.rangeStart} 至 ${p.meta.rangeEnd}，共 ${p.meta.days} 天`,
+      `成员 ${p.meta.members} 人，任务 ${p.meta.tasks} 项`,
+      `应完成 ${m.expected} 条，按时 ${m.onTime} 条，补记 ${m.late} 条，豁免 ${m.excused} 条，未完成 ${m.missing} 条`,
+      `按时率 ${pctText(m.rateOnTime)}，完成率 ${pctText(m.rateDone)}`,
+      '成员明细：' + m.perMember.map((x) => `${x.name} 应完成${x.expected}按时${x.done}未完成${x.missing}`).join('；'),
+      '任务明细：' + m.perTask.map((x) => `${x.title} 完成率${pctText(x.rate)}`).join('；')
+    ];
+    return lines.join('\n');
+  }
+
+  async function generateSummary() {
+    const r = reportState();
+    if (!r.payload) return;
+    r.busy = true; r.error = '';
+    paintReportBody();
+    try {
+      const models = await cloud.llm.models.list();
+      const list = Array.isArray(models) ? models : (models && models.data) || [];
+      const model = list.find((m) => m.disabled !== true) || list[0];
+      if (!model) throw new Error('这个应用没有可用的模型');
+      let text = '';
+      for await (const chunk of cloud.llm.chat.completions.create({
+        model: model.id,
+        messages: [
+          { role: 'system', content: '你是打卡数据统计助手。只根据给定数字陈述事实与异常，不评价、不排名、不夸张、不编造。用简体中文，230 字以内，分 2 到 3 句。' },
+          { role: 'user', content: factsForModel(r.payload) }
+        ],
+        stream: true
+      })) {
+        const d = chunk.choices[0] && chunk.choices[0].delta && chunk.choices[0].delta.content;
+        if (d) text += d;
+      }
+      r.summary = text.trim() || '';
+      if (!r.summary) throw new Error('模型没有返回内容');
+    } catch (err) {
+      console.error('[summary]', err);
+      r.error = (err && err.message) || '生成失败，可以直接导出';
+    }
+    r.busy = false;
+    paintReportBody();
+  }
+
+  async function thumbOf(path, maxEdge = 320) {
+    const blob = await cloud.storage.download(path);
+    const bmp = await createImageBitmap(blob);
+    const scale = Math.min(1, maxEdge / Math.max(bmp.width, bmp.height));
+    const w = Math.round(bmp.width * scale), h = Math.round(bmp.height * scale);
+    const canvas = document.createElement('canvas');
+    canvas.width = w; canvas.height = h;
+    canvas.getContext('2d').drawImage(bmp, 0, 0, w, h);
+    const out = await new Promise((res) => canvas.toBlob(res, 'image/jpeg', 0.72));
+    if (bmp.close) bmp.close();
+    const buf = new Uint8Array(await out.arrayBuffer());
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.72);
+    return { bytes: buf, width: w, height: h, dataUrl };
+  }
+
+  async function exportReport(fmt) {
+    const r = reportState();
+    if (!r.payload) return;
+    const btn = document.querySelector(`[data-act="export"][data-fmt="${fmt}"]`);
+    if (btn) { btn.disabled = true; btn.dataset.label = btn.textContent; btn.textContent = '准备中…'; }
+    try {
+      const data = Object.assign({}, r.payload, { summary: r.summary, photos: [] });
+
+      if (fmt === 'html' || fmt === 'docx') {
+        const picks = [];
+        data.rows.forEach((row) => row.paths.forEach((p) => { if (picks.length < 6) picks.push({ path: p, caption: `${row.date} ${row.nickname} ${row.task}` }); }));
+        for (const p of picks) {
+          try {
+            const t = await thumbOf(p.path);
+            data.photos.push({ ...p, ...t });
+          } catch (e) { /* 单张失败跳过 */ }
+        }
+      }
+
+      const stamp = `${r.start}_${r.end}`;
+      if (fmt === 'csv') {
+        downloadBlob(new Blob([CheckinExport.buildCsv(data)], { type: 'text/csv;charset=utf-8' }), `打卡明细_${stamp}.csv`);
+      } else if (fmt === 'html') {
+        downloadBlob(new Blob([CheckinExport.buildHtml(data)], { type: 'text/html;charset=utf-8' }), `打卡总结_${stamp}.html`);
+      } else if (fmt === 'xlsx') {
+        await loadLib('XLSX');
+        downloadBlob(CheckinExport.buildXlsx(data, window.XLSX), `打卡汇总_${stamp}.xlsx`);
+      } else if (fmt === 'docx') {
+        await loadLib('docx');
+        downloadBlob(await CheckinExport.buildDocx(data, window.docx), `打卡总结_${stamp}.docx`);
+      }
+      toast('已开始下载');
+    } catch (err) {
+      console.error('[export]', err);
+      toast((err && err.message) || '导出失败');
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = btn.dataset.label || '导出'; }
+    }
+  }
+
+  function downloadBlob(blob, name) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 8000);
+  }
+
   /* ---------- 事件 ---------- */
   document.addEventListener('click', async (e) => {
     const el = e.target.closest('[data-act]');
@@ -1213,6 +1605,9 @@
     if (act === 'del-photo') { state.pendingPhotos.splice(Number(el.dataset.i), 1); return paintShots(); }
     if (act === 'view-photo') return openPhoto(el.dataset.src);
     if (act === 'open-notifs') return openNotifications();
+    if (act === 'run-report') return runReport();
+    if (act === 'gen-summary') return generateSummary();
+    if (act === 'export') return exportReport(el.dataset.fmt);
     if (act === 'open-custom') return openCustomSheet();
     if (act === 'submit-custom') return submitCustom();
     if (act === 'copy-invite') return copyText(state.group.invite_code);
@@ -1225,6 +1620,7 @@
     if (act === 'save-settings') return saveSettings();
     if (act === 'set-leader') return setLeader(el.dataset.user);
     if (act === 'go-admin') { state.view = 'admin'; history.replaceState(null, '', '#/admin'); return renderShell(); }
+    if (act === 'go-report') { state.view = 'report'; history.replaceState(null, '', '#/report'); return renderShell(); }
     if (act === 'logout') return logout();
   });
 
