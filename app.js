@@ -35,6 +35,8 @@
     attachments: {},
     notifications: [],
     secrets: null,
+    models: [],
+    modelsLoaded: false,
     unread: 0,
     pendingPhotos: [],
     view: 'today',
@@ -507,7 +509,7 @@
     if (state.view === 'wall') return renderWall(view);
     if (state.view === 'progress') return renderProgress(view);
     if (state.view === 'me') return renderMe(view);
-    if (state.view === 'admin') return renderAdmin(view);
+    if (state.view === 'admin') { renderAdmin(view); loadModels(); return; }
     if (state.view === 'report') return renderReport(view);
     renderToday(view);
   }
@@ -1104,6 +1106,16 @@
         <button class="btn ghost block" data-act="save-settings">保存设置</button>
       </div>
 
+      <div class="card" id="model-card">
+        <div class="card-head"><h2>总结用哪个模型</h2><span class="meta" id="model-meta">读取中…</span></div>
+        <div class="field">
+          <label for="model-select">平台模型</label>
+          <select class="input" id="model-select"><option value="">自动（优先免费）</option></select>
+        </div>
+        <p class="hint" id="model-hint">标 0 的是免费档；扣的是平台额度，不是这个网站的。</p>
+        <button class="btn ghost block" data-act="save-model">保存选择</button>
+      </div>
+
       <div class="card">
         <div class="card-head"><h2>外部模型（可选）</h2><span class="meta">${state.secrets && state.secrets.ext_key ? '已配置' : '未配置'}</span></div>
         <p class="hint" style="margin:0 0 12px">留空就用平台自带的免费模型。要接外部接口，填 OpenAI 兼容的地址。密钥只存在数据库里，只有负责人和站长能读。</p>
@@ -1143,6 +1155,67 @@
           </div>`).join('')}
       </div>
     `;
+  }
+
+  async function loadModels() {
+    if (!isAdmin()) return;
+    if (state.modelsLoaded) { paintModelCard(); return; }
+    try {
+      const res = await cloud.llm.models.list();
+      const list = Array.isArray(res) ? res : (res && res.data) || [];
+      state.models = list.filter((m) => m && m.disabled !== true && m.enabled !== false);
+      state.modelsLoaded = true;
+    } catch (err) {
+      console.error('[models]', err);
+      state.models = [];
+    }
+    paintModelCard();
+  }
+
+  function isFreeModel(m) {
+    return /x?0(\.0+)?\s*credits?/i.test(String((m && m.credits) || ''));
+  }
+
+  function paintModelCard() {
+    const sel = document.getElementById('model-select');
+    if (!sel) return;
+    const meta = document.getElementById('model-meta');
+    const hint = document.getElementById('model-hint');
+    if (!state.models.length) {
+      if (meta) meta.textContent = '读取失败';
+      if (hint) hint.textContent = '拿不到模型目录，先按自动（优先免费）走。刷新页面再试。';
+      return;
+    }
+    const free = state.models.filter(isFreeModel);
+    const paid = state.models.filter((m) => !isFreeModel(m));
+    const opt = (m) => `<option value="${esc(m.id)}">${esc(m.name || m.id)} · ${esc(String(m.credits || '倍率未知'))}</option>`;
+    sel.innerHTML = '<option value="">自动（优先免费）</option>'
+      + (free.length ? `<optgroup label="免费">${free.map(opt).join('')}</optgroup>` : '')
+      + (paid.length ? `<optgroup label="按倍率计费">${paid.map(opt).join('')}</optgroup>` : '');
+    sel.value = state.group.llm_model || '';
+    if (meta) meta.textContent = `${state.models.length} 个可用`;
+    if (hint) {
+      const cur = state.models.find((m) => m.id === sel.value);
+      hint.textContent = cur
+        ? `当前：${cur.name || cur.id}，倍率 ${cur.credits || '未知'}${isFreeModel(cur) ? '（免费档）' : ''}`
+        : '标 0 的是免费档；扣的是平台额度，不是这个网站的。';
+    }
+    sel.onchange = () => {
+      const cur = state.models.find((m) => m.id === sel.value);
+      if (hint) hint.textContent = cur
+        ? `当前：${cur.name || cur.id}，倍率 ${cur.credits || '未知'}${isFreeModel(cur) ? '（免费档）' : ''}`
+        : '选了自动：优先用免费档，免费档不可用时才退到其它模型。';
+    };
+  }
+
+  async function saveModelChoice() {
+    const sel = document.getElementById('model-select');
+    if (!sel) return;
+    const val = sel.value || null;
+    const { data, error } = await cloud.database.from('groups').update({ llm_model: val }).eq('id', state.group.id).select();
+    if (error || !data || !data.length) { toast((error && error.message) || '保存失败'); return; }
+    state.group = data[0];
+    toast(val ? '已固定这个模型' : '已设为自动');
   }
 
   async function addTask() {
@@ -1663,7 +1736,8 @@
 
       const models = await cloud.llm.models.list();
       const list = Array.isArray(models) ? models : (models && models.data) || [];
-      const model = pickFreeModel(list);
+      const wanted = state.group && state.group.llm_model;
+      const model = (wanted && list.find((m) => m.id === wanted && m.disabled !== true)) || pickFreeModel(list);
       if (!model) throw new Error('这个应用没有可用模型');
       r.modelLabel = model.name || model.id;
       let text = '';
@@ -1786,6 +1860,7 @@
     if (act === 'save-task') return saveTask(el.dataset.task);
     if (act === 'archive-task') return archiveTask(el.dataset.task);
     if (act === 'save-settings') return saveSettings();
+    if (act === 'save-model') return saveModelChoice();
     if (act === 'save-ext') return saveExt();
     if (act === 'test-ext') return testExt();
     if (act === 'set-leader') return setLeader(el.dataset.user);
