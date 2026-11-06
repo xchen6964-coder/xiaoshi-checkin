@@ -331,27 +331,69 @@
     { key: 'me', label: '我的', icon: '☺' }
   ];
 
+  function railHTML() {
+    const members = state.members;
+    const tasks = state.tasks;
+    const checks = state.todayCheckins;
+    const allDone = (m) => tasks.length > 0 && tasks.every((t) => checks.some((c) => c.user_id === m.id && c.task_id === t.id));
+    const doneCount = members.filter(allDone).length;
+    const missing = members.filter((m) => !allDone(m));
+
+    const deadlineRows = tasks.length
+      ? tasks.slice().sort((a, b) => parseHM(a.deadline_time).localeCompare(parseHM(b.deadline_time))).map((t) => {
+          const n = checks.filter((c) => c.task_id === t.id).length;
+          return `<div class="rail-row">
+            <div><div>${esc(t.title)}</div><div class="r-sub">${parseHM(t.deadline_time)} 截止</div></div>
+            <div class="r-sub">${n}/${members.length}</div>
+          </div>`;
+        }).join('')
+      : '<p class="rail-empty">还没有任务。设一条，今天就能开始。</p>';
+
+    return `
+      <div class="rail">
+        <div class="card">
+          <h3>今天</h3>
+          <div class="rail-big"><b>${doneCount}/${members.length}</b><span>人全部完成</span></div>
+          ${missing.length
+            ? `<p class="rail-empty">还差：${missing.map((m) => esc(m.nickname)).join('、')}</p>`
+            : `<p class="rail-empty">${tasks.length ? '都做完了。' : '等第一条任务。'}</p>`}
+        </div>
+
+        <div class="card">
+          <h3>截止顺序</h3>
+          ${deadlineRows}
+        </div>
+
+        <div class="card">
+          <h3>邀请成员</h3>
+          <div class="invite" style="margin-top:0">
+            <code>${esc(state.group.invite_code)}</code>
+            <button class="btn ghost small" data-act="copy-invite">复制</button>
+          </div>
+          <p class="rail-empty" style="margin-top:10px">对方登录后选「用邀请码加入」。</p>
+        </div>
+      </div>`;
+  }
+
   function renderShell() {
     const nav = NAV.concat(isAdmin() ? [{ key: 'admin', label: '管理', icon: '⚙' }] : []);
     app.innerHTML = `
       <div class="shell">
         <nav class="tabbar">
-          ${nav.map((n) => `<a href="#/${n.key}" data-nav="${n.key}" class="${state.view === n.key ? 'on' : ''}"><span class="ico">${n.icon}</span>${n.label}</a>`).join('')}
+          <div class="side-brand">
+            <div class="brand-mark">小</div>
+            <div class="sb-text"><b>小事打卡</b><span>${esc(state.group.name)}</span></div>
+          </div>
+          <div class="nav-links">
+            ${nav.map((n) => `<a href="#/${n.key}" data-nav="${n.key}" class="${state.view === n.key ? 'on' : ''}"><span class="ico">${n.icon}</span>${n.label}</a>`).join('')}
+          </div>
+          <div class="side-foot">
+            <div class="avatar">${initials(state.me.nickname)}</div>
+            <div><b>${esc(state.me.nickname)}</b><span>${roleLabel(state.me.role)}</span></div>
+          </div>
         </nav>
         <main class="main" id="view"></main>
-        <aside class="side">
-          <div class="card">
-            <div class="card-head"><h2>${esc(state.group.name)}</h2></div>
-            <div class="list-row"><span class="label">成员</span><span class="val">${state.members.length} 人</span></div>
-            <div class="list-row"><span class="label">我的身份</span><span class="val">${roleLabel(state.me.role)}</span></div>
-            <div class="copy-block">
-              <div class="invite">
-                <div><div class="label" style="font-size:11px;color:var(--faint)">邀请码</div><code>${esc(state.group.invite_code)}</code></div>
-                <button class="btn ghost small" data-act="copy-invite">复制</button>
-              </div>
-            </div>
-          </div>
-        </aside>
+        <aside class="side">${railHTML()}</aside>
       </div>`;
 
     document.querySelectorAll('[data-nav]').forEach((a) => {
@@ -433,15 +475,17 @@
         </div>
       </div>
 
-      <div class="card">
+      <div class="card ${total === 0 ? 'grow' : ''}">
         <div class="card-head">
           <h2>今天的任务</h2>
           <span class="meta">${total} 项</span>
         </div>
         ${total === 0 ? `
-          <div class="empty">
-            <b>还没有任务</b>
-            ${isAdmin() ? '去「管理」添加第一条，比如早起 08:30。' : '负责人在设置任务，稍等一下。'}
+          <div class="empty-lg">
+            <div class="e-ico">◎</div>
+            <b>今天还没有任务</b>
+            <p>${isAdmin() ? '设一条带截止时间的任务，比如「早起 08:30」。成员到点前提交，谁没交一眼看到。' : '负责人正在设置任务，过一会儿刷新看看。'}</p>
+            ${isAdmin() ? '<button class="btn" data-act="go-admin">去添加任务</button>' : ''}
           </div>` : state.tasks.map((t) => {
             const c = findCheckin(t.id);
             const ds = deadlineState(t);
@@ -452,11 +496,13 @@
                 <div class="t-title">${esc(t.title)} ${c && c.status === 'late' ? '<span class="chip warn" style="height:18px;font-size:10px">补记</span>' : ''}</div>
                 <div class="t-sub ${c ? 'late' : ds.cls}">${c ? `已打卡 ${timeOf(c.done_at)}` : ds.text}</div>
               </div>
+              <span class="t-count">${state.todayCheckins.filter((x) => x.task_id === t.id).length}/${state.members.length}</span>
               <button class="check ${c ? 'on' : ''}" data-act="toggle-task" data-task="${t.id}" data-checkin="${c ? c.id : ''}" aria-label="${c ? '取消打卡' : '打卡'}">
                 <svg width="15" height="15" viewBox="0 0 16 16"><path d="M3 8.5l3.2 3.2L13 5" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
               </button>
             </div>`;
           }).join('')}
+        ${state.group.allow_member_custom ? `<button class="add-row" data-act="open-custom">＋ 加一件小事</button>` : ''}
       </div>
 
       ${customToday().length ? `
@@ -475,7 +521,48 @@
           </div>`).join('')}
       </div>` : ''}
 
-      ${state.group.allow_member_custom ? `<button class="btn ghost block" data-act="open-custom">＋ 加一件小事</button>` : ''}
+      <div class="card">
+        <div class="card-head"><h2>本周</h2><span class="meta">全组打卡条数</span></div>
+        <div class="week">
+          ${(() => {
+            const start = weekStart();
+            const labels = ['一', '二', '三', '四', '五', '六', '日'];
+            const days = labels.map((lb, i) => {
+              const d = new Date(start + 'T00:00:00+08:00');
+              d.setDate(d.getDate() + i);
+              const key = d.toLocaleDateString('sv-SE', { timeZone: 'Asia/Shanghai' });
+              return { key, lb, n: state.weekCheckins.filter((c) => c.date === key).length };
+            });
+            const max = Math.max(1, ...days.map((x) => x.n));
+            const today = todayStr();
+            return days.map((x) => `
+              <div class="week-col">
+                <div class="week-bar ${x.n ? 'has' : ''} ${x.key === today ? 'today' : ''}" style="height:${6 + Math.round(46 * x.n / max)}px"></div>
+                <div class="week-num">${x.n || ''}</div>
+                <div class="week-day">${x.lb}</div>
+              </div>`).join('');
+          })()}
+        </div>
+      </div>
+
+      ${state.weekCheckins.length ? `
+      <div class="card">
+        <div class="card-head"><h2>最近打卡</h2><span class="meta">全组 · ${state.weekCheckins.length} 条</span></div>
+        ${state.weekCheckins.slice(0, 6).map((c) => {
+          const who = (state.members.find((m) => m.id === c.user_id) || {}).nickname || '成员';
+          const task = c.task_id ? (state.tasks.find((t) => t.id === c.task_id) || {}).title : '';
+          const d = new Date(c.done_at);
+          const isToday = c.date === todayStr();
+          return `<div class="feed-row">
+            <div class="feed-main">
+              <div><b>${esc(who)}</b> ${esc(task || c.title || '小事')}</div>
+              ${c.note ? `<div class="feed-note">${esc(c.note)}</div>` : ''}
+            </div>
+            <span class="feed-time">${isToday ? timeOf(c.done_at) : `${d.getMonth() + 1}/${d.getDate()}`}</span>
+          </div>`;
+        }).join('')}
+      </div>` : ''}
+
     `;
   }
 
@@ -857,6 +944,7 @@
     if (act === 'archive-task') return archiveTask(el.dataset.task);
     if (act === 'save-settings') return saveSettings();
     if (act === 'set-leader') return setLeader(el.dataset.user);
+    if (act === 'go-admin') { state.view = 'admin'; history.replaceState(null, '', '#/admin'); return renderShell(); }
     if (act === 'logout') return logout();
   });
 
