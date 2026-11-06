@@ -24,6 +24,10 @@
     members: [],
     todayCheckins: [],
     weekCheckins: [],
+    attachments: {},
+    notifications: [],
+    unread: 0,
+    pendingPhotos: [],
     view: 'today',
     pendingOtp: null,
     otpTimer: null,
@@ -103,6 +107,50 @@
     state.members = membersRes.data || [];
     state.todayCheckins = todayRes.data || [];
     state.weekCheckins = weekRes.data || [];
+    await loadAttachmentUrls([...state.todayCheckins, ...state.weekCheckins]);
+    await refreshNotifications();
+  }
+
+  async function refreshNotifications() {
+    try {
+      await cloud.database.rpc('enqueue_due_reminders');
+    } catch (err) {
+      console.error('[reminder]', err);
+    }
+    const { data } = await cloud.database
+      .from('notifications')
+      .select('*')
+      .eq('group_id', state.group.id)
+      .order('created_at', { ascending: false })
+      .limit(20);
+    state.notifications = data || [];
+    state.unread = state.notifications.filter((n) => !n.read_at).length;
+  }
+
+  async function loadAttachmentUrls(checkins) {
+    state.attachments = {};
+    const ids = [...new Set((checkins || []).map((c) => c.id))];
+    if (!ids.length) return;
+    const { data, error } = await cloud.database
+      .from('attachments')
+      .select('id,checkin_id,path,width,height')
+      .in('checkin_id', ids);
+    if (error || !data || !data.length) return;
+
+    const urlMap = {};
+    try {
+      const res = await cloud.storage.createSignedUrls(data.map((r) => r.path), 3600);
+      const arr = Array.isArray(res && res.data) ? res.data : ((res && res.data && res.data.data) || []);
+      arr.forEach((x) => {
+        const key = x.path || x.name;
+        if (key) urlMap[key] = x.signedUrl || x.signed_url || x.url || '';
+      });
+    } catch (err) {
+      console.error('[signed-url]', err);
+    }
+    data.forEach((r) => {
+      (state.attachments[r.checkin_id] = state.attachments[r.checkin_id] || []).push({ ...r, url: urlMap[r.path] || '' });
+    });
   }
 
   function weekStart() {
@@ -456,7 +504,13 @@
           <div class="day">${fmtDateCn(todayStr())}</div>
           <h1>今天的小事</h1>
         </div>
-        <div class="avatar">${initials(state.me.nickname)}</div>
+        <div class="topbar-actions">
+          <button class="bell" data-act="open-notifs" aria-label="通知">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg>
+            ${state.unread ? `<i>${state.unread > 9 ? '9+' : state.unread}</i>` : ''}
+          </button>
+          <div class="avatar">${initials(state.me.nickname)}</div>
+        </div>
       </div>
 
       <div class="card hero">
@@ -558,6 +612,7 @@
               <div><b>${esc(who)}</b> ${esc(task || c.title || '小事')}</div>
               ${c.note ? `<div class="feed-note">${esc(c.note)}</div>` : ''}
             </div>
+            ${(state.attachments[c.id] || []).length ? `<img class="feed-shot" src="${state.attachments[c.id][0].url}" data-act="view-photo" data-src="${state.attachments[c.id][0].url}" alt="">` : ''}
             <span class="feed-time">${isToday ? timeOf(c.done_at) : `${d.getMonth() + 1}/${d.getDate()}`}</span>
           </div>`;
         }).join('')}
@@ -575,41 +630,169 @@
   function openCheckinSheet(taskId) {
     const task = state.tasks.find((t) => t.id === taskId);
     if (!task) return;
+    state.pendingPhotos = [];
     openSheet(task.title, `
       <div class="field">
         <label>今天做了什么（选填，最多 200 字）</label>
         <textarea class="input" id="ck-note" maxlength="200" placeholder="写一句，别人在墙上能看到"></textarea>
       </div>
-      <p class="hint" style="margin:0 0 14px">照片上传下一步补上；现在先支持文字。</p>
+      <div class="field">
+        <label>照片（最多 3 张，自动压缩）</label>
+        <div class="shots" id="ck-shots"></div>
+        <input type="file" id="ck-file" accept="image/*" multiple hidden>
+      </div>
+      <p class="hint" id="ck-hint" style="margin:0 0 14px">文字和照片至少一样。</p>
       <button class="btn block" data-act="submit-checkin" data-task="${taskId}">提交打卡</button>
     `);
+    paintShots();
+    const input = document.getElementById('ck-file');
+    input.addEventListener('change', async (e) => {
+      const files = [...(e.target.files || [])].slice(0, 3 - state.pendingPhotos.length);
+      for (const f of files) {
+        if (state.pendingPhotos.length >= 3) break;
+        if (!f.type.startsWith('image/')) { toast('只支持图片'); continue; }
+        try {
+          const blob = await compressImage(f);
+          state.pendingPhotos.push({ blob, url: URL.createObjectURL(blob), w: blob.width || 0 });
+        } catch (err) {
+          toast('这张图读不了，换一张试试');
+        }
+      }
+      input.value = '';
+      paintShots();
+    });
     setTimeout(() => document.getElementById('ck-note') && document.getElementById('ck-note').focus(), 120);
+  }
+
+  function paintShots() {
+    const box = document.getElementById('ck-shots');
+    if (!box) return;
+    const photos = state.pendingPhotos || [];
+    box.innerHTML = photos.map((p, i) => `
+      <div class="shot-wrap">
+        <img class="shot" src="${p.url}" alt="">
+        <button class="shot-del" data-act="del-photo" data-i="${i}" aria-label="移除">✕</button>
+      </div>`).join('')
+      + (photos.length < 3 ? `<label class="shot-add" for="ck-file">＋</label>` : '');
+  }
+
+  async function compressImage(file, maxEdge = 1600, quality = 0.82) {
+    let bitmap;
+    try {
+      bitmap = await createImageBitmap(file);
+    } catch (e) {
+      bitmap = await new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = reject;
+        img.src = URL.createObjectURL(file);
+      });
+    }
+    const w0 = bitmap.width, h0 = bitmap.height;
+    const scale = Math.min(1, maxEdge / Math.max(w0, h0));
+    const w = Math.round(w0 * scale), h = Math.round(h0 * scale);
+    const canvas = document.createElement('canvas');
+    canvas.width = w; canvas.height = h;
+    canvas.getContext('2d').drawImage(bitmap, 0, 0, w, h);
+    const blob = await new Promise((res) => canvas.toBlob(res, 'image/jpeg', quality));
+    if (bitmap.close) bitmap.close();
+    if (!blob) throw new Error('compress failed');
+    blob.width = w; blob.height = h;
+    return blob;
+  }
+
+  async function uploadPhotos(checkinId) {
+    const photos = (state.pendingPhotos || []).slice(0, 3);
+    if (!photos.length) return { uploaded: 0, failed: 0 };
+    const uid = (state.session && state.session.user && state.session.user.id) || state.me.auth_uid;
+    let uploaded = 0, failed = 0;
+    for (let i = 0; i < photos.length; i++) {
+      const p = photos[i];
+      try {
+        const path = cloud.storage.sharedPath(uid, `checkins/${todayStr()}/${checkinId}/${i + 1}.jpg`);
+        const up = await cloud.storage.upload(path, p.blob, { contentType: 'image/jpeg', cacheControl: '3600' });
+        if (up && up.error) throw up.error;
+        const { error } = await cloud.database.from('attachments').insert({
+          checkin_id: checkinId,
+          path,
+          width: p.blob.width || null,
+          height: p.blob.height || null,
+          bytes: p.blob.size || null
+        });
+        if (error) throw error;
+        uploaded += 1;
+      } catch (err) {
+        console.error('[upload]', err);
+        failed += 1;
+      }
+    }
+    return { uploaded, failed };
   }
 
   async function submitCheckin(taskId) {
     const task = state.tasks.find((t) => t.id === taskId);
     const noteEl = document.getElementById('ck-note');
     const note = noteEl ? noteEl.value.trim() : '';
+    const photos = state.pendingPhotos || [];
+    if (!note && !photos.length) { toast('写一句，或者传张照片'); return; }
+
     const dl = parseHM(task.deadline_time);
     const late = nowHM() > dl;
     const btn = document.querySelector('[data-act="submit-checkin"]');
-    if (btn) { btn.disabled = true; btn.textContent = '提交中…'; }
-    const { error } = await cloud.database.from('checkins').insert({
+    if (btn) { btn.disabled = true; btn.textContent = photos.length ? '上传中…' : '提交中…'; }
+
+    const { data, error } = await cloud.database.from('checkins').insert({
       group_id: state.group.id,
       user_id: state.me.id,
       task_id: taskId,
       date: todayStr(),
       status: late ? 'late' : 'on_time',
       note: note || null
-    });
-    if (error) {
+    }).select();
+
+    if (error || !data || !data.length) {
       if (btn) { btn.disabled = false; btn.textContent = '提交打卡'; }
-      toast(error.code === '23505' ? '这条已经打过卡了' : (error.message || '提交失败'));
+      toast(error && error.code === '23505' ? '这条已经打过卡了' : ((error && error.message) || '提交失败'));
       return;
     }
+
+    const res = await uploadPhotos(data[0].id);
+    state.pendingPhotos = [];
     closeSheet();
     await refresh();
-    toast(late ? '已记下，标注为补记' : '打卡完成');
+    if (res.failed) toast(`打卡记下了，但有 ${res.failed} 张照片没传上`);
+    else toast(late ? '已记下，标注为补记' : '打卡完成');
+  }
+
+  async function openNotifications() {
+    const rows = state.notifications || [];
+    openSheet('通知', rows.length ? rows.map((n) => `
+      <div class="notif-row">
+        <span class="notif-dot ${n.read_at ? 'read' : ''}"></span>
+        <div class="feed-main">
+          <div><b>${esc(n.title)}</b></div>
+          ${n.body ? `<div class="feed-note">${esc(n.body)}</div>` : ''}
+        </div>
+        <span class="feed-time">${timeOf(n.created_at)}</span>
+      </div>`).join('') : '<div class="empty"><b>没有新通知</b>临近截止会自动提醒你。</div>');
+
+    if (state.unread) {
+      const unreadIds = rows.filter((n) => !n.read_at).map((n) => n.id);
+      const { error } = await cloud.database.from('notifications')
+        .update({ read_at: new Date().toISOString() })
+        .in('id', unreadIds);
+      if (!error) {
+        state.notifications = rows.map((n) => ({ ...n, read_at: n.read_at || new Date().toISOString() }));
+        state.unread = 0;
+        const bell = document.querySelector('.bell i');
+        if (bell) bell.remove();
+      }
+    }
+  }
+
+  function openPhoto(src) {
+    if (!src) return;
+    openSheet('照片', `<img src="${src}" style="width:100%;border-radius:12px;display:block" alt="">`);
   }
 
   function openCustomSheet() {
@@ -670,6 +853,7 @@
         <div class="card"><div class="empty"><b>这周还没有内容</b>打卡时写一句，就会贴到这里。</div></div>
       ` : `<div class="wall">${items.map((c) => `
         <div class="note">
+          ${(state.attachments[c.id] || []).length ? `<img class="note-img" src="${state.attachments[c.id][0].url}" data-act="view-photo" data-src="${state.attachments[c.id][0].url}" alt="">` : ''}
           <div class="n-title">${esc(c.title || taskOf(c.task_id) || '小事')}</div>
           ${c.note ? `<div class="n-body">${esc(c.note)}</div>` : ''}
           <div class="n-foot"><span>${esc(nameOf(c.user_id))}</span><span>${timeOf(c.done_at)}</span></div>
@@ -824,8 +1008,9 @@
             <div class="t-icon">${esc(t.emoji || '·')}</div>
             <div class="t-main">
               <div class="t-title">${esc(t.title)}</div>
-              <div class="t-sub">${parseHM(t.deadline_time)} 截止 · 提前 ${t.reminder_offset} 分钟提醒</div>
+              <div class="t-sub">${parseHM(t.deadline_time)} 截止 · ${t.reminder_offset ? `提前 ${t.reminder_offset} 分钟提醒` : '不提醒'}</div>
             </div>
+            <button class="btn ghost small" data-act="edit-task" data-task="${t.id}">编辑</button>
             <button class="icon-btn" data-act="archive-task" data-task="${t.id}" aria-label="归档">✕</button>
           </div>`).join('') || '<div class="empty"><b>还没有任务</b>在下面加一条。</div>'}
       </div>
@@ -903,6 +1088,58 @@
     toast('已添加');
   }
 
+  function editTaskSheet(id) {
+    const t = state.tasks.find((x) => x.id === id);
+    if (!t) return;
+    openSheet('编辑任务', `
+      <div class="field">
+        <label for="et-title">任务名</label>
+        <input class="input" id="et-title" maxlength="20" value="${esc(t.title)}">
+      </div>
+      <div class="field">
+        <label>图标 / 每天截止时间</label>
+        <div class="row-2">
+          <input class="input" id="et-emoji" maxlength="2" value="${esc(t.emoji || '')}" style="max-width:88px;text-align:center">
+          <input class="input" id="et-deadline" type="time" value="${parseHM(t.deadline_time)}">
+        </div>
+      </div>
+      <div class="field">
+        <label for="et-offset">提前多久提醒</label>
+        <div class="input-group">
+          <input class="input" id="et-offset" type="number" min="0" max="240" step="5" value="${t.reminder_offset}">
+          <span class="unit">分钟</span>
+        </div>
+        <div class="hint" style="margin-top:6px">填 0 = 不提醒</div>
+      </div>
+      <button class="btn block" data-act="save-task" data-task="${t.id}">保存</button>
+    `);
+  }
+
+  async function saveTask(id) {
+    const title = document.getElementById('et-title').value.trim();
+    const emoji = document.getElementById('et-emoji').value.trim();
+    const deadline = document.getElementById('et-deadline').value;
+    const offset = Number(document.getElementById('et-offset').value || 0);
+    if (!title) { toast('任务名不能空'); return; }
+    if (!deadline) { toast('设一个截止时间'); return; }
+    const btn = document.querySelector('[data-act="save-task"]');
+    if (btn) { btn.disabled = true; btn.textContent = '保存中…'; }
+    const { data, error } = await cloud.database.from('tasks').update({
+      title,
+      emoji: emoji || null,
+      deadline_time: deadline,
+      reminder_offset: Math.max(0, Math.min(240, offset))
+    }).eq('id', id).select();
+    if (error || !data || !data.length) {
+      if (btn) { btn.disabled = false; btn.textContent = '保存'; }
+      toast((error && error.message) || '保存失败');
+      return;
+    }
+    closeSheet();
+    await refresh();
+    toast('已保存');
+  }
+
   async function archiveTask(id) {
     if (!confirm('归档这条任务？历史记录会保留。')) return;
     const { data, error } = await cloud.database.from('tasks').update({ archived: true }).eq('id', id).select();
@@ -944,12 +1181,17 @@
     const act = el.dataset.act;
     if (act === 'toggle-task') return toggleTask(el.dataset.task, el.dataset.checkin);
     if (act === 'submit-checkin') return submitCheckin(el.dataset.task);
+    if (act === 'del-photo') { state.pendingPhotos.splice(Number(el.dataset.i), 1); return paintShots(); }
+    if (act === 'view-photo') return openPhoto(el.dataset.src);
+    if (act === 'open-notifs') return openNotifications();
     if (act === 'open-custom') return openCustomSheet();
     if (act === 'submit-custom') return submitCustom();
     if (act === 'copy-invite') return copyText(state.group.invite_code);
     if (act === 'copy-progress') return copyProgress();
     if (act === 'remind') return remind();
     if (act === 'add-task') return addTask();
+    if (act === 'edit-task') return editTaskSheet(el.dataset.task);
+    if (act === 'save-task') return saveTask(el.dataset.task);
     if (act === 'archive-task') return archiveTask(el.dataset.task);
     if (act === 'save-settings') return saveSettings();
     if (act === 'set-leader') return setLeader(el.dataset.user);
