@@ -1,0 +1,150 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="628" viewBox="0 0 900 628" font-family="system-ui,-apple-system,'Segoe UI','Microsoft YaHei',sans-serif">
+  <rect width="900" height="628" fill="#FFFFFF"/>
+
+  <text x="45" y="42" font-size="22" font-weight="600" fill="#1F2328">页面结构 · 三个页面就够</text>
+  <text x="45" y="68" font-size="13" fill="#59636E">手机优先（这群人大概率在手机上打卡），桌面打开时同一套页面横向铺开，不做两套。</text>
+  <line x1="45" y1="86" x2="855" y2="86" stroke="#D8DEE4" stroke-width="1"/>
+
+  <!-- ============ 手机 1 今日 ============ -->
+  <text x="45" y="112" font-size="13" font-weight="600" fill="#1F2328">① 今日</text>
+  <text x="98" y="112" font-size="11.5" fill="#8B949E">打开就是今天要做的事</text>
+
+  <rect x="45" y="122" width="240" height="440" rx="18" fill="#FFFFFF" stroke="#D0D7DE" stroke-width="1.5"/>
+  <rect x="45" y="122" width="240" height="44" rx="18" fill="#F6F8FA"/>
+  <rect x="45" y="150" width="240" height="16" fill="#F6F8FA"/>
+  <line x1="45" y1="166" x2="285" y2="166" stroke="#E5E9EE" stroke-width="1"/>
+  <text x="65" y="149" font-size="12.5" font-weight="600" fill="#1F2328">11月6日 周五</text>
+  <circle cx="262" cy="144" r="10" fill="#D0D7DE"/>
+
+  <!-- 连续天数 -->
+  <rect x="61" y="178" width="208" height="62" rx="10" fill="#E6F4EA"/>
+  <text x="77" y="202" font-size="11" fill="#1A7F37">连续打卡</text>
+  <text x="77" y="228" font-size="19" font-weight="700" fill="#1A7F37">7 天</text>
+  <text x="255" y="228" font-size="11" fill="#1A7F37" text-anchor="end">本周 6/7</text>
+
+  <!-- 固定清单 -->
+  <text x="61" y="264" font-size="11.5" font-weight="600" fill="#59636E">固定清单</text>
+  <rect x="61" y="272" width="208" height="34" rx="8" fill="#FAFBFC" stroke="#E5E9EE" stroke-width="1"/>
+  <circle cx="79" cy="289" r="8" fill="#2DA44E"/>
+  <path d="M75 289.5 L78 292.5 L83 285.5" stroke="#FFFFFF" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="96" y="293" font-size="12" fill="#8B949E" text-decoration="line-through">早起喝一杯水</text>
+
+  <rect x="61" y="312" width="208" height="34" rx="8" fill="#FAFBFC" stroke="#E5E9EE" stroke-width="1"/>
+  <circle cx="79" cy="329" r="8" fill="#FFFFFF" stroke="#C6CDD5" stroke-width="1.5"/>
+  <text x="96" y="333" font-size="12" fill="#1F2328">读 20 页书</text>
+
+  <rect x="61" y="352" width="208" height="34" rx="8" fill="#FAFBFC" stroke="#E5E9EE" stroke-width="1"/>
+  <circle cx="79" cy="369" r="8" fill="#FFFFFF" stroke="#C6CDD5" stroke-width="1.5"/>
+  <text x="96" y="373" font-size="12" fill="#1F2328">走够 6000 步</text>
+
+  <!-- 今天的小事 -->
+  <text x="61" y="412" font-size="11.5" font-weight="600" fill="#59636E">今天的小事</text>
+  <rect x="61" y="420" width="208" height="34" rx="8" fill="#FAFBFC" stroke="#E5E9EE" stroke-width="1"/>
+  <circle cx="79" cy="437" r="8" fill="#FFFFFF" stroke="#C6CDD5" stroke-width="1.5"/>
+  <text x="96" y="441" font-size="12" fill="#1F2328">给妈妈打了个电话</text>
+
+  <rect x="61" y="460" width="208" height="34" rx="8" fill="#FAFBFC" stroke="#E5E9EE" stroke-width="1"/>
+  <circle cx="79" cy="477" r="8" fill="#FFFFFF" stroke="#C6CDD5" stroke-width="1.5"/>
+  <text x="96" y="481" font-size="12" fill="#1F2328">修好了漏水的水龙头</text>
+
+  <rect x="61" y="504" width="208" height="34" rx="17" fill="#2DA44E"/>
+  <text x="165" y="526" font-size="12.5" font-weight="600" fill="#FFFFFF" text-anchor="middle">+ 加一件小事</text>
+
+  <text x="95" y="556" font-size="11" font-weight="600" fill="#1F2328">今日</text>
+  <text x="165" y="556" font-size="11" fill="#8B949E">打卡墙</text>
+  <text x="235" y="556" font-size="11" fill="#8B949E">我的</text>
+
+  <!-- ============ 手机 2 打卡墙 ============ -->
+  <text x="330" y="112" font-size="13" font-weight="600" fill="#1F2328">② 打卡墙</text>
+  <text x="397" y="112" font-size="11.5" fill="#8B949E">看到别人打了什么</text>
+
+  <rect x="330" y="122" width="240" height="440" rx="18" fill="#FFFFFF" stroke="#D0D7DE" stroke-width="1.5"/>
+  <rect x="330" y="122" width="240" height="44" rx="18" fill="#F6F8FA"/>
+  <rect x="330" y="150" width="240" height="16" fill="#F6F8FA"/>
+  <line x1="330" y1="166" x2="570" y2="166" stroke="#E5E9EE" stroke-width="1"/>
+  <text x="350" y="149" font-size="12.5" font-weight="600" fill="#1F2328">打卡墙</text>
+
+  <rect x="346" y="176" width="208" height="30" rx="15" fill="#F1F3F5"/>
+  <rect x="348" y="178" width="102" height="26" rx="13" fill="#FFFFFF"/>
+  <text x="399" y="195" font-size="11.5" font-weight="600" fill="#1F2328" text-anchor="middle">今天</text>
+  <text x="503" y="195" font-size="11.5" fill="#8B949E" text-anchor="middle">本周</text>
+
+  <!-- 卡片 1 -->
+  <rect x="346" y="218" width="208" height="82" rx="10" fill="#FFFFFF" stroke="#E5E9EE" stroke-width="1"/>
+  <circle cx="364" cy="238" r="12" fill="#D0D7DE"/>
+  <text x="382" y="235" font-size="11.5" font-weight="600" fill="#1F2328">小林</text>
+  <text x="538" y="235" font-size="10" fill="#8B949E" text-anchor="end">08:12</text>
+  <text x="364" y="262" font-size="11.5" fill="#1F2328">读 20 页书</text>
+  <text x="364" y="284" font-size="10.5" fill="#8B949E">♡ 3</text>
+
+  <!-- 卡片 2 -->
+  <rect x="346" y="310" width="208" height="82" rx="10" fill="#FFFFFF" stroke="#E5E9EE" stroke-width="1"/>
+  <circle cx="364" cy="330" r="12" fill="#D0D7DE"/>
+  <text x="382" y="327" font-size="11.5" font-weight="600" fill="#1F2328">阿泽</text>
+  <text x="538" y="327" font-size="10" fill="#8B949E" text-anchor="end">07:40</text>
+  <text x="364" y="354" font-size="11.5" fill="#1F2328">早起喝了一杯水</text>
+  <text x="364" y="376" font-size="10.5" fill="#8B949E">♡ 5</text>
+
+  <!-- 卡片 3 -->
+  <rect x="346" y="402" width="208" height="82" rx="10" fill="#FFFFFF" stroke="#E5E9EE" stroke-width="1"/>
+  <circle cx="364" cy="422" r="12" fill="#D0D7DE"/>
+  <text x="382" y="419" font-size="11.5" font-weight="600" fill="#1F2328">你</text>
+  <text x="538" y="419" font-size="10" fill="#8B949E" text-anchor="end">刚刚</text>
+  <text x="364" y="446" font-size="11.5" fill="#1F2328">修好了漏水的水龙头</text>
+  <text x="364" y="468" font-size="10.5" fill="#8B949E">♡ 0</text>
+
+  <text x="380" y="556" font-size="11" fill="#8B949E">今日</text>
+  <text x="450" y="556" font-size="11" font-weight="600" fill="#1F2328">打卡墙</text>
+  <text x="520" y="556" font-size="11" fill="#8B949E">我的</text>
+
+  <!-- ============ 手机 3 我的 ============ -->
+  <text x="615" y="112" font-size="13" font-weight="600" fill="#1F2328">③ 我的</text>
+  <text x="668" y="112" font-size="11.5" fill="#8B949E">回顾 + 管清单</text>
+
+  <rect x="615" y="122" width="240" height="440" rx="18" fill="#FFFFFF" stroke="#D0D7DE" stroke-width="1.5"/>
+  <rect x="615" y="122" width="240" height="44" rx="18" fill="#F6F8FA"/>
+  <rect x="615" y="150" width="240" height="16" fill="#F6F8FA"/>
+  <line x1="615" y1="166" x2="855" y2="166" stroke="#E5E9EE" stroke-width="1"/>
+  <text x="635" y="149" font-size="12.5" font-weight="600" fill="#1F2328">我的</text>
+
+  <!-- 统计 -->
+  <rect x="631" y="178" width="65" height="64" rx="10" fill="#F6F8FA"/>
+  <text x="663" y="206" font-size="17" font-weight="700" fill="#1F2328" text-anchor="middle">7</text>
+  <text x="663" y="226" font-size="10" fill="#8B949E" text-anchor="middle">连续天数</text>
+
+  <rect x="702" y="178" width="65" height="64" rx="10" fill="#F6F8FA"/>
+  <text x="734" y="206" font-size="17" font-weight="700" fill="#1F2328" text-anchor="middle">124</text>
+  <text x="734" y="226" font-size="10" fill="#8B949E" text-anchor="middle">总打卡</text>
+
+  <rect x="773" y="178" width="65" height="64" rx="10" fill="#F6F8FA"/>
+  <text x="805" y="206" font-size="17" font-weight="700" fill="#1F2328" text-anchor="middle">78%</text>
+  <text x="805" y="226" font-size="10" fill="#8B949E" text-anchor="middle">完成率</text>
+
+  <!-- 日历热力 -->
+  <text x="631" y="266" font-size="11.5" font-weight="600" fill="#59636E">最近 5 周</text>
+  <rect x="631" y="274" width="207" height="150" rx="10" fill="#FAFBFC" stroke="#E5E9EE" stroke-width="1"/>
+  <g>
+    <rect x="645" y="288" width="22" height="22" rx="4" fill="#2DA44E"/><rect x="673" y="288" width="22" height="22" rx="4" fill="#B7E2C6"/><rect x="701" y="288" width="22" height="22" rx="4" fill="#2DA44E"/><rect x="729" y="288" width="22" height="22" rx="4" fill="#EAF3ED"/><rect x="757" y="288" width="22" height="22" rx="4" fill="#2DA44E"/><rect x="785" y="288" width="22" height="22" rx="4" fill="#2DA44E"/><rect x="813" y="288" width="22" height="22" rx="4" fill="#B7E2C6"/>
+    <rect x="645" y="316" width="22" height="22" rx="4" fill="#2DA44E"/><rect x="673" y="316" width="22" height="22" rx="4" fill="#2DA44E"/><rect x="701" y="316" width="22" height="22" rx="4" fill="#EAF3ED"/><rect x="729" y="316" width="22" height="22" rx="4" fill="#2DA44E"/><rect x="757" y="316" width="22" height="22" rx="4" fill="#B7E2C6"/><rect x="785" y="316" width="22" height="22" rx="4" fill="#2DA44E"/><rect x="813" y="316" width="22" height="22" rx="4" fill="#2DA44E"/>
+    <rect x="645" y="344" width="22" height="22" rx="4" fill="#B7E2C6"/><rect x="673" y="344" width="22" height="22" rx="4" fill="#2DA44E"/><rect x="701" y="344" width="22" height="22" rx="4" fill="#2DA44E"/><rect x="729" y="344" width="22" height="22" rx="4" fill="#2DA44E"/><rect x="757" y="344" width="22" height="22" rx="4" fill="#EAF3ED"/><rect x="785" y="344" width="22" height="22" rx="4" fill="#2DA44E"/><rect x="813" y="344" width="22" height="22" rx="4" fill="#2DA44E"/>
+    <rect x="645" y="372" width="22" height="22" rx="4" fill="#2DA44E"/><rect x="673" y="372" width="22" height="22" rx="4" fill="#EAF3ED"/><rect x="701" y="372" width="22" height="22" rx="4" fill="#2DA44E"/><rect x="729" y="372" width="22" height="22" rx="4" fill="#B7E2C6"/><rect x="757" y="372" width="22" height="22" rx="4" fill="#2DA44E"/><rect x="785" y="372" width="22" height="22" rx="4" fill="#2DA44E"/><rect x="813" y="372" width="22" height="22" rx="4" fill="#2DA44E"/>
+    <rect x="645" y="400" width="22" height="22" rx="4" fill="#2DA44E"/><rect x="673" y="400" width="22" height="22" rx="4" fill="#2DA44E"/><rect x="701" y="400" width="22" height="22" rx="4" fill="#2DA44E"/><rect x="729" y="400" width="22" height="22" rx="4" fill="#2DA44E"/><rect x="757" y="400" width="22" height="22" rx="4" fill="#2DA44E"/><rect x="785" y="400" width="22" height="22" rx="4" fill="#2DA44E"/><rect x="813" y="400" width="22" height="22" rx="4" fill="#FFFFFF" stroke="#E5E9EE"/>
+  </g>
+
+  <!-- 入口 -->
+  <rect x="631" y="440" width="207" height="44" rx="8" fill="#FAFBFC" stroke="#E5E9EE" stroke-width="1"/>
+  <text x="649" y="467" font-size="12" fill="#1F2328">管理固定清单</text>
+  <text x="820" y="467" font-size="13" fill="#8B949E" text-anchor="end">›</text>
+
+  <rect x="631" y="492" width="207" height="44" rx="8" fill="#FAFBFC" stroke="#E5E9EE" stroke-width="1"/>
+  <text x="649" y="519" font-size="12" fill="#1F2328">邀请成员</text>
+  <text x="820" y="519" font-size="13" fill="#8B949E" text-anchor="end">›</text>
+
+  <text x="650" y="556" font-size="11" fill="#8B949E">今日</text>
+  <text x="720" y="556" font-size="11" fill="#8B949E">打卡墙</text>
+  <text x="790" y="556" font-size="11" font-weight="600" fill="#1F2328">我的</text>
+
+  <!-- 底部说明 -->
+  <rect x="45" y="582" width="810" height="34" rx="8" fill="#F6F8FA" stroke="#D8DEE4" stroke-width="1"/>
+  <text x="65" y="604" font-size="12" fill="#1F2328">打卡是一个动作，所以主页面只放「圈」，不放表单。文字输入只在「加一件小事」时出现，一次一条。</text>
+</svg>

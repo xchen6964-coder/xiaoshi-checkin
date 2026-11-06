@@ -36,3 +36,6 @@ pnpm-debug.log*
 
 # AI 工具本地数据
 .workbuddy/
+
+# 设计图渲染预览（由 SVG 生成，不入库）
+docs/preview-*.png

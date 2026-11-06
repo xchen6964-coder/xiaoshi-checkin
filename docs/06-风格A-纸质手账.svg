@@ -1,0 +1,168 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1240" height="900" viewBox="0 0 1240 900" font-family="PingFang SC,Hiragino Sans GB,Microsoft YaHei,sans-serif">
+  <defs>
+    <pattern id="a-grid" width="26" height="26" patternUnits="userSpaceOnUse">
+      <path d="M26 0H0V26" fill="none" stroke="#DCCFB8" stroke-width="0.8"/>
+    </pattern>
+    <pattern id="a-photo" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <rect width="10" height="10" fill="#EFE4CF"/>
+      <line x1="0" y1="0" x2="0" y2="10" stroke="#E0D0B4" stroke-width="3"/>
+    </pattern>
+    <filter id="a-sh" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#7A6A50" flood-opacity="0.16"/>
+    </filter>
+  </defs>
+
+  <rect width="1240" height="900" fill="#F2EADB"/>
+  <rect width="1240" height="900" fill="url(#a-grid)" opacity="0.55"/>
+
+  <text x="60" y="62" font-size="26" font-weight="700" fill="#2F2A22">方案 A · 纸质手账</text>
+  <text x="60" y="90" font-size="14" fill="#8C7E67">米白纸 · 手写感 · 印章胶带 · 低饱和暖色　适合「小事」的温和气质，进度公示像贴在墙上的手写名单</text>
+
+  <g filter="url(#a-sh)">
+    <rect x="70" y="112" width="360" height="718" rx="32" fill="#FDF9F0" stroke="#D9CBB0" stroke-width="2"/>
+  </g>
+
+  <text x="92" y="160" font-size="12" fill="#9A8B72">11月6日 周五 · 晴</text>
+  <text x="92" y="188" font-size="20" font-weight="700" fill="#2F2A22" font-family="Kaiti SC,STKaiti,serif">今天的小事</text>
+  <g transform="rotate(-7 379 169)">
+    <rect x="356" y="146" width="46" height="46" rx="7" fill="none" stroke="#C0523A" stroke-width="2"/>
+    <text x="379" y="164" font-size="11" fill="#C0523A" text-anchor="middle">11·06</text>
+    <text x="379" y="180" font-size="10" fill="#C0523A" text-anchor="middle">已打卡</text>
+  </g>
+  <line x1="92" y1="204" x2="408" y2="204" stroke="#DCCFB8" stroke-width="1" stroke-dasharray="4 4"/>
+
+  <rect x="88" y="218" width="324" height="96" rx="12" fill="#FFFDF6" stroke="#E2D5BE"/>
+  <text x="104" y="246" font-size="14" font-weight="600" fill="#2F2A22">早起</text>
+  <text x="150" y="246" font-size="11" fill="#9A8B72">08:30 截止</text>
+  <rect x="296" y="230" width="104" height="22" rx="11" fill="#FBEAE4" stroke="#E9C3B6"/>
+  <text x="348" y="245" font-size="11" fill="#C0523A" text-anchor="middle">剩 42 分钟</text>
+  <line x1="104" y1="262" x2="396" y2="262" stroke="#EDE2CE" stroke-width="1" stroke-dasharray="3 3"/>
+  <text x="104" y="286" font-size="14" font-weight="600" fill="#2F2A22">日精进</text>
+  <text x="162" y="286" font-size="11" fill="#9A8B72">23:50 截止</text>
+  <rect x="296" y="270" width="104" height="22" rx="11" fill="#F1EFE6" stroke="#DDD5C4"/>
+  <text x="348" y="285" font-size="11" fill="#7E7259" text-anchor="middle">剩 15 小时</text>
+  <text x="104" y="304" font-size="10" fill="#B0A38B">逾期后不可补记，只能查看</text>
+
+  <rect x="88" y="326" width="324" height="176" rx="12" fill="#FFFDF6" stroke="#E2D5BE"/>
+  <text x="104" y="352" font-size="14" font-weight="600" fill="#2F2A22">今日进度</text>
+  <text x="396" y="352" font-size="12" fill="#C0523A" text-anchor="end">4 / 6 人</text>
+  <text x="104" y="370" font-size="10" fill="#B0A38B">点名字可看他今天交了什么</text>
+
+  <g font-size="12">
+    <circle cx="113" cy="394" r="8" fill="#FDF9F0" stroke="#C0523A" stroke-width="1.6"/>
+    <path d="M109 394l3 3 5-6" fill="none" stroke="#C0523A" stroke-width="1.8" stroke-linecap="round"/>
+    <text x="128" y="398" fill="#2F2A22">阿岚</text>
+    <text x="196" y="398" font-size="10" fill="#9A8B72">已打卡 07:02</text>
+
+    <circle cx="281" cy="394" r="8" fill="#FDF9F0" stroke="#C0523A" stroke-width="1.6"/>
+    <path d="M277 394l3 3 5-6" fill="none" stroke="#C0523A" stroke-width="1.8" stroke-linecap="round"/>
+    <text x="296" y="398" fill="#2F2A22">小满</text>
+    <text x="360" y="398" font-size="10" fill="#9A8B72">已打卡</text>
+
+    <circle cx="113" cy="426" r="8" fill="#FDF9F0" stroke="#C0523A" stroke-width="1.6"/>
+    <path d="M109 426l3 3 5-6" fill="none" stroke="#C0523A" stroke-width="1.8" stroke-linecap="round"/>
+    <text x="128" y="430" fill="#2F2A22">老陈</text>
+    <text x="196" y="430" font-size="10" fill="#9A8B72">已打卡 06:41</text>
+
+    <circle cx="281" cy="426" r="8" fill="#FDF9F0" stroke="#D8C9AF" stroke-width="1.6" stroke-dasharray="3 2"/>
+    <text x="296" y="430" fill="#2F2A22">七喜</text>
+    <text x="360" y="430" font-size="10" fill="#C0523A">未打卡</text>
+
+    <circle cx="113" cy="458" r="8" fill="#FDF9F0" stroke="#C0523A" stroke-width="1.6"/>
+    <path d="M109 458l3 3 5-6" fill="none" stroke="#C0523A" stroke-width="1.8" stroke-linecap="round"/>
+    <text x="128" y="462" fill="#2F2A22">阿珍</text>
+    <text x="196" y="462" font-size="10" fill="#9A8B72">已打卡 08:05</text>
+
+    <circle cx="281" cy="458" r="8" fill="#FDF9F0" stroke="#D8C9AF" stroke-width="1.6" stroke-dasharray="3 2"/>
+    <text x="296" y="462" fill="#2F2A22">大熊</text>
+    <text x="360" y="462" font-size="10" fill="#C0523A">未打卡</text>
+  </g>
+
+  <rect x="208" y="506" width="84" height="18" fill="#E8D9BC" opacity="0.85" transform="rotate(-2 250 515)"/>
+  <rect x="88" y="516" width="324" height="198" rx="12" fill="#FFFDF6" stroke="#E2D5BE"/>
+  <rect x="104" y="534" width="120" height="120" rx="4" fill="#EFE4CF" stroke="#DCC9A8"/>
+  <rect x="110" y="540" width="108" height="108" rx="2" fill="url(#a-photo)"/>
+  <text x="164" y="600" font-size="11" fill="#A89573" text-anchor="middle">照片</text>
+  <text x="240" y="550" font-size="15" font-weight="700" fill="#2F2A22">晨跑 5 公里</text>
+  <text x="240" y="570" font-size="11" fill="#9A8B72">07:12 · 早起</text>
+  <text x="240" y="596" font-size="12" fill="#5B5343">今天风很大，跑到桥头</text>
+  <text x="240" y="614" font-size="12" fill="#5B5343">就往回走了。</text>
+  <g transform="rotate(-8 352 682)">
+    <rect x="330" y="668" width="44" height="28" rx="4" fill="none" stroke="#C0523A" stroke-width="1.6" opacity="0.85"/>
+    <text x="352" y="686" font-size="9" fill="#C0523A" text-anchor="middle" opacity="0.85">已完成</text>
+  </g>
+  <text x="104" y="700" font-size="10" fill="#B0A38B">阿岚 · 传了 1 张照片</text>
+
+  <rect x="88" y="730" width="324" height="44" rx="22" fill="#FDF9F0" stroke="#C9B897" stroke-dasharray="5 4"/>
+  <text x="250" y="757" font-size="13" fill="#7E7259" text-anchor="middle">＋ 加一件小事，或传张照片</text>
+  <text x="250" y="798" font-size="12" fill="#C0523A" text-anchor="middle">复制今日进度</text>
+
+  <rect x="480" y="112" width="700" height="196" rx="14" fill="#FFFDF6" stroke="#E2D5BE"/>
+  <text x="508" y="146" font-size="15" font-weight="700" fill="#2F2A22">配色 / 字体</text>
+  <circle cx="514" cy="192" r="24" fill="#F2EADB" stroke="#D9CBB0"/>
+  <circle cx="578" cy="192" r="24" fill="#FFFDF6" stroke="#D9CBB0"/>
+  <circle cx="642" cy="192" r="24" fill="#2F2A22"/>
+  <circle cx="706" cy="192" r="24" fill="#C0523A"/>
+  <circle cx="770" cy="192" r="24" fill="#6B7A52"/>
+  <g font-size="10" fill="#8C7E67" text-anchor="middle">
+    <text x="514" y="232">F2EADB 纸</text>
+    <text x="578" y="232">FFFDF6 卡</text>
+    <text x="642" y="232">2F2A22 墨</text>
+    <text x="706" y="232">C0523A 朱</text>
+    <text x="770" y="232">6B7A52 橄榄</text>
+  </g>
+  <line x1="820" y1="158" x2="820" y2="270" stroke="#EDE2CE"/>
+  <text x="848" y="176" font-size="12" fill="#2F2A22">标题　楷体 / 思源宋体 SemiBold</text>
+  <text x="848" y="204" font-size="12" fill="#2F2A22">正文　系统黑体，行高 1.6</text>
+  <text x="848" y="232" font-size="12" fill="#2F2A22">数字　等宽（时间、天数对齐）</text>
+  <text x="848" y="264" font-size="11" fill="#B0A38B">圆角 12px，1px 描边，不用投影</text>
+
+  <rect x="480" y="328" width="700" height="252" rx="14" fill="#FFFDF6" stroke="#E2D5BE"/>
+  <text x="508" y="362" font-size="15" font-weight="700" fill="#2F2A22">核心组件</text>
+
+  <text x="508" y="398" font-size="11" fill="#8C7E67">倒计时标签</text>
+  <rect x="508" y="408" width="118" height="30" rx="15" fill="#FBEAE4" stroke="#E9C3B6"/>
+  <text x="567" y="428" font-size="12" fill="#C0523A" text-anchor="middle">剩 42 分钟</text>
+  <rect x="508" y="446" width="118" height="30" rx="15" fill="#F1EFE6" stroke="#DDD5C4"/>
+  <text x="567" y="466" font-size="12" fill="#7E7259" text-anchor="middle">剩 15 小时</text>
+
+  <text x="660" y="398" font-size="11" fill="#8C7E67">勾选圈</text>
+  <circle cx="672" cy="424" r="13" fill="#FDF9F0" stroke="#C9B897" stroke-width="1.6"/>
+  <circle cx="712" cy="424" r="13" fill="#FDF9F0" stroke="#C0523A" stroke-width="1.6"/>
+  <path d="M706 424l4 5 7-9" fill="none" stroke="#C0523A" stroke-width="2" stroke-linecap="round"/>
+  <text x="660" y="462" font-size="10" fill="#B0A38B">未勾 / 已勾（手写勾）</text>
+
+  <text x="800" y="398" font-size="11" fill="#8C7E67">印章 = 完成态</text>
+  <g transform="rotate(-7 830 432)">
+    <rect x="806" y="408" width="48" height="48" rx="6" fill="none" stroke="#C0523A" stroke-width="2"/>
+    <text x="830" y="430" font-size="10" fill="#C0523A" text-anchor="middle">今日</text>
+    <text x="830" y="445" font-size="10" fill="#C0523A" text-anchor="middle">已记</text>
+  </g>
+
+  <text x="896" y="398" font-size="11" fill="#8C7E67">拍立得</text>
+  <g transform="rotate(2 960 440)">
+    <rect x="912" y="408" width="96" height="72" fill="#FFFFFF" stroke="#E2D5BE"/>
+    <rect x="920" y="414" width="80" height="52" fill="url(#a-photo)"/>
+    <text x="960" y="478" font-size="8" fill="#9A8B72" text-anchor="middle">11.06</text>
+  </g>
+
+  <line x1="508" y1="502" x2="1152" y2="502" stroke="#EDE2CE" stroke-dasharray="4 4"/>
+  <text x="508" y="530" font-size="12" fill="#5B5343">照片和文字同卡展示，照片按拍立得处理（白边、胶带、微旋转），不做正方形网格式图库。</text>
+  <text x="508" y="556" font-size="12" fill="#5B5343">进度公示用手写名单，已打卡画勾，未打卡留空圈——一眼看出缺谁，不用看数字。</text>
+
+  <rect x="480" y="600" width="700" height="230" rx="14" fill="#FFFDF6" stroke="#E2D5BE"/>
+  <text x="508" y="634" font-size="15" font-weight="700" fill="#2F2A22">点击后的反馈</text>
+  <circle cx="520" cy="668" r="11" fill="#C0523A"/>
+  <text x="520" y="672" font-size="11" fill="#FFFDF6" text-anchor="middle">1</text>
+  <text x="542" y="672" font-size="12" fill="#2F2A22">勾选：圆圈 120ms 内画出手写勾，文字用墨色划掉</text>
+  <circle cx="520" cy="704" r="11" fill="#C0523A"/>
+  <text x="520" y="708" font-size="11" fill="#FFFDF6" text-anchor="middle">2</text>
+  <text x="542" y="708" font-size="12" fill="#2F2A22">完成整条：右上角印章落下（1.4→1，180ms，略带回弹）</text>
+  <circle cx="520" cy="740" r="11" fill="#C0523A"/>
+  <text x="520" y="744" font-size="11" fill="#FFFDF6" text-anchor="middle">3</text>
+  <text x="542" y="744" font-size="12" fill="#2F2A22">传照片：拍立得从底部滑入，倾斜 -3°，自动带胶带</text>
+  <circle cx="520" cy="776" r="11" fill="#C0523A"/>
+  <text x="520" y="780" font-size="11" fill="#FFFDF6" text-anchor="middle">4</text>
+  <text x="542" y="780" font-size="12" fill="#2F2A22">进度刷新：名单里某人变成打勾，纸张轻微下沉再回弹</text>
+  <text x="508" y="812" font-size="11" fill="#B0A38B">动效控制在 250ms 内，不做连续弹跳</text>
+</svg>

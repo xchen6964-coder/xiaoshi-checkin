@@ -1,0 +1,180 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1240" height="900" viewBox="0 0 1240 900" font-family="PingFang SC,Hiragino Sans GB,Microsoft YaHei,sans-serif">
+  <defs>
+    <filter id="c-sh" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="5" stdDeviation="6" flood-color="#6B5B45" flood-opacity="0.18"/>
+    </filter>
+    <pattern id="c-photo1" width="11" height="11" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <rect width="11" height="11" fill="#EDE3CF"/>
+      <line x1="0" y1="0" x2="0" y2="11" stroke="#DDCEB2" stroke-width="4"/>
+    </pattern>
+    <pattern id="c-photo2" width="11" height="11" patternUnits="userSpaceOnUse" patternTransform="rotate(-45)">
+      <rect width="11" height="11" fill="#DDE9F0"/>
+      <line x1="0" y1="0" x2="0" y2="11" stroke="#C9DCE7" stroke-width="4"/>
+    </pattern>
+  </defs>
+
+  <rect width="1240" height="900" fill="#ECE9E2"/>
+  <line x1="0" y1="30" x2="1240" y2="30" stroke="#E2DED5"/>
+  <line x1="0" y1="870" x2="1240" y2="870" stroke="#E2DED5"/>
+
+  <text x="60" y="62" font-size="26" font-weight="700" fill="#2B2A26">方案 C · 便签拼贴墙</text>
+  <text x="60" y="90" font-size="14" fill="#7A756A">牛皮纸底 · 彩色便签 · 胶带与微旋转 · 手写批注　把「公示」做成一面真的墙，照片有存在感</text>
+
+  <g filter="url(#c-sh)">
+    <rect x="70" y="112" width="360" height="718" rx="28" fill="#FAF8F3" stroke="#DDD6C8"/>
+  </g>
+
+  <text x="92" y="158" font-size="19" font-weight="700" fill="#2B2A26">小事墙</text>
+  <text x="92" y="178" font-size="11" fill="#8C8474">11月6日 周五 · 第 12 天</text>
+  <rect x="300" y="142" width="52" height="20" rx="10" fill="#2B2A26"/>
+  <text x="326" y="156" font-size="9" fill="#FAF8F3" text-anchor="middle">负责人</text>
+  <circle cx="374" cy="152" r="13" fill="#F1EDE4"/>
+  <text x="374" y="156" font-size="10" fill="#7A756A" text-anchor="middle">⋯</text>
+
+  <rect x="88" y="194" width="324" height="54" rx="12" fill="#F1EDE4"/>
+  <g>
+    <circle cx="108" cy="221" r="14" fill="#FFD9D2" stroke="#FAF8F3" stroke-width="2"/>
+    <text x="108" y="225" font-size="9" fill="#A8553F" text-anchor="middle">岚</text>
+    <path d="M118 233l3 3 5-6" fill="none" stroke="#2E9E6B" stroke-width="1.8" stroke-linecap="round"/>
+
+    <circle cx="142" cy="221" r="14" fill="#D6E8FF" stroke="#FAF8F3" stroke-width="2"/>
+    <text x="142" y="225" font-size="9" fill="#3F5F86" text-anchor="middle">满</text>
+    <path d="M152 233l3 3 5-6" fill="none" stroke="#2E9E6B" stroke-width="1.8" stroke-linecap="round"/>
+
+    <circle cx="176" cy="221" r="14" fill="#DCF0D4" stroke="#FAF8F3" stroke-width="2"/>
+    <text x="176" y="225" font-size="9" fill="#4C6B45" text-anchor="middle">陈</text>
+    <path d="M186 233l3 3 5-6" fill="none" stroke="#2E9E6B" stroke-width="1.8" stroke-linecap="round"/>
+
+    <circle cx="210" cy="221" r="14" fill="#FFE9A8" stroke="#FAF8F3" stroke-width="2"/>
+    <text x="210" y="225" font-size="9" fill="#8A6B21" text-anchor="middle">珍</text>
+    <path d="M220 233l3 3 5-6" fill="none" stroke="#2E9E6B" stroke-width="1.8" stroke-linecap="round"/>
+
+    <circle cx="248" cy="221" r="14" fill="#F1EDE4" stroke="#CFC5B0" stroke-width="1.6" stroke-dasharray="3 2"/>
+    <text x="248" y="225" font-size="9" fill="#9A9284" text-anchor="middle">喜</text>
+    <circle cx="282" cy="221" r="14" fill="#F1EDE4" stroke="#CFC5B0" stroke-width="1.6" stroke-dasharray="3 2"/>
+    <text x="282" y="225" font-size="9" fill="#9A9284" text-anchor="middle">熊</text>
+  </g>
+  <text x="400" y="225" font-size="11" fill="#2B2A26" text-anchor="end">4/6</text>
+  <text x="400" y="240" font-size="9" fill="#8C8474" text-anchor="end">已交</text>
+
+  <g transform="rotate(-2 162 336)" filter="url(#c-sh)">
+    <rect x="88" y="250" width="148" height="172" fill="#FFE9A8"/>
+    <rect x="110" y="244" width="52" height="14" fill="#E9DDBE" opacity="0.9"/>
+    <rect x="98" y="262" width="128" height="84" fill="url(#c-photo1)"/>
+    <text x="102" y="368" font-size="12" font-weight="700" fill="#3A3220">晨跑 5 公里</text>
+    <text x="102" y="386" font-size="10" fill="#6E6244">风很大，跑到桥头</text>
+    <text x="102" y="402" font-size="10" fill="#6E6244">就往回走了</text>
+    <text x="102" y="416" font-size="9" fill="#9B8E6B">阿岚 · 07:12</text>
+  </g>
+
+  <g transform="rotate(1.5 322 306)" filter="url(#c-sh)">
+    <rect x="248" y="242" width="148" height="128" fill="#D6E8FF"/>
+    <rect x="272" y="236" width="48" height="13" fill="#DCE4EE" opacity="0.95"/>
+    <text x="262" y="276" font-size="12" font-weight="700" fill="#26384D">读完 30 页</text>
+    <text x="262" y="296" font-size="10" fill="#4A607A">《夜航西飞》</text>
+    <text x="262" y="314" font-size="10" fill="#4A607A">第 4 章看哭了</text>
+    <text x="262" y="350" font-size="9" fill="#7C8FA6">小满 · 22:40</text>
+    <g transform="rotate(-6 372 344)">
+      <rect x="352" y="332" width="40" height="24" rx="3" fill="none" stroke="#C0523A" stroke-width="1.4"/>
+      <text x="372" y="348" font-size="8" fill="#C0523A" text-anchor="middle">已阅</text>
+    </g>
+  </g>
+
+  <g transform="rotate(1.2 162 512)" filter="url(#c-sh)">
+    <rect x="88" y="440" width="148" height="146" fill="#DCF0D4"/>
+    <text x="100" y="474" font-size="12" font-weight="700" fill="#2F4229">给同事修了电脑</text>
+    <text x="100" y="494" font-size="10" fill="#516B48">顺手把打印机也</text>
+    <text x="100" y="510" font-size="10" fill="#516B48">重装了一遍驱动</text>
+    <rect x="100" y="524" width="124" height="30" rx="4" fill="#CBE3C1"/>
+    <text x="106" y="544" font-size="9" fill="#46603D">自定义 · 无需配图</text>
+    <text x="100" y="572" font-size="9" fill="#7B9273">老陈 · 18:30</text>
+  </g>
+
+  <g transform="rotate(-1.4 322 470)" filter="url(#c-sh)">
+    <rect x="248" y="386" width="148" height="168" fill="#FFD9D2"/>
+    <rect x="266" y="380" width="54" height="14" fill="#EEDCD5" opacity="0.9"/>
+    <rect x="258" y="398" width="128" height="90" fill="url(#c-photo2)"/>
+    <text x="262" y="508" font-size="12" font-weight="700" fill="#4A2E28">做了碗番茄面</text>
+    <text x="262" y="526" font-size="10" fill="#7A544C">第一次没糊锅</text>
+    <text x="262" y="544" font-size="9" fill="#A07A71">阿珍 · 19:05</text>
+  </g>
+
+  <rect x="248" y="574" width="148" height="56" rx="4" fill="none" stroke="#CFC5B0" stroke-dasharray="5 4"/>
+  <text x="322" y="598" font-size="10" fill="#9A9284" text-anchor="middle">七喜今天还没贴</text>
+  <text x="322" y="616" font-size="9" fill="#B2A996" text-anchor="middle">23:50 前还能补</text>
+
+  <rect x="88" y="690" width="212" height="44" rx="22" fill="#FF6B4A"/>
+  <text x="194" y="717" font-size="12" fill="#FFFFFF" text-anchor="middle">一键提醒没贴的 2 人</text>
+  <rect x="308" y="690" width="104" height="44" rx="22" fill="#F1EDE4"/>
+  <text x="360" y="717" font-size="12" fill="#5C5648" text-anchor="middle">复制进度</text>
+  <text x="250" y="766" font-size="11" fill="#8C8474" text-anchor="middle">点任意便签 → 展开照片、文字与完成时间</text>
+  <text x="250" y="798" font-size="10" fill="#B2A996" text-anchor="middle">长按空白处可切到「负责人模式」整理任务</text>
+
+  <rect x="480" y="112" width="700" height="180" rx="14" fill="#FFFDF8" stroke="#E0D8C8"/>
+  <text x="508" y="146" font-size="15" font-weight="700" fill="#2B2A26">配色 / 字体</text>
+  <circle cx="514" cy="190" r="22" fill="#ECE9E2" stroke="#D8D2C4"/>
+  <circle cx="574" cy="190" r="22" fill="#FFE9A8"/>
+  <circle cx="634" cy="190" r="22" fill="#FF6B4A"/>
+  <circle cx="694" cy="190" r="22" fill="#2B2A26"/>
+  <circle cx="754" cy="190" r="22" fill="#2E9E6B"/>
+  <g font-size="10" fill="#8C8474" text-anchor="middle">
+    <text x="514" y="230">ECE9E2 底</text>
+    <text x="574" y="230">FFE9A8 便签</text>
+    <text x="634" y="230">FF6B4A 主</text>
+    <text x="694" y="230">2B2A26 字</text>
+    <text x="754" y="230">2E9E6B 完成</text>
+  </g>
+  <line x1="806" y1="158" x2="806" y2="256" stroke="#EDE7DA"/>
+  <text x="834" y="174" font-size="12" fill="#3B382F">标题　思源黑体 Bold / 可选手写体</text>
+  <text x="834" y="202" font-size="12" fill="#3B382F">正文　系统黑体，10–12px 为主</text>
+  <text x="834" y="230" font-size="12" fill="#3B382F">便签不超过 3 行，多的收进详情</text>
+  <text x="834" y="256" font-size="11" fill="#9A9284">便签四色轮换，同一人不重复同色</text>
+
+  <rect x="480" y="310" width="700" height="272" rx="14" fill="#FFFDF8" stroke="#E0D8C8"/>
+  <text x="508" y="344" font-size="15" font-weight="700" fill="#2B2A26">便签解剖</text>
+
+  <g transform="rotate(-2 600 430)">
+    <rect x="528" y="372" width="144" height="116" fill="#FFE9A8"/>
+    <rect x="556" y="366" width="50" height="12" fill="#E9DDBE"/>
+    <text x="540" y="404" font-size="11" font-weight="700" fill="#3A3220">内容</text>
+    <text x="540" y="422" font-size="9" fill="#6E6244">照片（可选）</text>
+    <text x="540" y="440" font-size="9" fill="#6E6244">正文 ≤ 3 行</text>
+    <text x="540" y="458" font-size="9" fill="#9B8E6B">昵称 · 时间</text>
+    <text x="540" y="476" font-size="9" fill="#9B8E6B">印章 / 点赞</text>
+  </g>
+  <g font-size="10" fill="#8C8474">
+    <line x1="676" y1="386" x2="722" y2="386" stroke="#CFC5B0"/>
+    <text x="728" y="390">胶带：12–14px</text>
+    <line x1="676" y1="418" x2="722" y2="418" stroke="#CFC5B0"/>
+    <text x="728" y="422">旋转：−2° ~ +2°，随机</text>
+    <line x1="676" y1="450" x2="722" y2="450" stroke="#CFC5B0"/>
+    <text x="728" y="454">投影：轻，不浮起</text>
+    <line x1="676" y1="482" x2="722" y2="482" stroke="#CFC5B0"/>
+    <text x="728" y="486">无圆角，便签是纸不是卡</text>
+  </g>
+
+  <text x="508" y="512" font-size="11" fill="#8C8474">未打卡状态</text>
+  <rect x="508" y="522" width="150" height="34" rx="4" fill="none" stroke="#CFC5B0" stroke-dasharray="5 4"/>
+  <text x="583" y="544" font-size="10" fill="#9A9284" text-anchor="middle">虚线空位 + 一句提醒</text>
+
+  <text x="690" y="512" font-size="11" fill="#8C8474">负责人模式</text>
+  <rect x="690" y="522" width="150" height="34" rx="17" fill="#FF6B4A"/>
+  <text x="765" y="544" font-size="10" fill="#FFFFFF" text-anchor="middle">整理任务 / 设截止 / 交接</text>
+
+
+  <rect x="480" y="602" width="700" height="228" rx="14" fill="#FFFDF8" stroke="#E0D8C8"/>
+  <text x="508" y="636" font-size="15" font-weight="700" fill="#2B2A26">点击后的反馈</text>
+  <circle cx="520" cy="670" r="11" fill="#FF6B4A"/>
+  <text x="520" y="674" font-size="11" fill="#FFFFFF" text-anchor="middle">1</text>
+  <text x="542" y="674" font-size="12" fill="#3B382F">点便签：向上抬起 6px、阴影加深，像把纸拿起来看</text>
+  <circle cx="520" cy="706" r="11" fill="#FF6B4A"/>
+  <text x="520" y="710" font-size="11" fill="#FFFFFF" text-anchor="middle">2</text>
+  <text x="542" y="710" font-size="12" fill="#3B382F">新便签出现：从上方落下，轻微晃动后停住（240ms）</text>
+  <circle cx="520" cy="742" r="11" fill="#FF6B4A"/>
+  <text x="520" y="746" font-size="11" fill="#FFFFFF" text-anchor="middle">3</text>
+  <text x="542" y="746" font-size="12" fill="#3B382F">完成打卡：头像圈变实心绿，墙顶计数翻一格</text>
+  <circle cx="520" cy="778" r="11" fill="#FF6B4A"/>
+  <text x="520" y="782" font-size="11" fill="#FFFFFF" text-anchor="middle">4</text>
+  <text x="542" y="782" font-size="12" fill="#3B382F">一键提醒：按钮抖一下才发出去，避免误点（也能撤回）</text>
+  <text x="508" y="812" font-size="11" fill="#9A9284">便签乱但网格不乱：两列固定，旋转只是视觉噪声</text>
+</svg>

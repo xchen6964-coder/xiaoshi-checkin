@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="648" viewBox="0 0 900 648" font-family="system-ui,-apple-system,'Segoe UI','Microsoft YaHei',sans-serif">
+  <defs>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#8B949E"/>
+    </marker>
+    <marker id="arw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#9A6700"/>
+    </marker>
+  </defs>
+
+  <rect width="900" height="648" fill="#FFFFFF"/>
+
+  <text x="40" y="46" font-size="22" font-weight="600" fill="#1F2328">GitHub 授权失败 · 断点定位</text>
+  <text x="40" y="72" font-size="13" fill="#59636E">依据 WorkBuddy 客户端日志（2026-11-06 11:35–11:40，共 4 次尝试）与本地网络实测</text>
+  <line x1="40" y1="90" x2="860" y2="90" stroke="#D8DEE4" stroke-width="1"/>
+
+  <text x="40" y="118" font-size="13" font-weight="600" fill="#59636E">① 授权链路</text>
+
+  <!-- 节点 1 -->
+  <rect x="40" y="132" width="152" height="96" rx="8" fill="#FFFFFF" stroke="#1A7F37" stroke-width="1.5"/>
+  <text x="116" y="170" font-size="13" font-weight="600" fill="#1F2328" text-anchor="middle">客户端发起授权</text>
+  <text x="116" y="192" font-size="11" fill="#59636E" text-anchor="middle">CodeBuddy 客户端</text>
+
+  <line x1="196" y1="180" x2="210" y2="180" stroke="#8B949E" stroke-width="1.5" marker-end="url(#ar)"/>
+
+  <!-- 节点 2 -->
+  <rect x="214" y="132" width="152" height="96" rx="8" fill="#FFFFFF" stroke="#8B949E" stroke-width="1.5"/>
+  <text x="290" y="170" font-size="13" font-weight="600" fill="#1F2328" text-anchor="middle">浏览器打开授权页</text>
+  <text x="290" y="192" font-size="11" fill="#59636E" text-anchor="middle">github.com</text>
+
+  <line x1="370" y1="180" x2="384" y2="180" stroke="#8B949E" stroke-width="1.5" marker-end="url(#ar)"/>
+
+  <!-- 节点 3 -->
+  <rect x="388" y="132" width="152" height="96" rx="8" fill="#FFFFFF" stroke="#8B949E" stroke-width="1.5"/>
+  <text x="464" y="170" font-size="13" font-weight="600" fill="#1F2328" text-anchor="middle">你点 Authorize</text>
+  <text x="464" y="192" font-size="11" fill="#59636E" text-anchor="middle">在浏览器里</text>
+
+  <line x1="544" y1="180" x2="558" y2="180" stroke="#8B949E" stroke-width="1.5" marker-end="url(#ar)"/>
+
+  <!-- 节点 4 -->
+  <rect x="562" y="132" width="152" height="96" rx="8" fill="#FFFDF5" stroke="#9A6700" stroke-width="1.5"/>
+  <text x="638" y="170" font-size="13" font-weight="600" fill="#1F2328" text-anchor="middle">回跳 codebuddy.cn</text>
+  <text x="638" y="192" font-size="11" fill="#59636E" text-anchor="middle">带上 code 参数</text>
+
+  <line x1="718" y1="180" x2="732" y2="180" stroke="#9A6700" stroke-width="1.5" marker-end="url(#arw)"/>
+
+  <!-- 节点 5 -->
+  <rect x="736" y="132" width="152" height="96" rx="8" fill="#FFF5F5" stroke="#CF222E" stroke-width="1.5"/>
+  <text x="812" y="170" font-size="13" font-weight="600" fill="#1F2328" text-anchor="middle">服务端换 token</text>
+  <text x="812" y="192" font-size="11" fill="#59636E" text-anchor="middle">再通知客户端</text>
+
+  <!-- 状态标签 -->
+  <rect x="40" y="240" width="152" height="34" rx="6" fill="#E6F4EA"/>
+  <text x="116" y="262" font-size="12" fill="#1A7F37" text-anchor="middle">✓ 日志已确认</text>
+
+  <rect x="214" y="240" width="152" height="34" rx="6" fill="#F1F3F5"/>
+  <text x="290" y="262" font-size="12" fill="#59636E" text-anchor="middle">? 无法确认</text>
+
+  <rect x="388" y="240" width="152" height="34" rx="6" fill="#F1F3F5"/>
+  <text x="464" y="262" font-size="12" fill="#59636E" text-anchor="middle">? 无法确认</text>
+
+  <rect x="562" y="240" width="152" height="34" rx="6" fill="#FFF8C5"/>
+  <text x="638" y="262" font-size="12" fill="#9A6700" text-anchor="middle">⚠ 服务端 429 限流</text>
+
+  <rect x="736" y="240" width="152" height="34" rx="6" fill="#FFE9E9"/>
+  <text x="812" y="262" font-size="12" fill="#CF222E" text-anchor="middle">✕ 无成功回调</text>
+
+  <!-- 证据区 -->
+  <text x="40" y="312" font-size="13" font-weight="600" fill="#59636E">② 日志证据</text>
+  <rect x="40" y="326" width="848" height="196" rx="8" fill="#FAFBFC" stroke="#D8DEE4" stroke-width="1"/>
+
+  <circle cx="62" cy="352" r="3" fill="#1A7F37"/>
+  <text x="76" y="357" font-size="12.5" fill="#1F2328">客户端侧一切正常：4 次都成功把浏览器打开到 github.com/login/oauth/authorize，日志 opened=true</text>
+
+  <circle cx="62" cy="386" r="3" fill="#CF222E"/>
+  <text x="76" y="391" font-size="12.5" fill="#1F2328">打开之后，客户端再没有任何「授权成功」回调记录 —— 链路在浏览器这一步之后就断了</text>
+
+  <circle cx="62" cy="420" r="3" fill="#9A6700"/>
+  <text x="76" y="425" font-size="12.5" fill="#1F2328">服务端刷新 GitHub token 被限流 176 次，从 11-04 持续到今天 10:16：github token endpoint rate limited</text>
+
+  <circle cx="62" cy="454" r="3" fill="#9A6700"/>
+  <text x="76" y="459" font-size="12.5" fill="#1F2328">旧 token 已失效：api.githubcopilot.com/mcp/ 返回 401 invalid_token</text>
+
+  <circle cx="62" cy="488" r="3" fill="#1A7F37"/>
+  <text x="76" y="493" font-size="12.5" fill="#1F2328">网络已排除：github.com 200 / api.github.com 200 / codebuddy.cn 200，两个本地代理端口都通</text>
+
+  <!-- 结论 -->
+  <rect x="40" y="542" width="848" height="72" rx="8" fill="#FFFBEB" stroke="#F0C36D" stroke-width="1.5"/>
+  <text x="62" y="570" font-size="13.5" font-weight="600" fill="#7A4E00">结论：不是你的网络问题，也不是本地配置问题。</text>
+  <text x="62" y="594" font-size="12.5" fill="#7A4E00">断点在 GitHub 授权页回跳之后那一段 —— 要么浏览器里没真正完成授权，要么 codebuddy 服务端换 token 被 GitHub 限流。</text>
+
+  <text x="40" y="634" font-size="11" fill="#8B949E">诊断时间 2026-11-06 11:45 · 数据来源 C:\Users\26629\.workbuddy\logs\daemon.log</text>
+</svg>

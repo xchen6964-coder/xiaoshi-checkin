@@ -1,0 +1,104 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1240" height="720" viewBox="0 0 1240 720" font-family="PingFang SC,Hiragino Sans GB,Microsoft YaHei,sans-serif">
+  <defs>
+    <marker id="ar" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+      <path d="M0 0L8 4L0 8z" fill="#94A3B8"/>
+    </marker>
+    <filter id="s1" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#1E3A5F" flood-opacity="0.08"/>
+    </filter>
+  </defs>
+
+  <rect width="1240" height="720" fill="#F7F8FA"/>
+  <text x="60" y="58" font-size="25" font-weight="700" fill="#0F172A">Q1 · 三种提醒，差在「谁去敲人」</text>
+  <text x="60" y="86" font-size="13.5" fill="#64748B">网页关掉之后，浏览器没有任何办法主动找人。所以「提醒」不是前端功能，而是一条要选通道的后端链路。</text>
+
+  <rect x="60" y="116" width="300" height="72" rx="12" fill="#FFFFFF" stroke="#E2E8F0" filter="url(#s1)"/>
+  <text x="82" y="146" font-size="14" font-weight="700" fill="#0F172A">① 云函数定时器</text>
+  <text x="82" y="168" font-size="11" fill="#64748B">每分钟跑一次，不需要人打开网页</text>
+
+  <line x1="368" y1="152" x2="404" y2="152" stroke="#94A3B8" stroke-width="1.5" marker-end="url(#ar)"/>
+
+  <rect x="412" y="116" width="360" height="72" rx="12" fill="#FFFFFF" stroke="#E2E8F0" filter="url(#s1)"/>
+  <text x="434" y="146" font-size="14" font-weight="700" fill="#0F172A">② 判断谁进了提醒窗口</text>
+  <text x="434" y="168" font-size="11" fill="#64748B">08:30 截止 − 提前 30 分 → 08:00 该提醒了</text>
+
+  <line x1="780" y1="152" x2="816" y2="152" stroke="#94A3B8" stroke-width="1.5" marker-end="url(#ar)"/>
+
+  <rect x="824" y="116" width="356" height="72" rx="12" fill="#FFFFFF" stroke="#E2E8F0" filter="url(#s1)"/>
+  <text x="846" y="146" font-size="14" font-weight="700" fill="#0F172A">③ 按通道把消息送出去</text>
+  <text x="846" y="168" font-size="11" fill="#64748B">下面四条路，只能选能落地的</text>
+
+  <rect x="60" y="228" width="265" height="300" rx="14" fill="#FFFFFF" stroke="#12B5A5" stroke-width="1.5"/>
+  <circle cx="88" cy="258" r="14" fill="#12B5A5"/>
+  <text x="88" y="263" font-size="12" fill="#FFFFFF" text-anchor="middle">A</text>
+  <text x="112" y="263" font-size="15" font-weight="700" fill="#0F172A">站内通知</text>
+  <text x="80" y="294" font-size="10.5" fill="#94A3B8">链路</text>
+  <text x="80" y="316" font-size="10.5" fill="#334155">写进 notifications 表</text>
+  <text x="80" y="336" font-size="10.5" fill="#334155">↓</text>
+  <text x="80" y="356" font-size="10.5" fill="#334155">他打开网站，顶部红点 + 横幅</text>
+  <text x="80" y="390" font-size="10.5" fill="#94A3B8">到人速度</text>
+  <text x="80" y="408" font-size="10.5" fill="#B45309">他下次打开时，可能几小时后</text>
+  <text x="80" y="434" font-size="10.5" fill="#94A3B8">门槛</text>
+  <text x="80" y="452" font-size="10.5" fill="#334155">零。不需要成员做任何设置</text>
+  <text x="80" y="478" font-size="10.5" fill="#94A3B8">局限</text>
+  <text x="80" y="496" font-size="10.5" fill="#334155">不开网站 = 等于没提醒</text>
+  <rect x="80" y="504" width="96" height="22" rx="11" fill="#E7F8F5"/>
+  <text x="128" y="519" font-size="10" fill="#0E9C8E" text-anchor="middle">必做（兜底）</text>
+
+  <rect x="340" y="228" width="265" height="300" rx="14" fill="#FFFFFF" stroke="#FF8A3D" stroke-width="1.5"/>
+  <circle cx="368" cy="258" r="14" fill="#FF8A3D"/>
+  <text x="368" y="263" font-size="12" fill="#FFFFFF" text-anchor="middle">B</text>
+  <text x="392" y="263" font-size="15" font-weight="700" fill="#0F172A">企业微信群机器人</text>
+  <text x="360" y="294" font-size="10.5" fill="#94A3B8">链路</text>
+  <text x="360" y="316" font-size="10.5" fill="#334155">POST 一个 webhook 地址</text>
+  <text x="360" y="336" font-size="10.5" fill="#334155">↓</text>
+  <text x="360" y="356" font-size="10.5" fill="#334155">群里出现一条「该打卡了」</text>
+  <text x="360" y="390" font-size="10.5" fill="#94A3B8">到人速度</text>
+  <text x="360" y="408" font-size="10.5" fill="#0E9C8E">秒级，手机会响</text>
+  <text x="360" y="434" font-size="10.5" fill="#94A3B8">门槛</text>
+  <text x="360" y="452" font-size="10.5" fill="#334155">一个群 + 复制机器人地址（一次）</text>
+  <text x="360" y="478" font-size="10.5" fill="#94A3B8">局限</text>
+  <text x="360" y="496" font-size="10.5" fill="#334155">人得在群里；群消息可被免打扰</text>
+  <rect x="360" y="504" width="72" height="22" rx="11" fill="#FFF1E6"/>
+  <text x="396" y="519" font-size="10" fill="#D97028" text-anchor="middle">推荐</text>
+
+  <rect x="620" y="228" width="265" height="300" rx="14" fill="#FFFFFF" stroke="#E2E8F0"/>
+  <circle cx="648" cy="258" r="14" fill="#CBD5E1"/>
+  <text x="648" y="263" font-size="12" fill="#FFFFFF" text-anchor="middle">C</text>
+  <text x="672" y="263" font-size="15" font-weight="700" fill="#475569">邮件</text>
+  <text x="640" y="294" font-size="10.5" fill="#94A3B8">链路</text>
+  <text x="640" y="316" font-size="10.5" fill="#64748B">调发信服务 API</text>
+  <text x="640" y="336" font-size="10.5" fill="#64748B">↓</text>
+  <text x="640" y="356" font-size="10.5" fill="#64748B">投到各人邮箱</text>
+  <text x="640" y="390" font-size="10.5" fill="#94A3B8">到人速度</text>
+  <text x="640" y="408" font-size="10.5" fill="#64748B">1–5 分钟</text>
+  <text x="640" y="434" font-size="10.5" fill="#94A3B8">门槛</text>
+  <text x="640" y="452" font-size="10.5" fill="#64748B">每人填邮箱 + 发信额度</text>
+  <text x="640" y="478" font-size="10.5" fill="#94A3B8">局限</text>
+  <text x="640" y="496" font-size="10.5" fill="#64748B">易进垃圾箱，国内少看邮箱</text>
+  <rect x="640" y="504" width="56" height="22" rx="11" fill="#F1F5F9"/>
+  <text x="668" y="519" font-size="10" fill="#64748B" text-anchor="middle">不做</text>
+
+  <rect x="900" y="228" width="280" height="300" rx="14" fill="#FFFFFF" stroke="#E2E8F0"/>
+  <circle cx="928" cy="258" r="14" fill="#CBD5E1"/>
+  <text x="928" y="263" font-size="12" fill="#FFFFFF" text-anchor="middle">D</text>
+  <text x="952" y="263" font-size="15" font-weight="700" fill="#475569">浏览器推送</text>
+  <text x="920" y="294" font-size="10.5" fill="#94A3B8">链路</text>
+  <text x="920" y="316" font-size="10.5" fill="#64748B">Service Worker 订阅</text>
+  <text x="920" y="336" font-size="10.5" fill="#64748B">↓</text>
+  <text x="920" y="356" font-size="10.5" fill="#64748B">系统通知栏弹窗</text>
+  <text x="920" y="390" font-size="10.5" fill="#94A3B8">到人速度</text>
+  <text x="920" y="408" font-size="10.5" fill="#64748B">秒级，但必须先授权</text>
+  <text x="920" y="434" font-size="10.5" fill="#94A3B8">门槛</text>
+  <text x="920" y="452" font-size="10.5" fill="#64748B">HTTPS + 自建推送服务 + 手动授权</text>
+  <text x="920" y="478" font-size="10.5" fill="#94A3B8">局限</text>
+  <text x="920" y="496" font-size="10.5" fill="#64748B">微信内不支持；iOS 要装到桌面</text>
+  <rect x="920" y="504" width="72" height="22" rx="11" fill="#F1F5F9"/>
+  <text x="956" y="519" font-size="10" fill="#64748B" text-anchor="middle">不推荐</text>
+
+  <rect x="60" y="548" width="1120" height="130" rx="14" fill="#FFFFFF" stroke="#E2E8F0"/>
+  <text x="84" y="580" font-size="14" font-weight="700" fill="#0F172A">结论：A 管「留痕」，B 管「敲人」</text>
+  <text x="84" y="608" font-size="12" fill="#334155">站内通知永远要有，它是所有提醒的落点；企业微信机器人是唯一「不用装 App 就能让手机响」的通道。两者都不需要成员额外操作。</text>
+  <text x="84" y="634" font-size="12" fill="#334155">成本：站内 0 元；企微机器人 0 元（免费 webhook）；邮件按封计费；Web Push 要自建推送服务，最贵也最容易失败。</text>
+  <text x="84" y="660" font-size="11" fill="#94A3B8">提前量：每条任务可单独设（5–240 分钟），只有负责人能改。例如早起 08:30 截止、提前 30 分钟 → 08:00 提醒；日精进 23:50 截止、提前 20 分钟 → 23:30 提醒。</text>
+</svg>

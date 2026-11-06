@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="560" viewBox="0 0 900 560" font-family="system-ui,-apple-system,'Segoe UI','Microsoft YaHei',sans-serif">
+  <rect width="900" height="560" fill="#FFFFFF"/>
+
+  <text x="45" y="42" font-size="22" font-weight="600" fill="#1F2328">数据模型（修订版）· 五张表</text>
+  <text x="45" y="68" font-size="13" fill="#59636E">相比上一版只改一处：`habits` 从「归属某人」改成「归属某个组」，因此多出一张 groups 表。</text>
+  <line x1="45" y1="86" x2="855" y2="86" stroke="#D8DEE4" stroke-width="1"/>
+
+  <!-- groups -->
+  <rect x="45" y="106" width="245" height="136" rx="8" fill="#FFFFFF" stroke="#D0D7DE" stroke-width="1.5"/>
+  <rect x="45" y="106" width="245" height="34" rx="8" fill="#F6F8FA"/>
+  <rect x="45" y="130" width="245" height="10" fill="#F6F8FA"/>
+  <text x="61" y="128" font-size="12.5" font-weight="600" fill="#1F2328">groups</text>
+  <text x="274" y="128" font-size="10.5" fill="#8B949E" text-anchor="end">组</text>
+  <text x="61" y="162" font-size="11" fill="#1F2328">id</text>
+  <text x="61" y="184" font-size="11" fill="#1F2328">name</text>
+  <text x="61" y="206" font-size="11" fill="#1F2328">invite_code</text>
+  <text x="274" y="206" font-size="10" fill="#1A7F37" text-anchor="end">唯一</text>
+  <text x="61" y="228" font-size="11" fill="#1F2328">created_at</text>
+
+  <!-- users -->
+  <rect x="315" y="106" width="245" height="136" rx="8" fill="#FFFFFF" stroke="#D0D7DE" stroke-width="1.5"/>
+  <rect x="315" y="106" width="245" height="34" rx="8" fill="#F6F8FA"/>
+  <rect x="315" y="130" width="245" height="10" fill="#F6F8FA"/>
+  <text x="331" y="128" font-size="12.5" font-weight="600" fill="#1F2328">users</text>
+  <text x="544" y="128" font-size="10.5" fill="#8B949E" text-anchor="end">成员</text>
+  <text x="331" y="162" font-size="11" fill="#1F2328">id</text>
+  <text x="331" y="184" font-size="11" fill="#1F2328">group_id</text>
+  <text x="544" y="184" font-size="10" fill="#9A6700" text-anchor="end">→ groups</text>
+  <text x="331" y="206" font-size="11" fill="#1F2328">nickname</text>
+  <text x="544" y="206" font-size="10" fill="#8B949E" text-anchor="end">组内唯一</text>
+  <text x="331" y="228" font-size="11" fill="#1F2328">created_at</text>
+
+  <!-- habits -->
+  <rect x="45" y="258" width="245" height="136" rx="8" fill="#FFFFFF" stroke="#D0D7DE" stroke-width="1.5"/>
+  <rect x="45" y="258" width="245" height="34" rx="8" fill="#F6F8FA"/>
+  <rect x="45" y="282" width="245" height="10" fill="#F6F8FA"/>
+  <text x="61" y="280" font-size="12.5" font-weight="600" fill="#1F2328">habits</text>
+  <text x="274" y="280" font-size="10.5" fill="#8B949E" text-anchor="end">全组共用清单</text>
+  <text x="61" y="314" font-size="11" fill="#1F2328">id</text>
+  <text x="61" y="336" font-size="11" fill="#1F2328">group_id</text>
+  <text x="274" y="336" font-size="10" fill="#9A6700" text-anchor="end">→ groups</text>
+  <text x="61" y="358" font-size="11" fill="#1F2328">title / emoji</text>
+  <text x="61" y="380" font-size="11" fill="#1F2328">position / archived</text>
+
+  <!-- checkins -->
+  <rect x="315" y="258" width="245" height="136" rx="8" fill="#FFFFFF" stroke="#1A7F37" stroke-width="1.8"/>
+  <rect x="315" y="258" width="245" height="34" rx="8" fill="#E6F4EA"/>
+  <rect x="315" y="282" width="245" height="10" fill="#E6F4EA"/>
+  <text x="331" y="280" font-size="12.5" font-weight="600" fill="#1F2328">checkins</text>
+  <text x="544" y="280" font-size="10.5" fill="#1A7F37" text-anchor="end">打卡 · 核心表</text>
+  <text x="331" y="314" font-size="11" fill="#1F2328">id</text>
+  <text x="331" y="336" font-size="11" fill="#1F2328">user_id</text>
+  <text x="544" y="336" font-size="10" fill="#9A6700" text-anchor="end">→ users</text>
+  <text x="331" y="358" font-size="11" fill="#1F2328">habit_id</text>
+  <text x="410" y="358" font-size="10" fill="#9A6700">可空 = 自定义小事</text>
+  <text x="331" y="380" font-size="11" fill="#1F2328">title / date / done_at</text>
+
+  <!-- likes -->
+  <rect x="45" y="410" width="245" height="110" rx="8" fill="#FFFFFF" stroke="#D0D7DE" stroke-width="1.5"/>
+  <rect x="45" y="410" width="245" height="34" rx="8" fill="#F6F8FA"/>
+  <rect x="45" y="434" width="245" height="10" fill="#F6F8FA"/>
+  <text x="61" y="432" font-size="12.5" font-weight="600" fill="#1F2328">likes</text>
+  <text x="274" y="432" font-size="10.5" fill="#8B949E" text-anchor="end">点赞</text>
+  <text x="61" y="466" font-size="11" fill="#1F2328">id / checkin_id</text>
+  <text x="61" y="488" font-size="11" fill="#1F2328">user_id</text>
+  <text x="61" y="510" font-size="10.5" fill="#8B949E">同一人同一条只能点一次</text>
+
+  <!-- 右侧说明 -->
+  <rect x="585" y="106" width="270" height="300" rx="8" fill="#FAFBFC" stroke="#D8DEE4" stroke-width="1"/>
+  <text x="603" y="132" font-size="12.5" font-weight="600" fill="#1F2328">改了什么</text>
+
+  <text x="603" y="160" font-size="11.5" font-weight="600" fill="#1A7F37">habits 的归属变了</text>
+  <text x="603" y="180" font-size="11" fill="#59636E">原来挂在 user_id 下，每人一套；现在</text>
+  <text x="603" y="198" font-size="11" fill="#59636E">挂在 group_id 下，全组看到的是同一组</text>
+  <text x="603" y="216" font-size="11" fill="#59636E">条目。谁改了，所有人都看到。</text>
+
+  <text x="603" y="248" font-size="11.5" font-weight="600" fill="#1A7F37">邀请码 + 昵称怎么认人</text>
+  <text x="603" y="268" font-size="11" fill="#59636E">第一次：输邀请码 → 输昵称 → 建账号。</text>
+  <text x="603" y="286" font-size="11" fill="#59636E">以后：昵称在组内唯一，输对即视为本人。</text>
+  <text x="603" y="304" font-size="11" fill="#59636E">浏览器会记住，不用每次输。</text>
+
+  <text x="603" y="336" font-size="11.5" font-weight="600" fill="#9A6700">这条的代价</text>
+  <text x="603" y="356" font-size="11" fill="#59636E">没有密码，所以谁都能用别人的昵称登录。</text>
+  <text x="603" y="374" font-size="11" fill="#59636E">十几个人互相信任的场景可以接受，但你要</text>
+  <text x="603" y="392" font-size="11" fill="#59636E">知道这条边界。</text>
+
+  <!-- 底部 -->
+  <rect x="315" y="410" width="540" height="50" rx="8" fill="#FFFBEB" stroke="#F0C36D" stroke-width="1.5"/>
+  <text x="333" y="431" font-size="11.5" font-weight="600" fill="#7A4E00">还有一处没定：谁能增删固定清单？</text>
+  <text x="333" y="450" font-size="11" fill="#7A4E00">我按「组内任何人都能加、能删」做默认，十几个人够用；要改成只有一人能管，现在说。</text>
+</svg>

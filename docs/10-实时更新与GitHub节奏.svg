@@ -1,0 +1,111 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1240" height="900" viewBox="0 0 1240 900" font-family="PingFang SC,Hiragino Sans GB,Microsoft YaHei,sans-serif">
+  <defs>
+    <marker id="ar2" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+      <path d="M0 0L8 4L0 8z" fill="#94A3B8"/>
+    </marker>
+    <marker id="ar3" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+      <path d="M0 0L8 4L0 8z" fill="#12B5A5"/>
+    </marker>
+    <marker id="ar4" markerWidth="8" markerHeight="8" refX="1" refY="4" orient="auto">
+      <path d="M8 0L0 4L8 8z" fill="#94A3B8"/>
+    </marker>
+    <filter id="s2" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#1E3A5F" flood-opacity="0.07"/>
+    </filter>
+  </defs>
+
+  <rect width="1240" height="900" fill="#F7F8FA"/>
+  <text x="60" y="56" font-size="25" font-weight="700" fill="#0F172A">Q2 · 「实时」的两种做法　／　Q9 · GitHub 三种推送节奏</text>
+  <text x="60" y="84" font-size="13" fill="#64748B">上面决定别人打卡后你多久看到；下面决定代码历史长什么样。两个都不影响功能，只影响体验和维护成本。</text>
+
+  <rect x="60" y="108" width="540" height="290" rx="14" fill="#FFFFFF" stroke="#E2E8F0" filter="url(#s2)"/>
+  <text x="84" y="140" font-size="15" font-weight="700" fill="#0F172A">轮询（我建议的 B 方案）</text>
+  <text x="84" y="162" font-size="11" fill="#64748B">前端每隔 15 秒问一次「有变化吗」，问完就断开</text>
+
+  <rect x="84" y="184" width="150" height="52" rx="10" fill="#F4F8FD" stroke="#DCE8F5"/>
+  <text x="159" y="215" font-size="12" fill="#334155" text-anchor="middle">你的手机 / 电脑</text>
+  <rect x="356" y="184" width="130" height="52" rx="10" fill="#F4F8FD" stroke="#DCE8F5"/>
+  <text x="421" y="215" font-size="12" fill="#334155" text-anchor="middle">服务器</text>
+
+  <path d="M238 200H352" stroke="#94A3B8" stroke-width="1.5" marker-end="url(#ar2)"/>
+  <text x="246" y="180" font-size="10" fill="#64748B">每 15 秒问一次</text>
+  <path d="M352 224H242" stroke="#94A3B8" stroke-width="1.5" marker-end="url(#ar4)"/>
+  <text x="250" y="242" font-size="10" fill="#64748B">答：1 条新记录</text>
+
+  <text x="84" y="278" font-size="11" fill="#334155">· 最多晚 15 秒看到，足够「公示」用</text>
+  <text x="84" y="302" font-size="11" fill="#334155">· 实现最简单，任何托管方案都能跑</text>
+  <text x="84" y="326" font-size="11" fill="#334155">· 20 人同时开着，约 80 次请求/分钟</text>
+  <text x="84" y="350" font-size="11" fill="#94A3B8">· 只在页面可见时轮询，切到后台就停</text>
+  <text x="84" y="380" font-size="10" fill="#0E9C8E">代价：多一点点流量，几乎没有</text>
+
+  <rect x="640" y="108" width="540" height="290" rx="14" fill="#FFFFFF" stroke="#E2E8F0" filter="url(#s2)"/>
+  <text x="664" y="140" font-size="15" font-weight="700" fill="#0F172A">数据库订阅（C 方案，Realtime）</text>
+  <text x="664" y="162" font-size="11" fill="#64748B">浏览器和数据库之间挂一条长连接，数据一变服务器主动推</text>
+
+  <rect x="664" y="184" width="150" height="52" rx="10" fill="#F4FBF9" stroke="#CBEDE7"/>
+  <text x="739" y="215" font-size="12" fill="#334155" text-anchor="middle">你的手机 / 电脑</text>
+  <rect x="936" y="184" width="130" height="52" rx="10" fill="#F4FBF9" stroke="#CBEDE7"/>
+  <text x="1001" y="215" font-size="12" fill="#334155" text-anchor="middle">数据库</text>
+
+  <path d="M818 200H932" stroke="#12B5A5" stroke-width="1.5" marker-end="url(#ar3)"/>
+  <path d="M932 224H822" stroke="#12B5A5" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#ar3)"/>
+  <text x="822" y="178" font-size="10" fill="#0E9C8E">长连接一直挂着</text>
+  <text x="830" y="242" font-size="10" fill="#0E9C8E">有人打卡 → 立刻推给你</text>
+
+  <text x="664" y="278" font-size="11" fill="#334155">· 秒级，别人打完你这边就变</text>
+  <text x="664" y="302" font-size="11" fill="#334155">· 请求少，不用反复问</text>
+  <text x="664" y="326" font-size="11" fill="#334155">· 但托管方案必须支持 Realtime</text>
+  <text x="664" y="350" font-size="11" fill="#94A3B8">· 断线要自动重连，逻辑比轮询多</text>
+  <text x="664" y="380" font-size="10" fill="#B45309">代价：换方案时可能被绑住，20 人场景收益不明显</text>
+
+  <text x="60" y="440" font-size="15" font-weight="700" fill="#0F172A">Q9 · 代码怎么推上 GitHub</text>
+  <text x="60" y="462" font-size="11" fill="#64748B">三种都能用，区别只在「什么时候留下一个可以退回去的点」。</text>
+
+  <rect x="60" y="480" width="350" height="310" rx="14" fill="#FFFFFF" stroke="#12B5A5" stroke-width="1.5"/>
+  <text x="84" y="514" font-size="14" font-weight="700" fill="#0F172A">A 每完成一个功能就推</text>
+  <text x="84" y="536" font-size="10" fill="#94A3B8">功能做完就 commit + push，不留隔夜</text>
+  <line x1="92" y1="556" x2="92" y2="660" stroke="#CBEDE7" stroke-width="2"/>
+  <circle cx="92" cy="566" r="5" fill="#12B5A5"/>
+  <text x="108" y="570" font-size="11" fill="#334155">功能 1 完成 → push</text>
+  <circle cx="92" cy="606" r="5" fill="#12B5A5"/>
+  <text x="108" y="610" font-size="11" fill="#334155">功能 2 完成 → push</text>
+  <circle cx="92" cy="646" r="5" fill="#12B5A5"/>
+  <text x="108" y="650" font-size="11" fill="#334155">功能 3 完成 → push</text>
+  <text x="84" y="690" font-size="11" fill="#0E9C8E">好处：任何一步都能单独回滚</text>
+  <text x="84" y="714" font-size="11" fill="#64748B">坏处：提交多，历史比较碎</text>
+  <text x="84" y="738" font-size="11" fill="#64748B">适合：只有一个人改</text>
+  <rect x="84" y="752" width="86" height="22" rx="11" fill="#E7F8F5"/>
+  <text x="127" y="767" font-size="10" fill="#0E9C8E" text-anchor="middle">建议选这个</text>
+
+  <rect x="430" y="480" width="350" height="310" rx="14" fill="#FFFFFF" stroke="#E2E8F0"/>
+  <text x="454" y="514" font-size="14" font-weight="700" fill="#475569">B 每个阶段推一次</text>
+  <text x="454" y="536" font-size="10" fill="#94A3B8">攒到一个里程碑再统一推</text>
+  <line x1="462" y1="556" x2="462" y2="660" stroke="#E2E8F0" stroke-width="2"/>
+  <circle cx="462" cy="566" r="5" fill="#CBD5E1"/>
+  <text x="478" y="570" font-size="11" fill="#64748B">功能 1 / 2 / 3 先放着</text>
+  <circle cx="462" cy="606" r="5" fill="#CBD5E1"/>
+  <text x="478" y="610" font-size="11" fill="#64748B">阶段末一次性 push</text>
+  <circle cx="462" cy="646" r="5" fill="#CBD5E1"/>
+  <text x="478" y="650" font-size="11" fill="#64748B">历史干净，但只有大节点</text>
+  <text x="454" y="690" font-size="11" fill="#64748B">好处：提交记录清爽</text>
+  <text x="454" y="714" font-size="11" fill="#64748B">坏处：中途出事就丢，也难定位</text>
+  <text x="454" y="738" font-size="11" fill="#64748B">适合：不在乎过程，只要结果</text>
+
+  <rect x="800" y="480" width="380" height="310" rx="14" fill="#FFFFFF" stroke="#E2E8F0"/>
+  <text x="824" y="514" font-size="14" font-weight="700" fill="#475569">C 开分支 + 提 PR</text>
+  <text x="824" y="536" font-size="10" fill="#94A3B8">改动先进分支，你点头才合进 main</text>
+  <line x1="832" y1="556" x2="832" y2="660" stroke="#E2E8F0" stroke-width="2"/>
+  <circle cx="832" cy="566" r="5" fill="#CBD5E1"/>
+  <text x="848" y="570" font-size="11" fill="#64748B">开分支 feature/xxx</text>
+  <circle cx="832" cy="606" r="5" fill="#CBD5E1"/>
+  <text x="848" y="610" font-size="11" fill="#64748B">多次 commit 随便改</text>
+  <circle cx="832" cy="646" r="5" fill="#CBD5E1"/>
+  <text x="848" y="650" font-size="11" fill="#64748B">提 PR → 你审 → 合并</text>
+  <text x="824" y="690" font-size="11" fill="#64748B">好处：你有否决权，改动可讨论</text>
+  <text x="824" y="714" font-size="11" fill="#64748B">坏处：多一步，单人做显得重</text>
+  <text x="824" y="738" font-size="11" fill="#64748B">适合：朋友 / 另一个 AI 也改同一仓库</text>
+
+  <rect x="60" y="812" width="1120" height="56" rx="12" fill="#FFFFFF" stroke="#E2E8F0"/>
+  <text x="84" y="836" font-size="12" fill="#0F172A">我的建议：如果这仓库只有我在改 → A，每做完一个功能推一次，你要回滚随时能退。</text>
+  <text x="84" y="856" font-size="11" fill="#64748B">如果朋友或另一个 AI 也在改 → C。否则两边都往 main 推，后推的会把前面的覆盖掉，这种丢代码最难查。</text>
+</svg>

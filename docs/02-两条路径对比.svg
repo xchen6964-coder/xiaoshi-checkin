@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="560" viewBox="0 0 900 560" font-family="system-ui,-apple-system,'Segoe UI','Microsoft YaHei',sans-serif">
+  <rect width="900" height="560" fill="#FFFFFF"/>
+
+  <text x="40" y="46" font-size="22" font-weight="600" fill="#1F2328">两条路，选一条</text>
+  <text x="40" y="72" font-size="13" fill="#59636E">左边是继续跟 OAuth 死磕，右边是绕开它直接连。你要的是「先把仓库连上」，不是「必须用官方连接器」。</text>
+  <line x1="40" y1="90" x2="860" y2="90" stroke="#D8DEE4" stroke-width="1"/>
+
+  <!-- 左卡 -->
+  <rect x="40" y="118" width="400" height="344" rx="10" fill="#FFFFFF" stroke="#D8DEE4" stroke-width="1.5"/>
+  <rect x="40" y="118" width="400" height="46" rx="10" fill="#F1F3F5"/>
+  <rect x="40" y="150" width="400" height="14" fill="#F1F3F5"/>
+  <text x="62" y="147" font-size="14" font-weight="600" fill="#1F2328">路径 A ｜ 继续修 GitHub 连接器</text>
+
+  <text x="62" y="192" font-size="12" font-weight="600" fill="#59636E">怎么做</text>
+  <text x="62" y="214" font-size="12.5" fill="#1F2328">1. 看你浏览器地址栏最后停在哪一页</text>
+  <text x="62" y="236" font-size="12.5" fill="#1F2328">2. 停住了就点「关闭重试」，隔一阵再来</text>
+  <text x="62" y="258" font-size="12.5" fill="#1F2328">3. 等 GitHub 那边限流窗口过去</text>
+
+  <text x="62" y="292" font-size="12" font-weight="600" fill="#59636E">好处</text>
+  <text x="62" y="314" font-size="12.5" fill="#1A7F37">✓ 官方集成，连上后 AI 能直接调 GitHub 接口</text>
+  <text x="62" y="336" font-size="12.5" fill="#1A7F37">✓ 建仓、提 PR、读 issue 都能自动做</text>
+
+  <text x="62" y="370" font-size="12" font-weight="600" fill="#59636E">代价</text>
+  <text x="62" y="392" font-size="12.5" fill="#CF222E">✕ 卡在服务端，你这边改不了任何设置</text>
+  <text x="62" y="414" font-size="12.5" fill="#CF222E">✕ 已经连试 4 次都失败，可能还要试很多次</text>
+  <text x="62" y="436" font-size="12.5" fill="#CF222E">✕ 就算连上，Copilot 端点还要额外权限</text>
+
+  <!-- 右卡 -->
+  <rect x="460" y="118" width="400" height="344" rx="10" fill="#FFFFFF" stroke="#1A7F37" stroke-width="2"/>
+  <rect x="460" y="118" width="400" height="46" rx="10" fill="#E6F4EA"/>
+  <rect x="460" y="150" width="400" height="14" fill="#E6F4EA"/>
+  <text x="482" y="147" font-size="14" font-weight="600" fill="#1F2328">路径 B ｜ 用 token + git 直接连</text>
+  <rect x="762" y="128" width="78" height="26" rx="6" fill="#1A7F37"/>
+  <text x="801" y="146" font-size="11.5" font-weight="600" fill="#FFFFFF" text-anchor="middle">推荐</text>
+
+  <text x="482" y="192" font-size="12" font-weight="600" fill="#59636E">怎么做</text>
+  <text x="482" y="214" font-size="12.5" fill="#1F2328">1. 你在 GitHub 生成一个访问令牌（勾 repo）</text>
+  <text x="482" y="236" font-size="12.5" fill="#1F2328">2. 我配到本地 git，验证能读到你的账号</text>
+  <text x="482" y="258" font-size="12.5" fill="#1F2328">3. 我用 git 命令建仓、推初始提交</text>
+
+  <text x="482" y="292" font-size="12" font-weight="600" fill="#59636E">好处</text>
+  <text x="482" y="314" font-size="12.5" fill="#1A7F37">✓ 五分钟就能通，完全不受服务端限流影响</text>
+  <text x="482" y="336" font-size="12.5" fill="#1A7F37">✓ 建仓 + 推代码这件事，git 本身完全够用</text>
+  <text x="482" y="358" font-size="12.5" fill="#1A7F37">✓ 令牌你随时能撤销，权限只给 repo</text>
+
+  <text x="482" y="392" font-size="12" font-weight="600" fill="#59636E">代价</text>
+  <text x="482" y="414" font-size="12.5" fill="#CF222E">✕ AI 不能直接调 GitHub 接口（读 issue、提 PR）</text>
+  <text x="482" y="436" font-size="12.5" fill="#CF222E">✕ 但你只是要连仓库推代码，这项用不上</text>
+
+  <!-- 底部建议 -->
+  <rect x="40" y="484" width="820" height="52" rx="8" fill="#FFFBEB" stroke="#F0C36D" stroke-width="1.5"/>
+  <text x="62" y="516" font-size="13" fill="#7A4E00">我的建议：先走 B 把项目跑起来，A 你有空再修。两条不冲突，B 通了以后 A 修好也只是多一个能力。</text>
+
+  <text x="40" y="552" font-size="11" fill="#8B949E">注：你的本地 git 已配好账号 xchen6964-coder，只是没存凭据，生成令牌后直接就能用。</text>
+</svg>
