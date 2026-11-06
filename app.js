@@ -1320,7 +1320,7 @@
         <div class="card-head"><h2>总结</h2>
           <button class="btn ghost small" data-act="gen-summary" ${r.busy ? 'disabled' : ''}>${r.summary ? '重新生成' : (r.busy ? '生成中…' : '用模型写一段')}</button>
         </div>
-        ${r.summary ? `<div class="summary-box">${esc(r.summary)}</div>` : '<p class="rail-empty">不生成也能导出，只是文档里少一段文字总结。</p>'}
+        ${r.summary ? `<div class="summary-box">${esc(r.summary)}</div>${r.modelLabel ? `<p class="hint" style="margin-top:8px">由 ${esc(r.modelLabel)} 生成</p>` : ''}` : '<p class="rail-empty">不生成也能导出，只是文档里少一段文字总结。</p>'}
       </div>
 
       <div class="card">
@@ -1498,6 +1498,26 @@
     return lines.join('\n');
   }
 
+  const FREE_MODEL_IDS = ['hy4free', 'hy3'];
+
+  function pickFreeModel(list) {
+    const usable = (list || []).filter((m) => m && m.disabled !== true && m.enabled !== false);
+    for (const id of FREE_MODEL_IDS) {
+      const hit = usable.find((m) => m.id === id);
+      if (hit) return hit;
+    }
+    const zero = usable.find((m) => /x?0(\.0+)?\s*credits?/i.test(String(m.credits || '')));
+    return zero || usable.find((m) => m.id === 'auto') || usable[0] || null;
+  }
+
+  function llmErrorText(err) {
+    const code = (err && err.error && err.error.code) || '';
+    if (String(code).indexOf('quota_') === 0) return '本月 AI 额度已用完。报告和导出照常可用，只是少这段文字。';
+    if (String(code).indexOf('gateway_') === 0 || String(code).indexOf('model_') === 0) return '模型服务暂时不可用，过会儿再试，或直接导出。';
+    if (String(code).indexOf('auth_') === 0) return 'AI 通道鉴权失败，需要重新开通云服务。';
+    return (err && err.message) || '生成失败，可以直接导出';
+  }
+
   async function generateSummary() {
     const r = reportState();
     if (!r.payload) return;
@@ -1506,25 +1526,36 @@
     try {
       const models = await cloud.llm.models.list();
       const list = Array.isArray(models) ? models : (models && models.data) || [];
-      const model = list.find((m) => m.disabled !== true) || list[0];
-      if (!model) throw new Error('这个应用没有可用的模型');
+      const model = pickFreeModel(list);
+      if (!model) throw new Error('这个应用没有可用模型');
+      r.modelLabel = model.name || model.id;
       let text = '';
-      for await (const chunk of cloud.llm.chat.completions.create({
-        model: model.id,
-        messages: [
-          { role: 'system', content: '你是打卡数据统计助手。只根据给定数字陈述事实与异常，不评价、不排名、不夸张、不编造。用简体中文，230 字以内，分 2 到 3 句。' },
-          { role: 'user', content: factsForModel(r.payload) }
-        ],
-        stream: true
-      })) {
-        const d = chunk.choices[0] && chunk.choices[0].delta && chunk.choices[0].delta.content;
-        if (d) text += d;
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 90000);
+      try {
+        for await (const chunk of cloud.llm.chat.completions.create({
+          model: model.id,
+          messages: [
+            { role: 'system', content: '你是打卡数据统计助手。只根据给定数字陈述事实与异常，不评价、不排名、不夸张、不编造。用简体中文，230 字以内，分 2 到 3 句。' },
+            { role: 'user', content: factsForModel(r.payload) }
+          ],
+          stream: true,
+          signal: controller.signal
+        })) {
+          const d = chunk.choices[0] && chunk.choices[0].delta && chunk.choices[0].delta.content;
+          if (d) text += d;
+        }
+      } catch (e) {
+        if (e && e.name === 'AbortError') throw new Error('模型超过 90 秒没写完，已中断。可以重试，或直接导出。');
+        throw e;
+      } finally {
+        clearTimeout(timer);
       }
       r.summary = text.trim() || '';
       if (!r.summary) throw new Error('模型没有返回内容');
     } catch (err) {
       console.error('[summary]', err);
-      r.error = (err && err.message) || '生成失败，可以直接导出';
+      r.error = llmErrorText(err);
     }
     r.busy = false;
     paintReportBody();
