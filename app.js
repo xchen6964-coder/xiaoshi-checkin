@@ -612,7 +612,7 @@
               <div><b>${esc(who)}</b> ${esc(task || c.title || '小事')}</div>
               ${c.note ? `<div class="feed-note">${esc(c.note)}</div>` : ''}
             </div>
-            ${(state.attachments[c.id] || []).length ? `<img class="feed-shot" src="${state.attachments[c.id][0].url}" data-act="view-photo" data-src="${state.attachments[c.id][0].url}" alt="">` : ''}
+            ${(state.attachments[c.id] || []).length && state.attachments[c.id][0].url ? `<img class="feed-shot" src="${state.attachments[c.id][0].url}" data-act="view-photo" data-src="${state.attachments[c.id][0].url}" alt="">` : ''}
             <span class="feed-time">${isToday ? timeOf(c.done_at) : `${d.getMonth() + 1}/${d.getDate()}`}</span>
           </div>`;
         }).join('')}
@@ -840,7 +840,8 @@
 
   /* ---------- 打卡墙 ---------- */
   function renderWall(root) {
-    const items = state.weekCheckins.filter((c) => c.note || !c.task_id);
+    const hasPhoto = (c) => (state.attachments[c.id] || []).length > 0;
+    const items = state.weekCheckins.filter((c) => c.note || !c.task_id || hasPhoto(c));
     const nameOf = (id) => (state.members.find((m) => m.id === id) || {}).nickname || '成员';
     const taskOf = (id) => (state.tasks.find((t) => t.id === id) || {}).title || '';
 
@@ -850,10 +851,10 @@
         <div class="avatar">${initials(state.me.nickname)}</div>
       </div>
       ${items.length === 0 ? `
-        <div class="card"><div class="empty"><b>这周还没有内容</b>打卡时写一句，就会贴到这里。</div></div>
+        <div class="card"><div class="empty"><b>这周还没有内容</b>打卡时写一句或传张照片，就会贴到这里。</div></div>
       ` : `<div class="wall">${items.map((c) => `
         <div class="note">
-          ${(state.attachments[c.id] || []).length ? `<img class="note-img" src="${state.attachments[c.id][0].url}" data-act="view-photo" data-src="${state.attachments[c.id][0].url}" alt="">` : ''}
+          ${hasPhoto(c) && state.attachments[c.id][0].url ? `<img class="note-img" src="${state.attachments[c.id][0].url}" data-act="view-photo" data-src="${state.attachments[c.id][0].url}" alt="">` : ''}
           <div class="n-title">${esc(c.title || taskOf(c.task_id) || '小事')}</div>
           ${c.note ? `<div class="n-body">${esc(c.note)}</div>` : ''}
           <div class="n-foot"><span>${esc(nameOf(c.user_id))}</span><span>${timeOf(c.done_at)}</span></div>
