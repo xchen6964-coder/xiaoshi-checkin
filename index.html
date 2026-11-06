@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>小事打卡</title>
+<meta name="theme-color" content="#F1F4F9">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="app" class="app">
+    <div class="boot">
+      <div class="boot-dot"></div>
+      <p>正在打开…</p>
+    </div>
+  </div>
+
+  <div id="sheet" class="sheet-mask" hidden>
+    <div class="sheet">
+      <div class="sheet-head">
+        <h3 id="sheet-title">打卡</h3>
+        <button class="icon-btn" id="sheet-close" aria-label="关闭">✕</button>
+      </div>
+      <div id="sheet-body"></div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" hidden></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@tencent-ai/workbuddy-cloud-sdk@dev/lib/index.global.js"></script>
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

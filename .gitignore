@@ -39,3 +39,4 @@ pnpm-debug.log*
 
 # 设计图渲染预览（由 SVG 生成，不入库）
 docs/preview-*.png
+docs/shot-*.png
