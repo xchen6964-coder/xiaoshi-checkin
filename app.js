@@ -34,6 +34,7 @@
     weekCheckins: [],
     attachments: {},
     notifications: [],
+    secrets: null,
     unread: 0,
     pendingPhotos: [],
     view: 'today',
@@ -137,6 +138,17 @@
     state.weekCheckins = weekRes.data || [];
     await loadAttachmentUrls([...state.todayCheckins, ...state.weekCheckins]);
     await refreshNotifications();
+    if (isAdmin()) await loadSecrets();
+  }
+
+  async function loadSecrets() {
+    try {
+      const { data } = await cloud.database.from('group_secrets').select('*').eq('group_id', state.group.id).maybeSingle();
+      state.secrets = data || null;
+    } catch (err) {
+      console.error('[secrets]', err);
+      state.secrets = null;
+    }
   }
 
   async function refreshNotifications() {
@@ -1093,6 +1105,32 @@
       </div>
 
       <div class="card">
+        <div class="card-head"><h2>外部模型（可选）</h2><span class="meta">${state.secrets && state.secrets.ext_key ? '已配置' : '未配置'}</span></div>
+        <p class="hint" style="margin:0 0 12px">留空就用平台自带的免费模型。要接外部接口，填 OpenAI 兼容的地址。密钥只存在数据库里，只有负责人和站长能读。</p>
+        <div class="field">
+          <label for="ex-name">显示名（可空）</label>
+          <input class="input" id="ex-name" maxlength="24" placeholder="例如 OpenRouter 免费" value="${esc((state.secrets && state.secrets.ext_name) || '')}">
+        </div>
+        <div class="field">
+          <label for="ex-base">接口地址（Base URL）</label>
+          <input class="input" id="ex-base" placeholder="https://openrouter.ai/api/v1" value="${esc((state.secrets && state.secrets.ext_base) || '')}">
+        </div>
+        <div class="field">
+          <label for="ex-model">模型名</label>
+          <input class="input" id="ex-model" placeholder="例如 deepseek/deepseek-chat-v3:free" value="${esc((state.secrets && state.secrets.ext_model) || '')}">
+        </div>
+        <div class="field">
+          <label for="ex-key">API Key</label>
+          <input class="input" id="ex-key" type="password" placeholder="sk-..." value="${esc((state.secrets && state.secrets.ext_key) || '')}">
+        </div>
+        <div class="row-2">
+          <button class="btn ghost" data-act="test-ext" style="flex:1">测试连通</button>
+          <button class="btn" data-act="save-ext" style="flex:1">保存</button>
+        </div>
+        <div class="hint" id="ex-msg" style="margin-top:8px">智谱、Groq 不允许浏览器直连；OpenRouter、阿里百炼、DeepSeek 可以。</div>
+      </div>
+
+      <div class="card">
         <div class="card-head"><h2>成员</h2><span class="meta">${state.members.length} 人</span></div>
         ${state.members.map((m) => `
           <div class="list-row">
@@ -1186,6 +1224,93 @@
     if (error || !data || !data.length) { toast('归档失败'); return; }
     await refresh();
     toast('已归档');
+  }
+
+  function readExtForm() {
+    return {
+      ext_name: (document.getElementById('ex-name').value || '').trim() || null,
+      ext_base: (document.getElementById('ex-base').value || '').trim(),
+      ext_model: (document.getElementById('ex-model').value || '').trim(),
+      ext_key: (document.getElementById('ex-key').value || '').trim()
+    };
+  }
+
+  function extEndpoint(base) {
+    const b = String(base || '').replace(/\/+$/, '');
+    return /\/chat\/completions$/.test(b) ? b : b + '/chat/completions';
+  }
+
+  async function callExternal(messages, maxTokens) {
+    const sec = state.secrets || {};
+    const url = extEndpoint(sec.ext_base);
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 60000);
+    let res;
+    try {
+      res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + (sec.ext_key || '') },
+        body: JSON.stringify({
+          model: sec.ext_model,
+          messages,
+          temperature: 0.3,
+          max_tokens: maxTokens || 600,
+          stream: false
+        }),
+        signal: controller.signal
+      });
+    } catch (err) {
+      if (err && err.name === 'AbortError') throw new Error('外部接口超过 60 秒没响应');
+      throw new Error('连不上这个接口。多半是它不允许浏览器直连（CORS），换 OpenRouter / 阿里百炼 / DeepSeek 试试');
+    } finally {
+      clearTimeout(timer);
+    }
+    if (!res.ok) {
+      const body = await res.text().catch(() => '');
+      throw new Error('接口返回 ' + res.status + '：' + String(body).slice(0, 140));
+    }
+    const json = await res.json();
+    const text = json && json.choices && json.choices[0] && json.choices[0].message && json.choices[0].message.content;
+    if (!text) throw new Error('接口没返回内容，检查模型名是否正确');
+    return String(text).trim();
+  }
+
+  async function saveExt() {
+    const f = readExtForm();
+    if (!f.ext_base || !f.ext_model || !f.ext_key) { toast('地址、模型名、Key 都要填'); return; }
+    const { data, error } = await cloud.database.from('group_secrets').upsert({
+      group_id: state.group.id,
+      ext_name: f.ext_name,
+      ext_base: f.ext_base,
+      ext_model: f.ext_model,
+      ext_key: f.ext_key,
+      updated_at: new Date().toISOString()
+    }).select();
+    if (error || !data || !data.length) { toast((error && error.message) || '保存失败'); return; }
+    state.secrets = data[0];
+    toast('已保存，总结会优先用它');
+    renderShell();
+  }
+
+  async function testExt() {
+    const msg = document.getElementById('ex-msg');
+    const f = readExtForm();
+    if (!f.ext_base || !f.ext_model || !f.ext_key) { msg.textContent = '地址、模型名、Key 都要填'; return; }
+    msg.textContent = '测试中…';
+    const backup = state.secrets;
+    state.secrets = f;
+    const t0 = Date.now();
+    try {
+      const out = await callExternal([
+        { role: 'system', content: '只回复两个字：可用' },
+        { role: 'user', content: 'ping' }
+      ], 20);
+      msg.textContent = `通了，${Date.now() - t0} ms，返回：${out.slice(0, 40)}`;
+    } catch (err) {
+      msg.textContent = '失败：' + (err.message || err);
+    } finally {
+      state.secrets = backup;
+    }
   }
 
   async function saveSettings() {
@@ -1524,6 +1649,18 @@
     r.busy = true; r.error = '';
     paintReportBody();
     try {
+      if (state.secrets && state.secrets.ext_base && state.secrets.ext_model && state.secrets.ext_key) {
+        const out = await callExternal([
+          { role: 'system', content: '你是打卡数据统计助手。只根据给定数字陈述事实与异常，不评价、不排名、不夸张、不编造。用简体中文，230 字以内，分 2 到 3 句。' },
+          { role: 'user', content: factsForModel(r.payload) }
+        ], 600);
+        r.summary = out;
+        r.modelLabel = (state.secrets.ext_name || state.secrets.ext_model) + '（外部）';
+        r.busy = false;
+        paintReportBody();
+        return;
+      }
+
       const models = await cloud.llm.models.list();
       const list = Array.isArray(models) ? models : (models && models.data) || [];
       const model = pickFreeModel(list);
@@ -1649,6 +1786,8 @@
     if (act === 'save-task') return saveTask(el.dataset.task);
     if (act === 'archive-task') return archiveTask(el.dataset.task);
     if (act === 'save-settings') return saveSettings();
+    if (act === 'save-ext') return saveExt();
+    if (act === 'test-ext') return testExt();
     if (act === 'set-leader') return setLeader(el.dataset.user);
     if (act === 'go-admin') { state.view = 'admin'; history.replaceState(null, '', '#/admin'); return renderShell(); }
     if (act === 'go-report') { state.view = 'report'; history.replaceState(null, '', '#/report'); return renderShell(); }
