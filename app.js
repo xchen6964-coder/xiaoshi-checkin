@@ -833,14 +833,23 @@
       <div class="card">
         <div class="card-head"><h2>加一条任务</h2></div>
         <div class="field">
-          <input class="input" id="nt-title" maxlength="20" placeholder="任务名，例如 早起">
-        </div>
-        <div class="field row-2">
-          <input class="input" id="nt-emoji" maxlength="2" placeholder="图标 🌅" style="max-width:110px">
-          <input class="input" id="nt-deadline" type="time" value="08:30">
+          <label for="nt-title">任务名</label>
+          <input class="input" id="nt-title" maxlength="20" placeholder="例如 早起">
         </div>
         <div class="field">
-          <input class="input" id="nt-offset" type="number" min="0" max="240" value="30" placeholder="提前多少分钟提醒">
+          <label>图标 / 每天截止时间</label>
+          <div class="row-2">
+            <input class="input" id="nt-emoji" maxlength="2" placeholder="🌅" style="max-width:88px;text-align:center">
+            <input class="input" id="nt-deadline" type="time" value="08:30">
+          </div>
+        </div>
+        <div class="field">
+          <label for="nt-offset">提前多久提醒</label>
+          <div class="input-group">
+            <input class="input" id="nt-offset" type="number" min="0" max="240" step="5" value="30">
+            <span class="unit">分钟</span>
+          </div>
+          <div class="hint" style="margin-top:6px">填 0 = 不提醒，最多 240 分钟。提醒发到站内和企业微信群。</div>
         </div>
         <button class="btn block" data-act="add-task">添加</button>
       </div>
