@@ -557,13 +557,15 @@
     progress: '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 6h10M5 10h10M5 14h10"/><circle cx="7" cy="6" r="1" class="fill"/><circle cx="12" cy="10" r="1" class="fill"/><circle cx="9" cy="14" r="1" class="fill"/></svg>',
     me: '<svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="7" r="3"/><path d="M4.5 16c.8-3 2.7-4.5 5.5-4.5s4.7 1.5 5.5 4.5"/></svg>',
     admin: '<svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="3"/><path d="M10 3.5v2M10 14.5v2M3.5 10h2M14.5 10h2M5.4 5.4l1.4 1.4M13.2 13.2l1.4 1.4M14.6 5.4l-1.4 1.4M6.8 13.2l-1.4 1.4"/></svg>',
-    report: '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 15V9M10 15V5M15 15v-3"/><path d="M3.5 16.5h13"/></svg>'
+    report: '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 15V9M10 15V5M15 15v-3"/><path d="M3.5 16.5h13"/></svg>',
+    members: '<svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="7" cy="6.8" r="2.6"/><path d="M2.6 15.4c.5-2.6 2.2-4 4.4-4s3.9 1.4 4.4 4"/><path d="M13.4 5.1a2.5 2.5 0 0 1 0 4.8"/><path d="M14.8 11.6c1.6.4 2.7 1.7 3 3.8"/></svg>'
   };
 
   const NAV = [
     { key: 'today', label: '今日', icon: NAV_ICONS.today },
     { key: 'wall', label: '打卡墙', icon: NAV_ICONS.wall },
     { key: 'progress', label: '进度', icon: NAV_ICONS.progress },
+    { key: 'members', label: '成员', icon: NAV_ICONS.members },
     { key: 'me', label: '我的', icon: NAV_ICONS.me }
   ];
 
@@ -664,6 +666,7 @@
     if (!view) return;
     if (state.view === 'wall') renderWall(view);
     else if (state.view === 'progress') renderProgress(view);
+    else if (state.view === 'members') renderMembers(view);
     else if (state.view === 'me') renderMe(view);
     else if (state.view === 'admin') renderAdmin(view);
     else if (state.view === 'report') renderReport(view);
@@ -1481,6 +1484,130 @@
     }
   }
 
+  /* ---------- 成员 ---------- */
+  function weekExpected() {
+    const d = new Date(todayStr() + 'T00:00:00+08:00');
+    const dow = (d.getDay() + 6) % 7;
+    return state.tasks.length * (dow + 1);
+  }
+
+  function memberWeekDone(uid) {
+    const ws = weekStart();
+    const td = todayStr();
+    return state.weekCheckins.filter((c) => c.user_id === uid && c.task_id && c.date >= ws && c.date <= td).length;
+  }
+
+  function memberOps(m) {
+    const excused = state.todayCheckins.some((c) => c.user_id === m.id && c.status === 'excused');
+    return [
+      state.me.role === 'owner' && m.role === 'member' ? `<button class="btn ghost small" data-act="set-leader" data-user="${m.id}">设为负责人</button>` : '',
+      state.me.role === 'owner' && m.role === 'leader' ? '<button class="btn ghost small" data-act="clear-leader">收回负责人</button>' : '',
+      state.me.role === 'leader' && m.role === 'member' ? `<button class="btn ghost small" data-act="request-handover" data-user="${m.id}">交接给他</button>` : '',
+      m.role === 'member' && excused ? `<button class="btn ghost small" data-act="excuse-today" data-user="${m.id}" data-on="0">取消豁免</button>` : '',
+      m.role === 'member' ? `<button class="icon-btn" data-act="set-active" data-user="${m.id}" data-on="0" aria-label="停用">停</button>` : ''
+    ].join('');
+  }
+
+  function renderMembers(root) {
+    root.className = 'memphis-view members-view';
+    const exp = weekExpected();
+    const outHandover = (state.handovers || []).find((h) => h.from_user_id === state.me.id);
+    const whoHandover = outHandover ? ((state.members.find((x) => x.id === outHandover.to_user_id) || {}).nickname || '对方') : '';
+
+    root.innerHTML = `
+      <div class="topbar">${viewHeading('员', `${esc(state.group.name)} · ${state.members.length} 人`, '成员')}</div>
+
+      <div class="card">
+        <div class="card-head"><h2>在组的人</h2><span class="meta">${isAdmin() ? '点一行看他的打卡' : '本周完成数'}</span></div>
+        ${state.members.map((m) => `
+          <div class="list-row m-row">
+            <div class="m-who" data-act="open-member" data-user="${m.id}">
+              <span class="avatar" style="width:30px;height:30px;font-size:12px">${avatarInner(m.nickname, m.avatar_url)}</span>
+              <div class="m-info">
+                <div class="m-name">${esc(m.nickname)}<span class="chip ${m.role === 'member' ? 'plain' : ''}">${roleLabel(m.role)}</span></div>
+                <div class="label">本周 ${memberWeekDone(m.id)}/${exp}</div>
+              </div>
+            </div>
+            <span class="m-ops">${memberOps(m)}</span>
+          </div>`).join('') || '<div class="empty"><b>还没有成员</b>把邀请码发给对方。</div>'}
+        ${whoHandover ? `<p class="hint" style="margin:12px 0 0">已向 ${esc(whoHandover)} 发出交接，等对方在通知里接受。24 小时内有效。</p>` : ''}
+      </div>
+
+      ${state.inactive.length ? `
+      <div class="card">
+        <div class="card-head"><h2>已停用</h2><span class="meta">${state.inactive.length} 人 · 历史保留</span></div>
+        ${state.inactive.map((m) => `
+          <div class="list-row">
+            <div class="m-who" style="opacity:.6">
+              <span class="avatar" style="width:30px;height:30px;font-size:12px">${avatarInner(m.nickname, m.avatar_url)}</span>
+              <div class="m-info"><div class="m-name">${esc(m.nickname)}</div><div class="label">不占今天的名额</div></div>
+            </div>
+            <button class="btn ghost small" data-act="set-active" data-user="${m.id}" data-on="1">恢复</button>
+          </div>`).join('')}
+      </div>` : ''}
+    `;
+  }
+
+  async function openMemberSheet(uid) {
+    const m = state.members.find((x) => x.id === uid);
+    if (!m) return;
+    if (!isAdmin()) { toast('只有负责人能看别人的打卡'); return; }
+    openSheet(`${m.nickname} 的打卡`, '<p class="hint" style="margin:0">正在读取…</p>');
+    const { data, error } = await cloud.database
+      .from('checkins')
+      .select('date,status,done_at,task_id,note')
+      .eq('group_id', state.group.id)
+      .eq('user_id', uid)
+      .order('done_at', { ascending: false })
+      .limit(400);
+    if (error) { sheetBody.innerHTML = `<p class="error" style="margin:0">${esc(error.message)}</p>`; return; }
+    const list = data || [];
+
+    const daySet = new Set(list.map((c) => c.date));
+    const td = todayStr();
+    let cur = new Date(td + 'T00:00:00+08:00');
+    if (!daySet.has(td)) cur = new Date(cur.getTime() - 86400000);
+    let streak = 0;
+    while (streak < 1000 && daySet.has(cur.toLocaleDateString('sv-SE', { timeZone: 'Asia/Shanghai' }))) {
+      streak += 1;
+      cur = new Date(cur.getTime() - 86400000);
+    }
+    const total = list.length;
+    const onTime = list.filter((c) => c.status === 'on_time').length;
+    const rate = total ? Math.round((onTime / total) * 100) : 0;
+
+    const ws = weekStart();
+    const weekDates = Array.from({ length: 7 }, (_, i) => dateAdd(ws, i));
+    const stCls = (c) => (!c ? 'off' : c.status === 'excused' ? 'ex' : c.status === 'late' ? 'lt' : 'ok');
+    const grid = state.tasks.map((t) => `
+      <div class="mg-row">
+        <span class="mg-lab">${esc(t.title)}</span>
+        <span class="mg-cells">${weekDates.map((d) => {
+          const c = list.find((x) => x.task_id === t.id && x.date === d);
+          return `<i class="mg-c ${stCls(c)}" title="${d}${c ? '' : ' 没打卡'}"></i>`;
+        }).join('')}</span>
+      </div>`).join('');
+
+    const recent = list.filter((c) => c.task_id).slice(0, 6).map((c) => `
+      <div class="list-row">
+        <div><div>${c.date.slice(5)} ${timeOf(c.done_at)}</div><div class="label">${esc(taskName(c.task_id) || '小事')}</div></div>
+        <span class="val">${c.status === 'on_time' ? '按时' : c.status === 'late' ? '补记' : '豁免'}</span>
+      </div>`).join('');
+
+    sheetBody.innerHTML = `
+      <div class="m-kpis">
+        <div class="m-kpi"><b>${streak}</b><span>连续天数</span></div>
+        <div class="m-kpi"><b>${total}</b><span>总打卡</span></div>
+        <div class="m-kpi"><b>${rate}%</b><span>按时率</span></div>
+      </div>
+      <div class="field"><label>本周 · 任务 × 七天</label></div>
+      <div class="mg-wrap">${grid || '<p class="hint" style="margin:0">还没有任务。</p>'}</div>
+      <div class="field" style="margin-top:16px"><label>最近打卡</label></div>
+      ${recent || '<p class="hint" style="margin:0">还没有打卡记录。</p>'}
+      <p class="hint" style="margin-top:14px">只能看，不能替别人打。</p>
+    `;
+  }
+
   /* ---------- 我的 ---------- */
   function renderMe(root) {
     root.className = 'memphis-view me-view';
@@ -1638,7 +1765,6 @@
   function renderAdmin(root) {
     root.className = 'memphis-view admin-view';
     if (!isAdmin()) { root.innerHTML = '<div class="card"><div class="empty"><b>没有权限</b>只有负责人和站长能进这里。</div></div>'; return; }
-    const excusedSet = new Set(state.todayCheckins.filter((c) => c.status === 'excused').map((c) => c.user_id));
     root.innerHTML = `
       <div class="topbar">${viewHeading('管', '负责人 / 站长', '管理')}</div>
 
@@ -1699,42 +1825,6 @@
           <input class="input" id="set-webhook" placeholder="https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=..." value="${esc(state.group.wecom_webhook || '')}">
         </div>
         <button class="btn ghost block" data-act="save-settings">保存设置</button>
-      </div>
-
-      <div class="card">
-        <div class="card-head"><h2>成员</h2><span class="meta">${state.members.length} 人</span></div>
-        ${state.members.map((m) => `
-          <div class="list-row">
-            <div style="display:flex;align-items:center;gap:10px">
-              <span class="avatar" style="width:28px;height:28px;font-size:12px">${avatarInner(m.nickname, m.avatar_url)}</span>
-              <span>${esc(m.nickname)}</span>
-              <span class="chip ${m.role === 'member' ? 'plain' : ''}">${roleLabel(m.role)}</span>
-            </div>
-            <span style="display:flex;gap:6px;flex:none">
-              ${state.me.role === 'owner' && m.role === 'member' ? `<button class="btn ghost small" data-act="set-leader" data-user="${m.id}">设为负责人</button>` : ''}
-              ${state.me.role === 'owner' && m.role === 'leader' ? `<button class="btn ghost small" data-act="clear-leader">收回负责人</button>` : ''}
-              ${state.me.role === 'leader' && m.role === 'member' ? `<button class="btn ghost small" data-act="request-handover" data-user="${m.id}">交接给他</button>` : ''}
-              ${m.role === 'member' && excusedSet.has(m.id) ? `<button class="btn ghost small" data-act="excuse-today" data-user="${m.id}" data-on="0">取消豁免</button>` : ''}
-              ${m.role === 'member' ? `<button class="icon-btn" data-act="set-active" data-user="${m.id}" data-on="0" aria-label="停用">停</button>` : ''}
-            </span>
-          </div>`).join('')}
-        ${(() => {
-          const out = (state.handovers || []).find((h) => h.from_user_id === state.me.id);
-          if (!out) return '';
-          const who = (state.members.find((x) => x.id === out.to_user_id) || {}).nickname || '对方';
-          return `<p class="hint" style="margin:12px 0 0">已向 ${esc(who)} 发出交接，等对方在通知里接受。24 小时内有效。</p>`;
-        })()}
-        ${state.inactive.length ? `
-          <p class="hint" style="margin:14px 0 6px">已停用 ${state.inactive.length} 人（历史记录保留）</p>
-          ${state.inactive.map((m) => `
-            <div class="list-row">
-              <div style="display:flex;align-items:center;gap:10px;opacity:.55">
-                <span class="avatar" style="width:28px;height:28px;font-size:12px">${avatarInner(m.nickname, m.avatar_url)}</span>
-                <span>${esc(m.nickname)}</span>
-              </div>
-              <button class="btn ghost small" data-act="set-active" data-user="${m.id}" data-on="1">恢复</button>
-            </div>`).join('')}
-        ` : ''}
       </div>
 
       <div class="card">
@@ -2400,6 +2490,7 @@
     const act = el.dataset.act;
     if (act === 'toggle-task') return toggleTask(el.dataset.task, el.dataset.checkin);
     if (act === 'retry-load') return retryLoad();
+    if (act === 'open-member') return openMemberSheet(el.dataset.user);
     if (act === 'submit-checkin') return submitCheckin(el.dataset.task);
     if (act === 'del-photo') { state.pendingPhotos.splice(Number(el.dataset.i), 1); return paintShots(); }
     if (act === 'view-photo') return openPhoto(el.dataset.src);

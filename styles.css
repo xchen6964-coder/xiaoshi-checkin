@@ -518,6 +518,8 @@ body[data-view="report"] { --view-accent: var(--accent-mint); }
     background: var(--view-accent, var(--accent-mint)); color: var(--outline);
     border: 1.5px solid var(--outline);
   }
+  .tabbar a[data-nav="admin"],
+  .tabbar a[data-nav="report"] { display: none; }
 }
 
 @media (max-width: 359px) {
@@ -654,6 +656,26 @@ body[data-view="report"] { --view-accent: var(--accent-mint); }
 .heat-c.h3 { background: var(--heat-3); }
 .heat-c.fut { background: transparent; }
 .btn.ghost.danger { color: var(--danger); border-color: #F1C6C8; }
+
+/* 成员 */
+.m-row { gap: 10px; }
+.m-who { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1; cursor: pointer; }
+.m-info { min-width: 0; }
+.m-name { display: flex; align-items: center; gap: 6px; font-size: 14px; color: var(--ink); }
+.m-name .chip { font-size: 10.5px; padding: 1px 6px; }
+.m-ops { display: flex; gap: 6px; flex: none; align-items: center; }
+.m-kpis { display: flex; gap: 8px; }
+.m-kpi { flex: 1; background: var(--soft); border-radius: var(--radius); padding: 10px 4px; text-align: center; }
+.m-kpi b { display: block; font-size: 18px; font-weight: 500; color: var(--ink); }
+.m-kpi span { font-size: 11px; color: var(--muted); }
+.mg-wrap { background: var(--soft); border-radius: var(--radius); padding: 12px; }
+.mg-row { display: flex; align-items: center; gap: 10px; padding: 5px 0; }
+.mg-lab { font-size: 12px; color: var(--muted); width: 54px; flex: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mg-cells { display: flex; gap: 4px; flex: 1; }
+.mg-c { flex: 1; height: 14px; border-radius: 3px; background: var(--track); }
+.mg-c.ok { background: var(--heat-3); }
+.mg-c.lt { background: var(--warn); }
+.mg-c.ex { background: var(--dot-off); }
 
 /* 我的 */
 .list-row {
