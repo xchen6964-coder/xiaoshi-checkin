@@ -545,11 +545,20 @@
   }
 
   /* ---------- 主框架 ---------- */
+  const NAV_ICONS = {
+    today: '<svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="5.5"/><circle cx="10" cy="10" r="1.8" class="fill"/></svg>',
+    wall: '<svg viewBox="0 0 20 20" aria-hidden="true"><rect x="4" y="5" width="12" height="10" rx="2"/><path d="M7 8h6M7 11h4"/></svg>',
+    progress: '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 6h10M5 10h10M5 14h10"/><circle cx="7" cy="6" r="1" class="fill"/><circle cx="12" cy="10" r="1" class="fill"/><circle cx="9" cy="14" r="1" class="fill"/></svg>',
+    me: '<svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="7" r="3"/><path d="M4.5 16c.8-3 2.7-4.5 5.5-4.5s4.7 1.5 5.5 4.5"/></svg>',
+    admin: '<svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="3"/><path d="M10 3.5v2M10 14.5v2M3.5 10h2M14.5 10h2M5.4 5.4l1.4 1.4M13.2 13.2l1.4 1.4M14.6 5.4l-1.4 1.4M6.8 13.2l-1.4 1.4"/></svg>',
+    report: '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 15V9M10 15V5M15 15v-3"/><path d="M3.5 16.5h13"/></svg>'
+  };
+
   const NAV = [
-    { key: 'today', label: '今日', icon: '◎' },
-    { key: 'wall', label: '打卡墙', icon: '▤' },
-    { key: 'progress', label: '进度', icon: '▦' },
-    { key: 'me', label: '我的', icon: '☺' }
+    { key: 'today', label: '今日', icon: NAV_ICONS.today },
+    { key: 'wall', label: '打卡墙', icon: NAV_ICONS.wall },
+    { key: 'progress', label: '进度', icon: NAV_ICONS.progress },
+    { key: 'me', label: '我的', icon: NAV_ICONS.me }
   ];
 
   function railHTML() {
@@ -597,7 +606,11 @@
   }
 
   function renderShell() {
-    const nav = NAV.concat(isAdmin() ? [{ key: 'admin', label: '管理', icon: '⚙' }, { key: 'report', label: '报告', icon: '▦' }] : []);
+    document.body.dataset.view = state.view;
+    const nav = NAV.concat(isAdmin() ? [
+      { key: 'admin', label: '管理', icon: NAV_ICONS.admin },
+      { key: 'report', label: '报告', icon: NAV_ICONS.report }
+    ] : []);
     app.innerHTML = `
       <div class="shell">
         <nav class="tabbar">
@@ -695,6 +708,7 @@
   }
 
   function renderToday(root) {
+    root.className = 'today-view';
     const done = myToday().length;
     const total = state.tasks.length;
     const ratio = total ? done / total : 0;
@@ -712,10 +726,13 @@
     const cmpHTML = compareChip(todayCount);
 
     root.innerHTML = `
-      <div class="topbar">
-        <div>
-          <div class="day">${fmtDateCn(todayStr())}</div>
-          <h1>今天的小事</h1>
+      <div class="topbar today-topbar">
+        <div class="today-heading">
+          <div class="today-mark" aria-hidden="true">小</div>
+          <div>
+            <div class="day">${fmtDateCn(todayStr())} · ${esc(state.group.name)}</div>
+            <h1>今天的小事</h1>
+          </div>
         </div>
         <div class="topbar-actions">
           <button class="bell" data-act="open-notifs" aria-label="通知">
@@ -726,7 +743,7 @@
         </div>
       </div>
 
-      <div class="card hero">
+      <div class="card hero today-summary">
         <div class="ring">
           <svg width="96" height="96" viewBox="0 0 96 96">
             <circle cx="48" cy="48" r="40" fill="none" style="stroke:var(--ring-track)" stroke-width="9"/>
@@ -746,7 +763,7 @@
         </div>
       </div>
 
-      <div class="card ${total === 0 ? 'grow' : ''}">
+      <div class="card today-tasks ${total === 0 ? 'grow' : ''}">
         <div class="card-head">
           <h2>今天的任务</h2>
           <span class="meta">${total} 项</span>
@@ -757,7 +774,7 @@
             <b>今天还没有任务</b>
             <p>${isAdmin() ? '设一条带截止时间的任务，比如「早起 08:30」。成员到点前提交，谁没交一眼看到。' : '负责人正在设置任务，过一会儿刷新看看。'}</p>
             ${isAdmin() ? '<button class="btn" data-act="go-admin">去添加任务</button>' : ''}
-          </div>` : state.tasks.map((t) => {
+          </div>` : state.tasks.map((t, index) => {
             const c = findCheckin(t.id);
             const ds = deadlineState(t);
             const ids = new Set(taskCheckins.filter((x) => x.task_id === t.id).map((x) => x.user_id));
@@ -768,7 +785,7 @@
                 </div>`
               : `<span class="t-count">${ids.size}/${state.members.length}</span>`;
             return `
-            <div class="task ${c ? 'done' : ''}">
+            <div class="task tone-${index % 3} ${c ? 'done' : ''}">
               <div class="t-icon">${esc(t.emoji || '·')}</div>
               <div class="t-main">
                 <div class="t-title">${esc(t.title)} ${c && c.status === 'late' ? '<span class="chip warn" style="height:18px;font-size:10px">补记</span>' : ''}</div>
@@ -776,7 +793,7 @@
               </div>
               ${dotsHTML}
               <button class="check ${c ? 'on' : ''}" data-act="toggle-task" data-task="${t.id}" data-checkin="${c ? c.id : ''}" aria-label="${c ? '取消打卡' : '打卡'}">
-                <svg width="15" height="15" viewBox="0 0 16 16"><path d="M3 8.5l3.2 3.2L13 5" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <svg width="15" height="15" viewBox="0 0 16 16"><path d="M3 8.5l3.2 3.2L13 5" fill="none" style="stroke:var(--on-brand)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
               </button>
             </div>`;
           }).join('')}
@@ -787,19 +804,19 @@
       <div class="card">
         <div class="card-head"><h2>今天自己加的</h2><span class="meta">${customToday().length} 条</span></div>
         ${customToday().map((c) => `
-          <div class="task done">
+          <div class="task tone-blue done">
             <div class="t-icon">✎</div>
             <div class="t-main">
               <div class="t-title">${esc(c.title || '小事')}</div>
               <div class="t-sub late">${timeOf(c.done_at)}</div>
             </div>
             <button class="check on" data-act="toggle-task" data-task="" data-checkin="${c.id}">
-              <svg width="15" height="15" viewBox="0 0 16 16"><path d="M3 8.5l3.2 3.2L13 5" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <svg width="15" height="15" viewBox="0 0 16 16"><path d="M3 8.5l3.2 3.2L13 5" fill="none" style="stroke:var(--on-brand)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </button>
           </div>`).join('')}
       </div>` : ''}
 
-      <div class="card">
+      <div class="card today-week">
         <div class="card-head"><h2>本周</h2><span class="meta">全组打卡条数</span></div>
         <div class="week">
           ${(() => {
@@ -829,7 +846,7 @@
       </div>
 
       ${state.weekCheckins.length ? `
-      <div class="card">
+      <div class="card today-recent">
         <div class="card-head"><h2>最近打卡</h2><span class="meta">全组 · ${state.weekCheckins.length} 条</span></div>
         ${state.weekCheckins.slice(0, 6).map((c) => {
           const who = (state.members.find((m) => m.id === c.user_id) || {}).nickname || '成员';
