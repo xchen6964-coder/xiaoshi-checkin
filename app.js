@@ -46,6 +46,7 @@
     pendingPhotos: [],
     view: 'today',
     pendingOtp: null,
+    resetTicket: null,
     otpTimer: null,
     otpLeft: 0
   };
@@ -343,11 +344,68 @@
         <div class="seg" id="login-seg">
           <button class="on" data-kind="phone">手机号</button>
           <button data-kind="email">邮箱</button>
+          <button data-kind="pwd">密码</button>
         </div>
 
+        <div id="gate-body"></div>
+        <div class="error" id="gate-error">${errMsg ? esc(errMsg) : ''}</div>
+        <div class="gate-foot">这个站只服务一个熟人小组。登录后需要邀请码才能进组。</div>
+      </div>`;
+
+    let kind = 'phone';
+    let mode = 'otp';
+
+    function paint() {
+      const body = document.getElementById('gate-body');
+      document.getElementById('gate-error').textContent = '';
+
+      if (mode === 'reset') {
+        body.innerHTML = `
+          <div class="field">
+            <label for="account">邮箱</label>
+            <input id="account" class="input" type="email" maxlength="64" placeholder="name@example.com" autocomplete="email">
+          </div>
+          <div class="field">
+            <label for="code">邮件里的验证码</label>
+            <div class="row-2">
+              <input id="code" class="input" type="text" inputmode="numeric" maxlength="8" placeholder="验证码">
+              <button class="btn ghost code" id="send-reset">发送</button>
+            </div>
+          </div>
+          <div class="field">
+            <label for="password">新密码</label>
+            <input id="password" class="input" type="password" maxlength="64" placeholder="至少 6 位" autocomplete="new-password">
+          </div>
+          <button class="btn block" id="do-reset">重设并登录</button>
+          <p class="hint"><a href="#" class="link-btn" id="back-pwd">返回密码登录</a></p>`;
+        document.getElementById('send-reset').addEventListener('click', sendResetMail);
+        document.getElementById('do-reset').addEventListener('click', doReset);
+        document.getElementById('back-pwd').addEventListener('click', (e) => { e.preventDefault(); mode = 'pwd'; paint(); });
+        return;
+      }
+
+      if (kind === 'pwd') {
+        body.innerHTML = `
+          <div class="field">
+            <label for="account">邮箱</label>
+            <input id="account" class="input" type="email" maxlength="64" placeholder="name@example.com" autocomplete="email">
+          </div>
+          <div class="field">
+            <label for="password">密码</label>
+            <input id="password" class="input" type="password" maxlength="64" placeholder="密码" autocomplete="current-password">
+          </div>
+          <button class="btn block" id="do-pwd">登录</button>
+          <p class="hint"><a href="#" class="link-btn" id="to-reset">忘了密码</a></p>`;
+        document.getElementById('do-pwd').addEventListener('click', doPasswordLogin);
+        document.getElementById('to-reset').addEventListener('click', (e) => { e.preventDefault(); mode = 'reset'; paint(); });
+        return;
+      }
+
+      const isPhone = kind === 'phone';
+      body.innerHTML = `
         <div class="field">
-          <label for="account" id="acc-label">手机号</label>
-          <input id="account" class="input" type="tel" inputmode="numeric" maxlength="11" placeholder="11 位手机号" autocomplete="tel">
+          <label for="account">${isPhone ? '手机号' : '邮箱'}</label>
+          <input id="account" class="input" type="${isPhone ? 'tel' : 'email'}" inputmode="${isPhone ? 'numeric' : 'email'}" maxlength="${isPhone ? 11 : 64}" placeholder="${isPhone ? '11 位手机号' : 'name@example.com'}" autocomplete="${isPhone ? 'tel' : 'email'}">
         </div>
         <div class="field">
           <label for="code">验证码</label>
@@ -356,39 +414,29 @@
             <button class="btn ghost code" id="send-code">获取验证码</button>
           </div>
         </div>
-        <div class="error" id="gate-error">${errMsg ? esc(errMsg) : ''}</div>
-        <button class="btn block" id="do-login">登录</button>
-        <p class="hint">第一次登录会自动创建账号，不需要密码。</p>
-        <div class="gate-foot">
-          这个站只服务一个熟人小组。登录后需要邀请码才能进组。
-        </div>
-      </div>`;
+        ${isPhone ? '' : `<div class="field">
+          <label for="password">密码（选填）</label>
+          <input id="password" class="input" type="password" maxlength="64" placeholder="新账号会记下这个密码" autocomplete="new-password">
+        </div>`}
+        <button class="btn block" id="do-login">登录 / 注册</button>
+        <p class="hint">第一次登录会自动创建账号${isPhone ? '，不需要密码' : '；填了密码以后就能用密码登录'}。</p>`;
+      document.getElementById('send-code').addEventListener('click', () => sendCode(kind));
+      document.getElementById('do-login').addEventListener('click', () => doLogin(kind));
+      document.getElementById('code').addEventListener('keydown', (e) => { if (e.key === 'Enter') doLogin(kind); });
+    }
 
-    let kind = 'phone';
-    const acc = document.getElementById('account');
     document.querySelectorAll('#login-seg button').forEach((b) => {
       b.addEventListener('click', () => {
         kind = b.dataset.kind;
+        mode = kind === 'pwd' ? 'pwd' : 'otp';
+        state.pendingOtp = null;
+        state.resetTicket = null;
         document.querySelectorAll('#login-seg button').forEach((x) => x.classList.toggle('on', x === b));
-        const label = document.getElementById('acc-label');
-        if (kind === 'phone') {
-          label.textContent = '手机号';
-          acc.type = 'tel'; acc.inputMode = 'numeric'; acc.maxLength = 11;
-          acc.placeholder = '11 位手机号'; acc.autocomplete = 'tel';
-        } else {
-          label.textContent = '邮箱';
-          acc.type = 'email'; acc.inputMode = 'email'; acc.maxLength = 64;
-          acc.placeholder = 'name@example.com'; acc.autocomplete = 'email';
-        }
-        acc.value = '';
-        document.getElementById('gate-error').textContent = '';
+        paint();
       });
     });
-    state.loginKind = () => kind;
 
-    document.getElementById('send-code').addEventListener('click', () => sendCode(kind));
-    document.getElementById('do-login').addEventListener('click', () => doLogin(kind));
-    document.getElementById('code').addEventListener('keydown', (e) => { if (e.key === 'Enter') doLogin(kind); });
+    paint();
   }
 
   async function sendCode(kind) {
@@ -439,6 +487,10 @@
       token: code
     };
     if (pending.kind === 'phone') payload.phone = pending.value; else payload.email = pending.value;
+    if (pending.kind === 'email' && !pending.isExistingUser) {
+      const pwdEl = document.getElementById('password');
+      if (pwdEl && pwdEl.value) payload.password = pwdEl.value;
+    }
     const { data, error } = await cloud.auth.verifyOtp(payload);
     if (error) {
       btn.disabled = false;
@@ -449,6 +501,81 @@
     state.session = data && data.user ? data : await cloud.auth.getSession().then((r) => r.data);
     clearInterval(state.otpTimer);
     state.pendingOtp = null;
+    await enterApp();
+  }
+
+  async function doPasswordLogin() {
+    const err = document.getElementById('gate-error');
+    const email = document.getElementById('account').value.trim();
+    const pwd = document.getElementById('password').value;
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) { err.textContent = '请输入正确的邮箱地址'; return; }
+    if (!pwd) { err.textContent = '请输入密码'; return; }
+    err.textContent = '';
+    const btn = document.getElementById('do-pwd');
+    btn.disabled = true;
+    btn.textContent = '登录中…';
+    const { data, error } = await cloud.auth.signInWithPassword({ email, password: pwd });
+    if (error) {
+      btn.disabled = false;
+      btn.textContent = '登录';
+      err.textContent = '邮箱或密码不对';
+      return;
+    }
+    state.session = data;
+    await enterApp();
+  }
+
+  async function sendResetMail() {
+    const err = document.getElementById('gate-error');
+    const email = document.getElementById('account').value.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) { err.textContent = '请输入正确的邮箱地址'; return; }
+    err.textContent = '';
+    const btn = document.getElementById('send-reset');
+    btn.disabled = true;
+    const { data, error } = await cloud.auth.resetPasswordForEmail(email);
+    if (error) {
+      btn.disabled = false;
+      err.textContent = error.message || '邮件发送失败';
+      return;
+    }
+    state.resetTicket = data;
+    toast('邮件已发出，去邮箱收验证码');
+    let left = 60;
+    btn.textContent = `${left}s`;
+    clearInterval(state.otpTimer);
+    state.otpTimer = setInterval(() => {
+      left -= 1;
+      if (left <= 0) {
+        clearInterval(state.otpTimer);
+        btn.disabled = false;
+        btn.textContent = '重新发送';
+      } else {
+        btn.textContent = `${left}s`;
+      }
+    }, 1000);
+  }
+
+  async function doReset() {
+    const err = document.getElementById('gate-error');
+    const code = document.getElementById('code').value.trim();
+    const pwd = document.getElementById('password').value;
+    if (!state.resetTicket) { err.textContent = '请先点「发送」收验证码'; return; }
+    if (!/^\d{4,8}$/.test(code)) { err.textContent = '请输入邮件里的验证码'; return; }
+    if (pwd.length < 6) { err.textContent = '密码至少 6 位'; return; }
+    err.textContent = '';
+    const btn = document.getElementById('do-reset');
+    btn.disabled = true;
+    btn.textContent = '重设中…';
+    const { error } = await state.resetTicket.updateUser({ nonce: code, password: pwd });
+    if (error) {
+      btn.disabled = false;
+      btn.textContent = '重设并登录';
+      err.textContent = error.message || '重设失败，验证码可能过期了';
+      return;
+    }
+    clearInterval(state.otpTimer);
+    state.resetTicket = null;
+    toast('密码已重设');
     await enterApp();
   }
 
