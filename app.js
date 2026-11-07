@@ -1588,11 +1588,14 @@
         }).join('')}</span>
       </div>`).join('');
 
-    const recent = list.filter((c) => c.task_id).slice(0, 6).map((c) => `
+    const recent = list.filter((c) => c.task_id).slice(0, 6).map((c) => {
+      const tn = taskName(c.task_id);
+      return `
       <div class="list-row">
-        <div><div>${c.date.slice(5)} ${timeOf(c.done_at)}</div><div class="label">${esc(taskName(c.task_id) || '小事')}</div></div>
+        <div><div>${c.date.slice(5)} ${timeOf(c.done_at)}</div><div class="label">${esc(tn || '已归档的任务')}</div></div>
         <span class="val">${c.status === 'on_time' ? '按时' : c.status === 'late' ? '补记' : '豁免'}</span>
-      </div>`).join('');
+      </div>`;
+    }).join('');
 
     sheetBody.innerHTML = `
       <div class="m-kpis">
