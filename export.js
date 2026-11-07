@@ -21,7 +21,7 @@
 
   /* ---------------- CSV ---------------- */
   function buildCsv(data) {
-    const head = ['日期', '成员', '任务', '状态', '完成时间', '文字', '照片数'];
+    const head = ['日期', '成员', '任务', '状态', '完成时间', '文字', '点赞', '照片数'];
     const lines = [head.join(',')];
     data.rows.forEach((r) => {
       const cells = [
@@ -31,6 +31,7 @@
         STATUS_TEXT[r.status] || r.status,
         r.time || '',
         (r.note || '').replace(/"/g, '""'),
+        String(r.likes || 0),
         String(r.photos || 0)
       ].map((c) => `"${c}"`);
       lines.push(cells.join(','));
@@ -56,7 +57,7 @@
     const detailRows = data.rows.map((r) => `
       <tr><td class="n">${esc(r.date)}</td><td>${esc(r.nickname)}</td><td>${esc(r.task)}</td>
       <td>${STATUS_TEXT[r.status] || esc(r.status)}</td><td class="n">${esc(r.time || '')}</td>
-      <td>${esc(r.note || '')}</td><td class="n">${r.photos || 0}</td></tr>`).join('');
+      <td>${esc(r.note || '')}</td><td class="n">${r.likes || 0}</td><td class="n">${r.photos || 0}</td></tr>`).join('');
     const photoBlocks = (data.photos || []).slice(0, 12).map((p) => `
       <figure><img src="${p.dataUrl}" alt=""><figcaption>${esc(p.caption || '')}</figcaption></figure>`).join('');
 
@@ -114,7 +115,7 @@
   ${photoBlocks ? `<h2>照片</h2><div class="photos">${photoBlocks}</div>` : ''}
 
   <h2>明细</h2>
-  <table><thead><tr><th class="n">日期</th><th>成员</th><th>任务</th><th>状态</th><th class="n">时间</th><th>文字</th><th class="n">照片</th></tr></thead>
+  <table><thead><tr><th class="n">日期</th><th>成员</th><th>任务</th><th>状态</th><th class="n">时间</th><th>文字</th><th class="n">点赞</th><th class="n">照片</th></tr></thead>
   <tbody>${detailRows}</tbody></table>
 
   <div class="foot">由「小事打卡」生成 · ${esc(meta.generatedAt)}</div>
@@ -155,12 +156,12 @@
     ws1['!cols'] = [{ wch: 18 }, { wch: 12 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 }];
     XLSX.utils.book_append_sheet(wb, ws1, '汇总');
 
-    const detail = [['日期', '成员', '任务', '状态', '完成时间', '文字', '照片数']];
+    const detail = [['日期', '成员', '任务', '状态', '完成时间', '文字', '点赞', '照片数']];
     data.rows.forEach((r) => detail.push([
-      r.date, r.nickname, r.task, STATUS_TEXT[r.status] || r.status, r.time || '', r.note || '', r.photos || 0
+      r.date, r.nickname, r.task, STATUS_TEXT[r.status] || r.status, r.time || '', r.note || '', r.likes || 0, r.photos || 0
     ]));
     const ws2 = XLSX.utils.aoa_to_sheet(detail);
-    ws2['!cols'] = [{ wch: 12 }, { wch: 10 }, { wch: 16 }, { wch: 8 }, { wch: 10 }, { wch: 40 }, { wch: 8 }];
+    ws2['!cols'] = [{ wch: 12 }, { wch: 10 }, { wch: 16 }, { wch: 8 }, { wch: 10 }, { wch: 40 }, { wch: 8 }, { wch: 8 }];
     XLSX.utils.book_append_sheet(wb, ws2, '明细');
 
     const out = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
@@ -246,8 +247,8 @@
 
     children.push(new Paragraph({ text: '明细', heading: HeadingLevel.HEADING_1 }));
     children.push(table(
-      ['日期', '成员', '任务', '状态', '时间'],
-      data.rows.slice(0, 300).map((r) => [r.date, r.nickname, r.task, STATUS_TEXT[r.status] || r.status, r.time || ''])
+      ['日期', '成员', '任务', '状态', '时间', '点赞'],
+      data.rows.slice(0, 300).map((r) => [r.date, r.nickname, r.task, STATUS_TEXT[r.status] || r.status, r.time || '', r.likes || 0])
     ));
 
     children.push(new Paragraph({

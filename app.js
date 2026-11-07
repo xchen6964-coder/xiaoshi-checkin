@@ -1427,7 +1427,7 @@
 
   function reportState() {
     if (!state.report) {
-      state.report = { range: '7', start: isoDaysAgo(6), end: isoDaysAgo(0), payload: null, summary: '', busy: false, error: '' };
+      state.report = { range: '7', start: isoDaysAgo(6), end: isoDaysAgo(0), payload: null, summary: '', busy: false, error: '', detailAll: false };
     }
     return state.report;
   }
@@ -1494,6 +1494,9 @@
       return;
     }
     const m = r.payload.metrics;
+    const rows = r.payload.rows || [];
+    const shown = r.detailAll ? rows : rows.slice(0, 30);
+    const stText = (s) => ({ on_time: '按时', late: '补记', excused: '豁免' }[s] || s);
     box.innerHTML = `
       <div class="card">
         <div class="card-head"><h2>${esc(r.start)} ~ ${esc(r.end)}</h2><span class="meta">${m.days} 天 · ${m.members} 人</span></div>
@@ -1533,6 +1536,30 @@
       </div>
 
       <div class="card">
+        <div class="card-head"><h2>明细</h2><span class="meta">${rows.length} 条${r.detailAll || rows.length <= 30 ? '' : ` · 显示最近 30 条`}</span></div>
+        ${rows.length ? `
+        <div class="tbl-wrap">
+          <table class="matrix detail-table">
+            <thead><tr><th>日期</th><th>成员</th><th>任务</th><th>状态</th><th>时间</th><th>赞</th><th>照片</th></tr></thead>
+            <tbody>
+              ${shown.map((x) => `
+                <tr>
+                  <td>${esc(x.date.slice(5))}</td>
+                  <td>${esc(x.nickname)}</td>
+                  <td>${esc(x.task)}</td>
+                  <td><span class="st ${x.status}">${stText(x.status)}</span></td>
+                  <td>${esc(x.time || '')}</td>
+                  <td>${x.likes || 0}</td>
+                  <td>${x.photos || 0}</td>
+                </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+        ${rows.length > 30 ? `<button class="btn ghost block" data-act="detail-all" style="margin-top:12px">${r.detailAll ? '收起到 30 条' : `显示全部 ${rows.length} 条`}</button>` : ''}
+        ` : '<p class="rail-empty">这个区间还没有打卡记录。</p>'}
+      </div>
+
+      <div class="card">
         <div class="card-head"><h2>导出</h2><span class="meta">${r.payload.rows.length} 条明细</span></div>
         <div class="export-grid">
           <button class="btn ghost small" data-act="export" data-fmt="html">HTML</button>
@@ -1563,7 +1590,7 @@
     const span = Math.round((new Date(r.end) - new Date(r.start)) / 86400000) + 1;
     if (span > 92) { r.error = '一次最多统计 92 天'; return; }
 
-    r.busy = true; r.error = ''; r.summary = '';
+    r.busy = true; r.error = ''; r.summary = ''; r.detailAll = false;
     renderReport(document.getElementById('view'));
 
     try {
@@ -1592,6 +1619,12 @@
     }
     const photoMap = {};
     atts.forEach((a) => { (photoMap[a.checkin_id] = photoMap[a.checkin_id] || []).push(a.path); });
+
+    const likeMap = {};
+    if (rowsRaw.length) {
+      const lr = await cloud.database.from('likes').select('checkin_id').in('checkin_id', rowsRaw.map((c) => c.id));
+      (lr.data || []).forEach((l) => { likeMap[l.checkin_id] = (likeMap[l.checkin_id] || 0) + 1; });
+    }
 
     const days = eachDate(start, end);
     const tasks = state.tasks;
@@ -1654,6 +1687,7 @@
         status: c.status,
         time: timeOf(c.done_at),
         note: c.note || '',
+        likes: likeMap[c.id] || 0,
         photos: (photoMap[c.id] || []).length,
         paths: photoMap[c.id] || []
       }));
@@ -1849,6 +1883,7 @@
     if (act === 'del-checkin') return delCheckin(el.dataset.checkin);
     if (act === 'open-notifs') return openNotifications();
     if (act === 'run-report') return runReport();
+    if (act === 'detail-all') { const rr = reportState(); rr.detailAll = !rr.detailAll; return paintReportBody(); }
     if (act === 'gen-summary') return generateSummary();
     if (act === 'export') return exportReport(el.dataset.fmt);
     if (act === 'open-custom') return openCustomSheet();
