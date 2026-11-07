@@ -187,6 +187,7 @@ a { color: inherit; text-decoration: none; }
 }
 .chip.warn { background: var(--warn-soft); color: #D97028; }
 .chip.plain { background: #EEF2F7; color: var(--muted); }
+.chips-line { display: flex; flex-wrap: wrap; gap: 6px; margin: -4px 0 12px; }
 
 /* 任务行 */
 .task {
@@ -235,6 +236,9 @@ a { color: inherit; text-decoration: none; }
 .matrix { width: 100%; border-collapse: collapse; font-size: 12.5px; }
 .matrix th, .matrix td { padding: 9px 4px; text-align: center; border-bottom: 1px solid #F1F5F9; }
 .matrix th { font-weight: 500; color: var(--muted); font-size: 11.5px; }
+.matrix th .th-dl { font-weight: 400; font-size: 10px; }
+.matrix th .th-n { font-weight: 400; font-size: 10px; color: var(--brand-ink); font-variant-numeric: tabular-nums; }
+.matrix td.td-n { color: var(--brand-ink); font-size: 11.5px; font-variant-numeric: tabular-nums; }
 .matrix td:first-child, .matrix th:first-child { text-align: left; padding-left: 2px; }
 .matrix .name { display: flex; align-items: center; gap: 7px; }
 .dot-mark {
@@ -270,6 +274,7 @@ a { color: inherit; text-decoration: none; }
 .note .like.on { background: #fff; color: #E5484D; font-weight: 700; }
 #view .seg { margin: 4px 0 10px; }
 .strip { display: flex; gap: 6px; flex-wrap: wrap; margin: 0 0 14px; }
+.wall-gap { font-size: 12.5px; color: var(--muted); margin: 0 0 8px; }
 .strip-p { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font-size: 11px; background: #E3E9F2; color: #64748B; }
 .strip-p.on { background: var(--brand); color: #fff; }
 .wall-day { font-size: 12px; font-weight: 500; color: var(--muted); margin: 16px 0 8px; }
@@ -556,7 +561,7 @@ textarea.input { height: auto; min-height: 96px; padding: 12px 14px; resize: ver
 .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
 .kpi { background: #F7FAFF; border: 1px solid #E3EEF8; border-radius: 12px; padding: 12px 14px; }
 .kpi b { display: block; font-size: 20px; font-variant-numeric: tabular-nums; letter-spacing: -.4px; }
-.kpi span { font-size: 11px; color: var(--muted); }
+.kpi span { display: block; font-size: 11px; line-height: 1.45; color: var(--muted); }
 .summary-box {
   background: #F7FBFA; border-left: 3px solid var(--brand); border-radius: 0 10px 10px 0;
   padding: 12px 14px; font-size: 13.5px; line-height: 1.8; white-space: pre-wrap;
@@ -566,9 +571,10 @@ textarea.input { height: auto; min-height: 96px; padding: 12px 14px; resize: ver
 .stat-name { flex: none; width: 88px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .stat-bar { flex: 1; height: 6px; border-radius: 3px; background: #EEF2F7; overflow: hidden; }
 .stat-bar i { display: block; height: 100%; background: var(--brand); border-radius: 3px; }
-.stat-val { flex: none; width: 52px; text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); }
+.stat-val { flex: none; width: 46px; text-align: right; font-variant-numeric: tabular-nums; color: var(--muted); }
+.stat-n { flex: none; width: 58px; text-align: right; font-variant-numeric: tabular-nums; color: var(--ink); font-size: 12px; }
 .export-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
-@media (max-width: 420px) { .kpis { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { .kpis { grid-template-columns: repeat(2, 1fr); } }
 
 /* 手机端底部只保留四个主入口，管理/报告收进「我的」 */
 @media (max-width: 1023px) {

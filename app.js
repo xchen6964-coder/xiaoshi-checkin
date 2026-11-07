@@ -613,6 +613,29 @@
     return d.toLocaleDateString('sv-SE', { timeZone: 'Asia/Shanghai' });
   }
 
+  function dateAdd(iso, days) {
+    const d = new Date(iso + 'T00:00:00+08:00');
+    d.setDate(d.getDate() + days);
+    return d.toLocaleDateString('sv-SE', { timeZone: 'Asia/Shanghai' });
+  }
+
+  // 昨天同一时刻之前的打卡条数；昨天不在本周范围内（周一）时返回 null
+  function prevSameTimeCount() {
+    const yKey = dateOffset(-1);
+    if (yKey < weekStart()) return null;
+    const nowStr = nowHM();
+    return state.weekCheckins.filter((c) => c.task_id && c.date === yKey && timeOf(c.done_at) <= nowStr).length;
+  }
+
+  function compareChip(todayCount) {
+    const y = prevSameTimeCount();
+    if (y === null || (!todayCount && !y)) return '';
+    const diff = todayCount - y;
+    const cls = diff > 0 ? '' : diff < 0 ? ' warn' : ' plain';
+    const txt = diff === 0 ? '与昨日此刻持平' : `${diff > 0 ? '+' : ''}${diff} 较昨日此刻`;
+    return `<span class="chip${cls}">${txt}</span>`;
+  }
+
   function renderToday(root) {
     const done = myToday().length;
     const total = state.tasks.length;
@@ -627,21 +650,8 @@
     }).length : 0;
     const gap = state.members.length - fullDone;
 
-    // 较昨日此刻：只比到同一时刻，避免早上一打开就显示「-13」
-    const yKey = dateOffset(-1);
-    const inWeek = yKey >= weekStart();
-    const nowStr = nowHM();
-    const yCount = inWeek
-      ? state.weekCheckins.filter((c) => c.task_id && c.date === yKey && timeOf(c.done_at) <= nowStr).length
-      : null;
     const todayCount = taskCheckins.length;
-    let cmpHTML = '';
-    if (yCount !== null && (todayCount || yCount)) {
-      const diff = todayCount - yCount;
-      const cls = diff > 0 ? '' : diff < 0 ? ' warn' : ' plain';
-      const txt = diff === 0 ? '与昨日此刻持平' : `${diff > 0 ? '+' : ''}${diff} 较昨日此刻`;
-      cmpHTML = `<span class="chip${cls}">${txt}</span>`;
-    }
+    const cmpHTML = compareChip(todayCount);
 
     root.innerHTML = `
       <div class="topbar">
@@ -1177,6 +1187,12 @@
         <button data-act="wall-tab" data-tab="today" class="${state.wallTab === 'today' ? 'on' : ''}">今天</button>
         <button data-act="wall-tab" data-tab="week" class="${state.wallTab === 'week' ? 'on' : ''}">本周</button>
       </div>
+      ${(() => {
+        const posted = doneSet.size;
+        const totalM = state.members.length;
+        const txt = posted === 0 ? '今天还没人打卡' : posted >= totalM ? `今天 ${totalM} 人都打了卡` : `今天 ${posted}/${totalM} 人已打卡 · 还差 ${totalM - posted} 人`;
+        return `<div class="wall-gap">${txt}</div>`;
+      })()}
       <div class="strip">
         ${state.members.map((m) => `<span class="strip-p ${doneSet.has(m.id) ? 'on' : ''}" title="${esc(m.nickname)}">${avatarInner(m.nickname, m.avatar_url)}</span>`).join('')}
       </div>
@@ -1237,6 +1253,10 @@
       return '<span class="dot-mark ok">✓</span>';
     };
     const doneCount = members.filter((m) => tasks.length && tasks.every((t) => state.todayCheckins.some((c) => c.user_id === m.id && c.task_id === t.id))).length;
+    const taskDone = (tid) => state.todayCheckins.filter((c) => c.task_id === tid).length;
+    const userDone = (uid) => state.todayCheckins.filter((c) => c.user_id === uid && c.task_id).length;
+    const cmp = compareChip(state.todayCheckins.filter((c) => c.task_id).length);
+    const gap = members.length - doneCount;
 
     root.innerHTML = `
       <div class="topbar">
@@ -1246,18 +1266,20 @@
 
       <div class="card">
         <div class="card-head">
-          <h2>全组 ${doneCount}/${members.length} 人做完</h2>
-          <span class="meta">${tasks.length} 项任务</span>
+          <h2>${tasks.length === 0 ? `${members.length} 人在组` : gap === 0 ? '全员已交齐' : `还差 ${gap} 人交齐`}</h2>
+          <span class="meta">${doneCount}/${members.length} 人 · ${tasks.length} 项</span>
         </div>
+        ${cmp ? `<div class="chips-line">${cmp}</div>` : ''}
         ${tasks.length === 0 ? `<div class="empty"><b>还没有任务</b>去管理里加一条。</div>` : `
         <div class="tbl-wrap">
           <table class="matrix">
-            <thead><tr><th>成员</th>${tasks.map((t) => `<th>${esc(t.title)}<br><span style="font-weight:400;font-size:10px">${parseHM(t.deadline_time)}</span></th>`).join('')}</tr></thead>
+            <thead><tr><th>成员</th>${tasks.map((t) => `<th>${esc(t.title)}<br><span class="th-dl">${parseHM(t.deadline_time)}</span><br><span class="th-n">${taskDone(t.id)}/${members.length}</span></th>`).join('')}<th>完成</th></tr></thead>
             <tbody>
               ${members.map((m) => `
                 <tr>
                   <td><span class="name"><span class="avatar" style="width:24px;height:24px;font-size:11px">${avatarInner(m.nickname, m.avatar_url)}</span>${esc(m.nickname)}</span></td>
                   ${tasks.map((t) => `<td>${cell(m.id, t.id)}</td>`).join('')}
+                  <td class="td-n">${userDone(m.id)}/${tasks.length}</td>
                 </tr>`).join('')}
             </tbody>
           </table>
@@ -1340,6 +1362,11 @@
     const onTimeCount = mine.filter((c) => c.status === 'on_time').length;
     const rate = total ? Math.round((onTimeCount / total) * 100) : null;
 
+    const ws = weekStart();
+    const thisWeek = mine.filter((c) => c.date >= ws && c.date <= todayStr()).length;
+    const lastWeek = mine.filter((c) => c.date >= dateAdd(ws, -7) && c.date < ws).length;
+    const wDiff = thisWeek - lastWeek;
+
     const cnt = {};
     mine.forEach((c) => { cnt[c.date] = (cnt[c.date] || 0) + 1; });
     const startMs = nowD.getTime() - (dow + 28) * 86400000;
@@ -1368,15 +1395,16 @@
       </div>
 
       <div class="card">
-        <div class="kpis three">
+        <div class="kpis">
           <div class="kpi"><b>${streak}</b><span>连续天数</span></div>
           <div class="kpi"><b>${total}</b><span>总打卡</span></div>
           <div class="kpi"><b>${rate == null ? '—' : rate + '%'}</b><span>按时率</span></div>
+          <div class="kpi"><b>${thisWeek}</b><span>本周 · ${wDiff === 0 ? '与上周持平' : `较上周 ${wDiff > 0 ? '+' : ''}${wDiff}`}</span></div>
         </div>
         <div class="heat">
           ${heatCells.map((x) => `<i class="heat-c h${x.lvl}${x.future ? ' fut' : ''}" title="${x.d}${x.n ? ' · ' + x.n + ' 条' : ' · 没打卡'}"></i>`).join('')}
         </div>
-        <p class="hint" style="margin:10px 0 0">最近 5 周。颜色越深，当天打卡越多；灰色是没打卡。</p>
+        <p class="hint" style="margin:10px 0 0">最近 5 周，${heatCells.filter((x) => x.n > 0).length} 天有打卡。颜色越深，当天打卡越多；灰色是没打卡。</p>
       </div>
 
       <div class="card">
@@ -1884,6 +1912,7 @@
             <span class="stat-name">${esc(x.name)}</span>
             <span class="stat-bar"><i style="width:${Math.round((x.rate || 0) * 100)}%"></i></span>
             <span class="stat-val">${pctText(x.rate)}</span>
+            <span class="stat-n">${x.done}/${x.expected}</span>
           </div>`).join('')}
       </div>
 
@@ -1894,6 +1923,7 @@
             <span class="stat-name">${esc(x.title)}</span>
             <span class="stat-bar"><i style="width:${Math.round((x.rate || 0) * 100)}%"></i></span>
             <span class="stat-val">${pctText(x.rate)}</span>
+            <span class="stat-n">${x.done}/${x.expected}</span>
           </div>`).join('')}
       </div>
 

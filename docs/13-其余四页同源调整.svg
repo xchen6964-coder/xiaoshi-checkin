@@ -1,0 +1,106 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1240" height="820" viewBox="0 0 1240 820" font-family="PingFang SC,Hiragino Sans GB,Microsoft YaHei,sans-serif">
+  <defs>
+    <pattern id="p-dot" width="22" height="22" patternUnits="userSpaceOnUse">
+      <circle cx="1" cy="1" r="1" fill="#D7E0EC"/>
+    </pattern>
+  </defs>
+  <rect width="1240" height="820" fill="#F1F4F9"/>
+  <rect width="1240" height="820" fill="url(#p-dot)" opacity="0.8"/>
+
+  <text x="70" y="58" font-size="26" font-weight="700" fill="#0F172A">其余四页 · 同源调整清单</text>
+  <text x="70" y="86" font-size="14" fill="#64748B">原则同今日页：把「总量」换成「缺口」，把数字标到具体对象上。不动配色、断点、卡片结构。</text>
+
+  <rect x="70" y="108" width="520" height="300" rx="14" fill="#FFFFFF" stroke="#E3E9F2"/>
+  <text x="94" y="140" font-size="16" font-weight="700" fill="#0F172A">① 进度页</text>
+  <text x="94" y="168" font-size="12.5" fill="#334155">卡片头换成缺口口径，与今日页 hero 一致。</text>
+
+  <rect x="94" y="182" width="472" height="52" rx="10" fill="#F7FAFF" stroke="#E3EEF8"/>
+  <text x="108" y="204" font-size="11" fill="#94A3B8">改前</text>
+  <text x="152" y="204" font-size="13" fill="#64748B">全组 4/6 人做完</text>
+  <text x="108" y="224" font-size="11" fill="#94A3B8">改后</text>
+  <text x="152" y="224" font-size="15" font-weight="700" fill="#0F172A">还差 2 人交齐</text>
+  <rect x="268" y="212" width="92" height="17" rx="9" fill="#E7F8F5"/>
+  <text x="314" y="224" font-size="10" fill="#0E9C8E" text-anchor="middle">+1 较昨日此刻</text>
+
+  <text x="94" y="262" font-size="12.5" fill="#334155">矩阵补两个维度的完成数，同今日页点阵的分母：</text>
+  <rect x="94" y="274" width="472" height="62" rx="10" fill="#FFFFFF" stroke="#F1F5F9"/>
+  <text x="108" y="294" font-size="11" fill="#64748B">成员</text>
+  <text x="206" y="294" font-size="11" fill="#64748B">早起</text>
+  <text x="286" y="294" font-size="11" fill="#64748B">日精进</text>
+  <text x="376" y="294" font-size="11" fill="#64748B">运动</text>
+  <text x="470" y="294" font-size="11" fill="#64748B">完成</text>
+  <text x="206" y="312" font-size="10" fill="#12B5A5">5/6</text>
+  <text x="286" y="312" font-size="10" fill="#12B5A5">5/6</text>
+  <text x="376" y="312" font-size="10" fill="#12B5A5">4/6</text>
+  <text x="108" y="330" font-size="12" fill="#334155">阿岚</text>
+  <circle cx="196" cy="326" r="7" fill="#12B5A5"/><circle cx="276" cy="326" r="7" fill="#12B5A5"/><circle cx="366" cy="326" r="7" fill="#E2E8F0"/>
+  <text x="470" y="330" font-size="11" fill="#64748B">2/3</text>
+  <text x="94" y="356" font-size="11.5" fill="#94A3B8">列头下加「该项 5/6 人」，行末加「本人 2/3 项」。</text>
+  <text x="94" y="380" font-size="11.5" fill="#94A3B8">数据现成，不新增查询。</text>
+
+  <rect x="650" y="108" width="520" height="300" rx="14" fill="#FFFFFF" stroke="#E3E9F2"/>
+  <text x="674" y="140" font-size="16" font-weight="700" fill="#0F172A">② 打卡墙</text>
+  <text x="674" y="168" font-size="12.5" fill="#334155">头像环上方加一行缺口文字，跟今日页一句口径。</text>
+
+  <rect x="674" y="182" width="472" height="118" rx="10" fill="#F7FAFF" stroke="#E3EEF8"/>
+  <text x="688" y="206" font-size="11" fill="#94A3B8">改后多这一行</text>
+  <text x="688" y="228" font-size="13" font-weight="600" fill="#0F172A">今天 5/6 人已贴 · 还差 1 人</text>
+  <g>
+    <circle cx="700" cy="258" r="13" fill="#E7F8F5" stroke="#BFEDE6"/><text x="700" y="262" font-size="10" fill="#0E9C8E" text-anchor="middle">岚</text>
+    <circle cx="732" cy="258" r="13" fill="#E7F8F5" stroke="#BFEDE6"/><text x="732" y="262" font-size="10" fill="#0E9C8E" text-anchor="middle">满</text>
+    <circle cx="764" cy="258" r="13" fill="#E7F8F5" stroke="#BFEDE6"/><text x="764" y="262" font-size="10" fill="#0E9C8E" text-anchor="middle">陈</text>
+    <circle cx="796" cy="258" r="13" fill="#E7F8F5" stroke="#BFEDE6"/><text x="796" y="262" font-size="10" fill="#0E9C8E" text-anchor="middle">喜</text>
+    <circle cx="828" cy="258" r="13" fill="#E7F8F5" stroke="#BFEDE6"/><text x="828" y="262" font-size="10" fill="#0E9C8E" text-anchor="middle">玥</text>
+    <circle cx="860" cy="258" r="13" fill="#F1F5F9"/><text x="860" y="262" font-size="10" fill="#94A3B8" text-anchor="middle">熊</text>
+    <text x="890" y="262" font-size="11" fill="#94A3B8">← 就是现在这排头像</text>
+  </g>
+  <text x="674" y="326" font-size="11.5" fill="#94A3B8">不再单独加控件，只是把头像环的含义写成一句话。</text>
+  <text x="674" y="350" font-size="11.5" fill="#94A3B8">点亮的头像已经是「今天交过」，之前没人看得懂。</text>
+
+  <rect x="70" y="428" width="520" height="300" rx="14" fill="#FFFFFF" stroke="#E3E9F2"/>
+  <text x="94" y="460" font-size="16" font-weight="700" fill="#0F172A">③ 我的</text>
+  <text x="94" y="488" font-size="12.5" fill="#334155">KPI 从三块加到四块，补「本周」这一格。</text>
+
+  <rect x="94" y="502" width="472" height="58" rx="10" fill="#F7FAFF" stroke="#E3EEF8"/>
+  <rect x="106" y="512" width="104" height="38" rx="8" fill="#FFFFFF" stroke="#E3EEF8"/>
+  <text x="158" y="528" font-size="15" font-weight="700" fill="#0F172A" text-anchor="middle">18</text>
+  <text x="158" y="543" font-size="10" fill="#64748B" text-anchor="middle">连续天数</text>
+  <rect x="216" y="512" width="104" height="38" rx="8" fill="#FFFFFF" stroke="#E3EEF8"/>
+  <text x="268" y="528" font-size="15" font-weight="700" fill="#0F172A" text-anchor="middle">42</text>
+  <text x="268" y="543" font-size="10" fill="#64748B" text-anchor="middle">总打卡</text>
+  <rect x="326" y="512" width="104" height="38" rx="8" fill="#FFFFFF" stroke="#E3EEF8"/>
+  <text x="378" y="528" font-size="15" font-weight="700" fill="#0F172A" text-anchor="middle">93%</text>
+  <text x="378" y="543" font-size="10" fill="#64748B" text-anchor="middle">按时率</text>
+  <rect x="436" y="512" width="118" height="38" rx="8" fill="#E7F8F5" stroke="#BFEDE6"/>
+  <text x="495" y="528" font-size="15" font-weight="700" fill="#0E9C8E" text-anchor="middle">9 条</text>
+  <text x="495" y="543" font-size="10" fill="#0E9C8E" text-anchor="middle">本周 · 较上周 +2</text>
+  <text x="94" y="590" font-size="11.5" fill="#94A3B8">「本周」用 myCheckins 里最近 7 天算，较上周是同一口径的 7 天。</text>
+  <text x="94" y="614" font-size="11.5" fill="#94A3B8">热力图下面那行说明补一句「近 5 周 N 天有打卡」。</text>
+  <text x="94" y="646" font-size="11.5" fill="#94A3B8">代价：KPI 四块在 390 宽会挤，需要 `.kpis` 允许两列换行。</text>
+  <text x="94" y="670" font-size="11.5" fill="#94A3B8">这条会动一点布局，是四页里唯一要改结构的。</text>
+
+  <rect x="650" y="428" width="520" height="300" rx="14" fill="#FFFFFF" stroke="#E3E9F2"/>
+  <text x="674" y="460" font-size="16" font-weight="700" fill="#0F172A">④ 报告</text>
+  <text x="674" y="488" font-size="12.5" fill="#334155">成员 / 任务条形右侧补条数，百分比后面加分母。</text>
+
+  <rect x="674" y="502" width="472" height="96" rx="10" fill="#F7FAFF" stroke="#E3EEF8"/>
+  <text x="688" y="526" font-size="12" fill="#334155">阿岚</text>
+  <rect x="740" y="518" width="240" height="7" rx="4" fill="#EEF2F7"/>
+  <rect x="740" y="518" width="212" height="7" rx="4" fill="#12B5A5"/>
+  <text x="992" y="526" font-size="11" fill="#64748B">88%</text>
+  <text x="1030" y="526" font-size="11" font-weight="700" fill="#0F172A">14/16</text>
+  <text x="688" y="552" font-size="12" fill="#334155">小满</text>
+  <rect x="740" y="544" width="240" height="7" rx="4" fill="#EEF2F7"/>
+  <rect x="740" y="544" width="168" height="7" rx="4" fill="#12B5A5"/>
+  <text x="992" y="552" font-size="11" fill="#64748B">70%</text>
+  <text x="1030" y="552" font-size="11" font-weight="700" fill="#0F172A">11/16</text>
+  <text x="688" y="582" font-size="11" fill="#94A3B8">右列改成「百分比 · 条数/总条数」，比只有一个百分比更能看出差多少。</text>
+  <text x="674" y="626" font-size="11.5" fill="#94A3B8">不加「较上期」——那要给上一时间段再算一遍，等于两次统计。</text>
+  <text x="674" y="650" font-size="11.5" fill="#94A3B8">想要也可以做，代价是报告生成时间翻倍，你定。</text>
+
+  <rect x="70" y="748" width="1100" height="52" rx="12" fill="#FFFFFF" stroke="#E3E9F2"/>
+  <text x="94" y="772" font-size="13" font-weight="600" fill="#0F172A">管理页不动</text>
+  <text x="196" y="772" font-size="12.5" fill="#64748B">它是表单和成员列表，没有可对比的指标；往上加数字只会变吵。</text>
+
+  <text x="94" y="792" font-size="11.5" fill="#94A3B8">确认后我一次落四页，给 390 / 1080 / 1440 三档截图，再问你是否发布。</text>
+</svg>
