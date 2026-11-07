@@ -37,6 +37,8 @@
     notifications: [],
     likes: [],
     handovers: [],
+    myCheckins: [],
+    avatarUrls: {},
     wallTab: 'today',
     unread: 0,
     pendingPhotos: [],
@@ -67,6 +69,11 @@
 
   function initials(name) {
     return esc(String(name || '?').slice(0, 1));
+  }
+
+  function avatarInner(name, path) {
+    const url = path ? (state.avatarUrls[path] || '') : '';
+    return url ? `<img src="${url}" alt="">` : initials(name);
   }
 
   function openSheet(title, html) {
@@ -164,7 +171,7 @@
     const day = todayStr();
     const [tasksRes, membersRes, todayRes, weekRes] = await Promise.all([
       cloud.database.from('tasks').select('*').eq('group_id', gid).eq('archived', false).order('position', { ascending: true }),
-      cloud.database.from('users').select('id,nickname,role,active,created_at').eq('group_id', gid).eq('active', true).order('created_at', { ascending: true }),
+      cloud.database.from('users').select('id,nickname,role,active,created_at,avatar_url').eq('group_id', gid).eq('active', true).order('created_at', { ascending: true }),
       cloud.database.from('checkins').select('*').eq('group_id', gid).eq('date', day),
       cloud.database.from('checkins').select('*').eq('group_id', gid).gte('date', weekStart()).order('done_at', { ascending: false })
     ]);
@@ -184,7 +191,27 @@
     const { data: hData, error: hErr } = await cloud.database.from('handovers').select('*').eq('group_id', gid).eq('status', 'pending');
     if (hErr) console.error('[handovers]', hErr);
     state.handovers = hData || [];
+    const { data: mineData, error: mineErr } = await cloud.database.from('checkins').select('date,status').eq('group_id', gid).eq('user_id', state.me.id);
+    if (mineErr) console.error('[mycheckins]', mineErr);
+    state.myCheckins = mineData || [];
+    await loadAvatarUrls();
     await refreshNotifications();
+  }
+
+  async function loadAvatarUrls() {
+    state.avatarUrls = {};
+    const paths = [...new Set((state.members || []).map((m) => m.avatar_url).filter(Boolean))];
+    if (!paths.length) return;
+    try {
+      const res = await cloud.storage.createSignedUrls(paths, 3600);
+      const arr = Array.isArray(res && res.data) ? res.data : ((res && res.data && res.data.data) || []);
+      arr.forEach((x) => {
+        const key = x.path || x.name;
+        if (key) state.avatarUrls[key] = x.signedUrl || x.signed_url || x.url || '';
+      });
+    } catch (err) {
+      console.error('[avatar-url]', err);
+    }
   }
 
   async function refreshNotifications() {
@@ -521,7 +548,7 @@
             ${nav.map((n) => `<a href="#/${n.key}" data-nav="${n.key}" class="${state.view === n.key ? 'on' : ''}"><span class="ico">${n.icon}</span>${n.label}</a>`).join('')}
           </div>
           <div class="side-foot">
-            <div class="avatar">${initials(state.me.nickname)}</div>
+            <div class="avatar">${avatarInner(state.me.nickname, state.me.avatar_url)}</div>
             <div><b>${esc(state.me.nickname)}</b><span>${roleLabel(state.me.role)}</span></div>
           </div>
         </nav>
@@ -595,7 +622,7 @@
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg>
             ${state.unread ? `<i>${state.unread > 9 ? '9+' : state.unread}</i>` : ''}
           </button>
-          <div class="avatar">${initials(state.me.nickname)}</div>
+          <div class="avatar">${avatarInner(state.me.nickname, state.me.avatar_url)}</div>
         </div>
       </div>
 
@@ -983,14 +1010,14 @@
     root.innerHTML = `
       <div class="topbar">
         <div><div class="day">${state.wallTab === 'today' ? fmtDateCn(todayStr()) : '本周'}</div><h1>打卡墙</h1></div>
-        <div class="avatar">${initials(state.me.nickname)}</div>
+        <div class="avatar">${avatarInner(state.me.nickname, state.me.avatar_url)}</div>
       </div>
       <div class="seg">
         <button data-act="wall-tab" data-tab="today" class="${state.wallTab === 'today' ? 'on' : ''}">今天</button>
         <button data-act="wall-tab" data-tab="week" class="${state.wallTab === 'week' ? 'on' : ''}">本周</button>
       </div>
       <div class="strip">
-        ${state.members.map((m) => `<span class="strip-p ${doneSet.has(m.id) ? 'on' : ''}" title="${esc(m.nickname)}">${initials(m.nickname)}</span>`).join('')}
+        ${state.members.map((m) => `<span class="strip-p ${doneSet.has(m.id) ? 'on' : ''}" title="${esc(m.nickname)}">${avatarInner(m.nickname, m.avatar_url)}</span>`).join('')}
       </div>
       ${body}
     `;
@@ -1068,7 +1095,7 @@
             <tbody>
               ${members.map((m) => `
                 <tr>
-                  <td><span class="name"><span class="avatar" style="width:24px;height:24px;font-size:11px">${initials(m.nickname)}</span>${esc(m.nickname)}</span></td>
+                  <td><span class="name"><span class="avatar" style="width:24px;height:24px;font-size:11px">${avatarInner(m.nickname, m.avatar_url)}</span>${esc(m.nickname)}</span></td>
                   ${tasks.map((t) => `<td>${cell(m.id, t.id)}</td>`).join('')}
                 </tr>`).join('')}
             </tbody>
@@ -1137,18 +1164,58 @@
 
   /* ---------- 我的 ---------- */
   function renderMe(root) {
-    const mine = state.weekCheckins.filter((c) => c.user_id === state.me.id);
+    const mine = state.myCheckins || [];
+    const daySet = new Set(mine.map((c) => c.date));
+    const nowD = new Date(todayStr() + 'T00:00:00+08:00');
+    const dow = (nowD.getDay() + 6) % 7;
+    let cur = new Date(nowD.getTime());
+    if (!daySet.has(todayStr())) cur = new Date(nowD.getTime() - 86400000);
+    let streak = 0;
+    while (streak < 1000 && daySet.has(cur.toLocaleDateString('sv-SE', { timeZone: 'Asia/Shanghai' }))) {
+      streak += 1;
+      cur = new Date(cur.getTime() - 86400000);
+    }
+    const total = mine.length;
+    const onTimeCount = mine.filter((c) => c.status === 'on_time').length;
+    const rate = total ? Math.round((onTimeCount / total) * 100) : null;
+
+    const cnt = {};
+    mine.forEach((c) => { cnt[c.date] = (cnt[c.date] || 0) + 1; });
+    const startMs = nowD.getTime() - (dow + 28) * 86400000;
+    const heatCells = [];
+    for (let i = 0; i < 35; i++) {
+      const d = new Date(startMs + i * 86400000).toLocaleDateString('sv-SE', { timeZone: 'Asia/Shanghai' });
+      const n = cnt[d] || 0;
+      heatCells.push({ d, n, lvl: n >= 3 ? 3 : n === 2 ? 2 : n === 1 ? 1 : 0, future: i > 28 + dow });
+    }
+
     root.innerHTML = `
       <div class="topbar">
         <div><div class="day">${esc(state.group.name)}</div><h1>我的</h1></div>
-        <div class="avatar">${initials(state.me.nickname)}</div>
+      </div>
+
+      <div class="card me-card">
+        <label class="me-avatar" for="me-avatar-file" title="点头像换一张">
+          ${avatarInner(state.me.nickname, state.me.avatar_url)}
+          <i class="me-avatar-edit">换</i>
+        </label>
+        <input type="file" id="me-avatar-file" accept="image/*" hidden>
+        <div class="me-info">
+          <b>${esc(state.me.nickname)}</b>
+          <span>${roleLabel(state.me.role)} · ${(state.me.created_at || '').slice(0, 10)} 加入</span>
+        </div>
       </div>
 
       <div class="card">
-        <div class="list-row"><span class="label">昵称</span><span class="val">${esc(state.me.nickname)}</span></div>
-        <div class="list-row"><span class="label">身份</span><span class="val">${roleLabel(state.me.role)}</span></div>
-        <div class="list-row"><span class="label">本周打卡</span><span class="val">${mine.length} 条</span></div>
-        <div class="list-row"><span class="label">加入时间</span><span class="val">${(state.me.created_at || '').slice(0, 10)}</span></div>
+        <div class="kpis three">
+          <div class="kpi"><b>${streak}</b><span>连续天数</span></div>
+          <div class="kpi"><b>${total}</b><span>总打卡</span></div>
+          <div class="kpi"><b>${rate == null ? '—' : rate + '%'}</b><span>按时率</span></div>
+        </div>
+        <div class="heat">
+          ${heatCells.map((x) => `<i class="heat-c h${x.lvl}${x.future ? ' fut' : ''}" title="${x.d}${x.n ? ' · ' + x.n + ' 条' : ' · 没打卡'}"></i>`).join('')}
+        </div>
+        <p class="hint" style="margin:10px 0 0">最近 5 周。颜色越深，当天打卡越多；灰色是没打卡。</p>
       </div>
 
       <div class="card">
@@ -1188,6 +1255,32 @@
 
       <button class="btn ghost block" data-act="logout">退出登录</button>
     `;
+
+    const fileEl = document.getElementById('me-avatar-file');
+    if (fileEl) fileEl.addEventListener('change', onAvatarPick);
+  }
+
+  async function onAvatarPick(e) {
+    const f = (e.target.files || [])[0];
+    e.target.value = '';
+    if (!f) return;
+    if (!f.type.startsWith('image/')) { toast('只支持图片'); return; }
+    toast('正在上传…');
+    try {
+      const blob = await compressImage(f, 256, 0.85);
+      const uid = (state.session && state.session.user && state.session.user.id) || state.me.auth_uid;
+      const path = cloud.storage.sharedPath(uid, `avatar/${Date.now()}.jpg`);
+      const up = await cloud.storage.upload(path, blob, { contentType: 'image/jpeg', cacheControl: '3600' });
+      if (up && up.error) throw up.error;
+      const { data, error } = await cloud.database.from('users').update({ avatar_url: path }).eq('id', state.me.id).select();
+      if (error || !data || !data.length) throw (error || new Error('保存失败'));
+      state.me.avatar_url = path;
+      await refresh();
+      toast('头像已更新');
+    } catch (err) {
+      console.error('[avatar]', err);
+      toast('换头像失败：' + (err.message || '未知错误'));
+    }
   }
 
   /* ---------- 管理 ---------- */
@@ -1254,7 +1347,7 @@
         ${state.members.map((m) => `
           <div class="list-row">
             <div style="display:flex;align-items:center;gap:10px">
-              <span class="avatar" style="width:28px;height:28px;font-size:12px">${initials(m.nickname)}</span>
+              <span class="avatar" style="width:28px;height:28px;font-size:12px">${avatarInner(m.nickname, m.avatar_url)}</span>
               <span>${esc(m.nickname)}</span>
               <span class="chip ${m.role === 'member' ? 'plain' : ''}">${roleLabel(m.role)}</span>
             </div>
