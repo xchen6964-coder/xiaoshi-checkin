@@ -1386,6 +1386,12 @@
           return `<p class="hint" style="margin:12px 0 0">已向 ${esc(who)} 发出交接，等对方在通知里接受。24 小时内有效。</p>`;
         })()}
       </div>
+
+      <div class="card">
+        <div class="card-head"><h2>手机日历提醒</h2></div>
+        <p class="hint" style="margin-top:0">导出一份发到群里，成员各自点开加入手机日历，之后就由手机自己提醒。改了任务要重新发一次。</p>
+        <button class="btn ghost block" data-act="export-ics">导出日历文件</button>
+      </div>
     `;
   }
 
