@@ -296,6 +296,7 @@ a { color: inherit; text-decoration: none; }
 .heat-c.h2 { background: #5DCAA5; }
 .heat-c.h3 { background: #1D9E75; }
 .heat-c.fut { background: transparent; }
+.btn.ghost.danger { color: var(--danger); border-color: #F1C6C8; }
 
 /* 我的 */
 .list-row {

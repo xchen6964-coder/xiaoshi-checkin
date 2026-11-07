@@ -38,6 +38,7 @@
     likes: [],
     handovers: [],
     myCheckins: [],
+    inactive: [],
     avatarUrls: {},
     wallTab: 'today',
     unread: 0,
@@ -169,14 +170,16 @@
   async function loadAll() {
     const gid = state.group.id;
     const day = todayStr();
-    const [tasksRes, membersRes, todayRes, weekRes] = await Promise.all([
+    const [tasksRes, membersRes, inactiveRes, todayRes, weekRes] = await Promise.all([
       cloud.database.from('tasks').select('*').eq('group_id', gid).eq('archived', false).order('position', { ascending: true }),
       cloud.database.from('users').select('id,nickname,role,active,created_at,avatar_url').eq('group_id', gid).eq('active', true).order('created_at', { ascending: true }),
+      cloud.database.from('users').select('id,nickname,role,avatar_url').eq('group_id', gid).eq('active', false).order('created_at', { ascending: false }).limit(50),
       cloud.database.from('checkins').select('*').eq('group_id', gid).eq('date', day),
       cloud.database.from('checkins').select('*').eq('group_id', gid).gte('date', weekStart()).order('done_at', { ascending: false })
     ]);
     state.tasks = tasksRes.data || [];
     state.members = membersRes.data || [];
+    state.inactive = inactiveRes.data || [];
     state.todayCheckins = todayRes.data || [];
     state.weekCheckins = weekRes.data || [];
     const ids = state.weekCheckins.map((c) => c.id);
@@ -933,27 +936,140 @@
     const el = document.getElementById('cs-title');
     const title = el ? el.value.trim() : '';
     if (!title) { toast('写点什么再提交'); return; }
+    const dl = (state.group.custom_deadline || '23:59').slice(0, 5);
+    const late = nowHM() > dl;
     const { error } = await cloud.database.from('checkins').insert({
       group_id: state.group.id,
       user_id: state.me.id,
       task_id: null,
       title,
       date: todayStr(),
-      status: 'on_time'
+      status: late ? 'late' : 'on_time'
     });
     if (error) { toast(error.message || '提交失败'); return; }
     closeSheet();
     await refresh();
-    toast('已记下');
+    toast(late ? '已记下，超过默认截止，标为补记' : '已记下');
   }
 
   async function toggleTask(taskId, checkinId) {
     if (!checkinId) return openCheckinSheet(taskId);
-    if (!confirm('取消这条打卡？记录会被删除。')) return;
-    const { data, error } = await cloud.database.from('checkins').delete().eq('id', checkinId).select();
-    if (error || !data || !data.length) { toast('删除失败，可能不是你的记录'); return; }
+    return openEditSheet(checkinId);
+  }
+
+  function openEditSheet(checkinId) {
+    const c = myToday().find((x) => x.id === checkinId);
+    if (!c) return;
+    const atts = state.attachments[checkinId] || [];
+    state.edit = {
+      id: checkinId,
+      note: c.note || '',
+      keep: atts.map((a) => ({ id: a.id, path: a.path, url: a.url, removed: false })),
+      newPhotos: []
+    };
+    openSheet('编辑打卡', `
+      <div class="field">
+        <label>文字（≤200 字）</label>
+        <textarea class="input" id="ed-note" maxlength="200">${esc(state.edit.note)}</textarea>
+      </div>
+      <div class="field">
+        <label>照片（最多 3 张，可增删）</label>
+        <div class="shots" id="ed-shots"></div>
+        <input type="file" id="ed-file" accept="image/*" multiple hidden>
+      </div>
+      <div class="row-2" style="margin-bottom:12px">
+        <button class="btn" data-act="save-edit" style="flex:1">保存修改</button>
+        <button class="btn ghost danger" data-act="del-checkin" data-checkin="${checkinId}" style="flex:1">删除整条</button>
+      </div>
+    `);
+    paintEditShots();
+    const input = document.getElementById('ed-file');
+    input.addEventListener('change', async (e) => {
+      const files = [...(e.target.files || [])];
+      for (const f of files) {
+        const total = state.edit.keep.filter((k) => !k.removed).length + state.edit.newPhotos.length;
+        if (total >= 3) { toast('最多 3 张'); break; }
+        if (!f.type.startsWith('image/')) continue;
+        try {
+          const blob = await compressImage(f);
+          state.edit.newPhotos.push({ blob, url: URL.createObjectURL(blob) });
+        } catch (err) { toast('这张图读不了'); }
+      }
+      input.value = '';
+      paintEditShots();
+    });
+  }
+
+  function paintEditShots() {
+    const box = document.getElementById('ed-shots');
+    if (!box || !state.edit) return;
+    const kept = state.edit.keep.map((k, i) => ({ ...k, i })).filter((k) => !k.removed);
+    const used = kept.length + state.edit.newPhotos.length;
+    box.innerHTML = kept.map((k) => `
+      <div class="shot-wrap">
+        <img class="shot" src="${k.url}" alt="">
+        <button class="shot-del" data-act="ed-del-keep" data-i="${k.i}" aria-label="移除">✕</button>
+      </div>`).join('')
+      + state.edit.newPhotos.map((p, i) => `
+      <div class="shot-wrap">
+        <img class="shot" src="${p.url}" alt="">
+        <button class="shot-del" data-act="ed-del-new" data-i="${i}" aria-label="移除">✕</button>
+      </div>`).join('')
+      + (used < 3 ? `<label class="shot-add" for="ed-file">＋</label>` : '');
+  }
+
+  async function saveEdit() {
+    const noteEl = document.getElementById('ed-note');
+    const note = noteEl ? noteEl.value.trim() : '';
+    const e = state.edit;
+    if (!e) return;
+    const btn = document.querySelector('[data-act="save-edit"]');
+    if (btn) { btn.disabled = true; btn.textContent = '保存中…'; }
+    const { data, error } = await cloud.database.from('checkins')
+      .update({ note: note || null, updated_at: new Date().toISOString() })
+      .eq('id', e.id).select();
+    if (error || !data || !data.length) {
+      if (btn) { btn.disabled = false; btn.textContent = '保存修改'; }
+      toast((error && error.message) || '保存失败');
+      return;
+    }
+    let failed = 0;
+    for (const k of e.keep.filter((k) => k.removed)) {
+      try {
+        await cloud.database.from('attachments').delete().eq('id', k.id);
+        cloud.storage.remove([k.path]).catch(() => {});
+      } catch (err) { failed += 1; }
+    }
+    const keptCount = e.keep.filter((k) => !k.removed).length;
+    const uid = (state.session && state.session.user && state.session.user.id) || state.me.auth_uid;
+    for (let i = 0; i < e.newPhotos.length; i++) {
+      try {
+        const p = e.newPhotos[i];
+        const path = cloud.storage.sharedPath(uid, `checkins/${todayStr()}/${e.id}/${Date.now()}-${i + 1}.jpg`);
+        const up = await cloud.storage.upload(path, p.blob, { contentType: 'image/jpeg', cacheControl: '3600' });
+        if (up && up.error) throw up.error;
+        const r = await cloud.database.from('attachments').insert({
+          checkin_id: e.id, path, width: p.blob.width || null, height: p.blob.height || null, bytes: p.blob.size || null
+        });
+        if (r.error) throw r.error;
+      } catch (err) { console.error('[edit-upload]', err); failed += 1; }
+    }
+    state.edit = null;
+    closeSheet();
     await refresh();
-    toast('已取消');
+    toast(failed ? `已保存，但有 ${failed} 张照片没处理成功` : '已更新');
+  }
+
+  async function deleteCheckin(checkinId) {
+    if (!confirm('删除这条打卡？不可恢复。')) return;
+    const paths = (state.attachments[checkinId] || []).map((a) => a.path);
+    const { data, error } = await cloud.database.from('checkins').delete().eq('id', checkinId).select();
+    if (error || !data || !data.length) { toast('删除失败'); return; }
+    if (paths.length) cloud.storage.remove(paths).catch(() => {});
+    state.edit = null;
+    closeSheet();
+    await refresh();
+    toast('已删除');
   }
 
   async function refresh() {
@@ -1240,7 +1356,10 @@
         <p class="hint" style="margin-top:0">把这个码发给对方，他登录后选「用邀请码加入」。</p>
         <div class="invite">
           <code>${esc(state.group.invite_code)}</code>
-          <button class="btn ghost small" data-act="copy-invite">复制</button>
+          <span style="display:flex;gap:6px;flex:none">
+            <button class="btn ghost small" data-act="copy-invite">复制</button>
+            ${state.me.role === 'owner' ? `<button class="btn ghost small" data-act="regen-invite">重新生成</button>` : ''}
+          </span>
         </div>
       </div>
 
@@ -1310,6 +1429,7 @@
   /* ---------- 管理 ---------- */
   function renderAdmin(root) {
     if (!isAdmin()) { root.innerHTML = '<div class="card"><div class="empty"><b>没有权限</b>只有负责人和站长能进这里。</div></div>'; return; }
+    const excusedSet = new Set(state.todayCheckins.filter((c) => c.status === 'excused').map((c) => c.user_id));
     root.innerHTML = `
       <div class="topbar">
         <div><div class="day">负责人 / 站长</div><h1>管理</h1></div>
@@ -1317,15 +1437,19 @@
 
       <div class="card">
         <div class="card-head"><h2>任务与截止时间</h2><span class="meta">${state.tasks.length} 项</span></div>
-        ${state.tasks.map((t) => `
+        ${state.tasks.map((t, i) => `
           <div class="task">
             <div class="t-icon">${esc(t.emoji || '·')}</div>
             <div class="t-main">
               <div class="t-title">${esc(t.title)}</div>
               <div class="t-sub">${parseHM(t.deadline_time)} 截止 · ${t.reminder_offset ? `提前 ${t.reminder_offset} 分钟提醒` : '不提醒'}</div>
             </div>
-            <button class="btn ghost small" data-act="edit-task" data-task="${t.id}">编辑</button>
-            <button class="icon-btn" data-act="archive-task" data-task="${t.id}" aria-label="归档">✕</button>
+            <span style="display:flex;gap:6px;flex:none">
+              <button class="icon-btn" data-act="move-task" data-task="${t.id}" data-dir="-1" ${i === 0 ? 'disabled' : ''} aria-label="上移">↑</button>
+              <button class="icon-btn" data-act="move-task" data-task="${t.id}" data-dir="1" ${i === state.tasks.length - 1 ? 'disabled' : ''} aria-label="下移">↓</button>
+              <button class="btn ghost small" data-act="edit-task" data-task="${t.id}">编辑</button>
+              <button class="icon-btn" data-act="archive-task" data-task="${t.id}" aria-label="归档">✕</button>
+            </span>
           </div>`).join('') || '<div class="empty"><b>还没有任务</b>在下面加一条。</div>'}
       </div>
 
@@ -1359,8 +1483,12 @@
           <div><div>允许成员自己加小事</div><div class="label">关掉后，成员只能做固定任务</div></div>
           <label class="switch"><input type="checkbox" id="set-custom" ${state.group.allow_member_custom ? 'checked' : ''}><i></i></label>
         </div>
+        <div class="list-row" style="margin-top:12px">
+          <div><div>自定义小事默认截止</div><div class="label">超过这个时间记为补记</div></div>
+          <input class="input" id="set-cd" type="time" value="${parseHM(state.group.custom_deadline || '23:59')}" style="width:108px;text-align:center;flex:none">
+        </div>
         <div class="field" style="margin-top:14px">
-          <label for="set-webhook">企业微信群机器人地址</label>
+          <label for="set-webhook">企业微信群机器人地址（暂不生效，见 PRD 4.5.3）</label>
           <input class="input" id="set-webhook" placeholder="https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=..." value="${esc(state.group.wecom_webhook || '')}">
         </div>
         <button class="btn ghost block" data-act="save-settings">保存设置</button>
@@ -1375,9 +1503,13 @@
               <span>${esc(m.nickname)}</span>
               <span class="chip ${m.role === 'member' ? 'plain' : ''}">${roleLabel(m.role)}</span>
             </div>
-            ${state.me.role === 'owner' && m.role === 'member' ? `<button class="btn ghost small" data-act="set-leader" data-user="${m.id}">设为负责人</button>` : ''}
-            ${state.me.role === 'owner' && m.role === 'leader' ? `<button class="btn ghost small" data-act="clear-leader">收回负责人</button>` : ''}
-            ${state.me.role === 'leader' && m.role === 'member' ? `<button class="btn ghost small" data-act="request-handover" data-user="${m.id}">交接给他</button>` : ''}
+            <span style="display:flex;gap:6px;flex:none">
+              ${state.me.role === 'owner' && m.role === 'member' ? `<button class="btn ghost small" data-act="set-leader" data-user="${m.id}">设为负责人</button>` : ''}
+              ${state.me.role === 'owner' && m.role === 'leader' ? `<button class="btn ghost small" data-act="clear-leader">收回负责人</button>` : ''}
+              ${state.me.role === 'leader' && m.role === 'member' ? `<button class="btn ghost small" data-act="request-handover" data-user="${m.id}">交接给他</button>` : ''}
+              ${m.role === 'member' && excusedSet.has(m.id) ? `<button class="btn ghost small" data-act="excuse-today" data-user="${m.id}" data-on="0">取消豁免</button>` : ''}
+              ${m.role === 'member' ? `<button class="icon-btn" data-act="set-active" data-user="${m.id}" data-on="0" aria-label="停用">停</button>` : ''}
+            </span>
           </div>`).join('')}
         ${(() => {
           const out = (state.handovers || []).find((h) => h.from_user_id === state.me.id);
@@ -1385,6 +1517,17 @@
           const who = (state.members.find((x) => x.id === out.to_user_id) || {}).nickname || '对方';
           return `<p class="hint" style="margin:12px 0 0">已向 ${esc(who)} 发出交接，等对方在通知里接受。24 小时内有效。</p>`;
         })()}
+        ${state.inactive.length ? `
+          <p class="hint" style="margin:14px 0 6px">已停用 ${state.inactive.length} 人（历史记录保留）</p>
+          ${state.inactive.map((m) => `
+            <div class="list-row">
+              <div style="display:flex;align-items:center;gap:10px;opacity:.55">
+                <span class="avatar" style="width:28px;height:28px;font-size:12px">${avatarInner(m.nickname, m.avatar_url)}</span>
+                <span>${esc(m.nickname)}</span>
+              </div>
+              <button class="btn ghost small" data-act="set-active" data-user="${m.id}" data-on="1">恢复</button>
+            </div>`).join('')}
+        ` : ''}
       </div>
 
       <div class="card">
@@ -1479,9 +1622,11 @@
   async function saveSettings() {
     const allow = document.getElementById('set-custom').checked;
     const webhook = document.getElementById('set-webhook').value.trim();
+    const cd = document.getElementById('set-cd').value || '23:59';
     const { data, error } = await cloud.database.from('groups').update({
       allow_member_custom: allow,
-      wecom_webhook: webhook || null
+      wecom_webhook: webhook || null,
+      custom_deadline: cd
     }).eq('id', state.group.id).select();
     if (error || !data || !data.length) { toast(error ? (error.message || '保存失败') : '保存失败，可能没有权限'); return; }
     state.group = data[0];
@@ -1494,6 +1639,46 @@
     if (error) { toast(error.message || '设置失败'); return; }
     await enterApp();
     toast('已更换负责人');
+  }
+
+  async function moveTask(id, dir) {
+    const list = state.tasks.slice();
+    const i = list.findIndex((t) => t.id === id);
+    const j = i + dir;
+    if (i < 0 || j < 0 || j >= list.length) return;
+    [list[i], list[j]] = [list[j], list[i]];
+    for (let idx = 0; idx < list.length; idx++) {
+      const { error } = await cloud.database.from('tasks').update({ position: idx }).eq('id', list[idx].id);
+      if (error) { toast(error.message || '排序失败'); return; }
+    }
+    await refresh();
+    toast('已调整顺序');
+  }
+
+  async function setMemberActive(userId, on) {
+    const m = state.inactive.find((x) => x.id === userId) || state.members.find((x) => x.id === userId);
+    if (!on && !confirm(`停用 ${m ? m.nickname : '该成员'}？他不能再打卡，历史记录保留。`)) return;
+    const { error } = await cloud.database.rpc('set_member_active', { p_user_id: userId, p_active: on });
+    if (error) { toast(error.message || '操作失败'); return; }
+    await refresh();
+    toast(on ? '已恢复' : '已停用');
+  }
+
+  async function regenInvite() {
+    if (!confirm('重新生成邀请码？旧码立即失效，还没加入的人要用新码。')) return;
+    const { data, error } = await cloud.database.rpc('regenerate_invite');
+    if (error) { toast(error.message || '操作失败'); return; }
+    await refresh();
+    toast('新邀请码：' + ((data && data.invite_code) || ''));
+  }
+
+  async function excuseToday(userId, on) {
+    const { data, error } = await cloud.database.rpc('set_excused_today', { p_user_id: userId, p_on: on });
+    if (error) { toast(error.message || '操作失败'); return; }
+    await refresh();
+    const n = (data && data.affected) || 0;
+    if (on && !n) toast('他今天已经打过卡，无需豁免');
+    else toast(on ? '已豁免今天' : '已取消豁免');
   }
 
   async function clearLeader() {
@@ -2013,6 +2198,9 @@
     if (act === 'open-post') return openPostSheet(el.dataset.checkin);
     if (act === 'toggle-like') return toggleLike(el.dataset.checkin);
     if (act === 'del-checkin') return delCheckin(el.dataset.checkin);
+    if (act === 'save-edit') return saveEdit();
+    if (act === 'ed-del-keep') { if (state.edit) { state.edit.keep[Number(el.dataset.i)].removed = true; paintEditShots(); } return; }
+    if (act === 'ed-del-new') { if (state.edit) { state.edit.newPhotos.splice(Number(el.dataset.i), 1); paintEditShots(); } return; }
     if (act === 'open-notifs') return openNotifications();
     if (act === 'run-report') return runReport();
     if (act === 'detail-all') { const rr = reportState(); rr.detailAll = !rr.detailAll; return paintReportBody(); }
@@ -2028,6 +2216,10 @@
     if (act === 'edit-task') return editTaskSheet(el.dataset.task);
     if (act === 'save-task') return saveTask(el.dataset.task);
     if (act === 'archive-task') return archiveTask(el.dataset.task);
+    if (act === 'move-task') return moveTask(el.dataset.task, Number(el.dataset.dir));
+    if (act === 'set-active') return setMemberActive(el.dataset.user, el.dataset.on === '1');
+    if (act === 'regen-invite') return regenInvite();
+    if (act === 'excuse-today') return excuseToday(el.dataset.user, el.dataset.on === '1');
     if (act === 'save-settings') return saveSettings();
     if (act === 'open-groups') return openGroupsSheet();
     if (act === 'switch-group') return switchGroup(el.dataset.group);
@@ -2053,6 +2245,22 @@
     const v = location.hash.replace('#/', '');
     if (v && v !== state.view && state.me) { state.view = v; renderShell(); }
   });
+
+  /* ---------- 定时刷新 ---------- */
+  setInterval(async () => {
+    if (document.hidden || !state.me || !cloud) return;
+    if (!sheetEl.hidden) return;
+    const ae = document.activeElement;
+    if (ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)) return;
+    try {
+      const y = window.scrollY;
+      await loadAll();
+      renderShell();
+      window.scrollTo(0, y);
+    } catch (err) {
+      console.error('[poll]', err);
+    }
+  }, 15000);
 
   boot();
 })();
