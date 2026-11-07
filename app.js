@@ -36,6 +36,7 @@
     attachments: {},
     notifications: [],
     likes: [],
+    handovers: [],
     wallTab: 'today',
     unread: 0,
     pendingPhotos: [],
@@ -180,6 +181,9 @@
       state.likes = [];
     }
     await loadAttachmentUrls([...state.todayCheckins, ...state.weekCheckins]);
+    const { data: hData, error: hErr } = await cloud.database.from('handovers').select('*').eq('group_id', gid).eq('status', 'pending');
+    if (hErr) console.error('[handovers]', hErr);
+    state.handovers = hData || [];
     await refreshNotifications();
   }
 
@@ -848,7 +852,17 @@
 
   async function openNotifications() {
     const rows = state.notifications || [];
-    openSheet('通知', rows.length ? rows.map((n) => `
+    const incoming = (state.handovers || []).filter((h) => h.to_user_id === state.me.id);
+    const ask = incoming.map((h) => `
+      <div class="handover-ask">
+        <div><b>${esc(memberName(h.from_user_id))} 想把负责人交给你</b></div>
+        <div class="label">接受后你会管理任务、提醒和导出，24 小时内有效。</div>
+        <div class="row-2" style="margin-top:10px">
+          <button class="btn" data-act="respond-handover" data-h="${h.id}" data-accept="1" style="flex:1">接受</button>
+          <button class="btn ghost" data-act="respond-handover" data-h="${h.id}" data-accept="0" style="flex:1">拒绝</button>
+        </div>
+      </div>`).join('');
+    openSheet('通知', ask + (rows.length ? rows.map((n) => `
       <div class="notif-row">
         <span class="notif-dot ${n.read_at ? 'read' : ''}"></span>
         <div class="feed-main">
@@ -856,7 +870,7 @@
           ${n.body ? `<div class="feed-note">${esc(n.body)}</div>` : ''}
         </div>
         <span class="feed-time">${timeOf(n.created_at)}</span>
-      </div>`).join('') : '<div class="empty"><b>没有新通知</b>临近截止会自动提醒你。</div>');
+      </div>`).join('') : '<div class="empty"><b>没有新通知</b>临近截止会自动提醒你。</div>'));
 
     if (state.unread) {
       const unreadIds = rows.filter((n) => !n.read_at).map((n) => n.id);
@@ -1245,7 +1259,14 @@
               <span class="chip ${m.role === 'member' ? 'plain' : ''}">${roleLabel(m.role)}</span>
             </div>
             ${state.me.role === 'owner' && m.role === 'member' ? `<button class="btn ghost small" data-act="set-leader" data-user="${m.id}">设为负责人</button>` : ''}
+            ${state.me.role === 'leader' && m.role === 'member' ? `<button class="btn ghost small" data-act="request-handover" data-user="${m.id}">交接给他</button>` : ''}
           </div>`).join('')}
+        ${(() => {
+          const out = (state.handovers || []).find((h) => h.from_user_id === state.me.id);
+          if (!out) return '';
+          const who = (state.members.find((x) => x.id === out.to_user_id) || {}).nickname || '对方';
+          return `<p class="hint" style="margin:12px 0 0">已向 ${esc(who)} 发出交接，等对方在通知里接受。24 小时内有效。</p>`;
+        })()}
       </div>
     `;
   }
@@ -1349,6 +1370,31 @@
     if (error) { toast(error.message || '设置失败'); return; }
     await enterApp();
     toast('已更换负责人');
+  }
+
+  async function requestHandover(userId) {
+    const m = state.members.find((x) => x.id === userId);
+    if (!m) return;
+    if (!confirm(`把负责人交给 ${m.nickname}？需要对方点「接受」才生效，24 小时内有效。`)) return;
+    const { error } = await cloud.database.rpc('request_handover', { p_to_user_id: userId });
+    if (error) { toast(error.message || '发起失败'); return; }
+    await refresh();
+    toast('已发出，等对方接受');
+  }
+
+  async function respondHandover(id, accept) {
+    if (accept && !confirm('接下负责人？接受后你会管理任务、提醒和导出。')) return;
+    const { data, error } = await cloud.database.rpc('respond_handover', { p_id: id, p_accept: accept });
+    if (error) { toast(error.message || '操作失败'); return; }
+    if (data && data.ok === false) {
+      closeSheet();
+      await refresh();
+      toast(data.reason === 'expired' ? '这个交接已经过期了' : '这个交接已经处理过了');
+      return;
+    }
+    closeSheet();
+    await enterApp();
+    toast(accept ? '你已经是负责人' : '已拒绝这次交接');
   }
 
   async function logout() {
@@ -1820,6 +1866,8 @@
     if (act === 'new-group') { closeSheet(); return renderOnboarding('create'); }
     if (act === 'join-group') { closeSheet(); return renderOnboarding('join'); }
     if (act === 'set-leader') return setLeader(el.dataset.user);
+    if (act === 'request-handover') return requestHandover(el.dataset.user);
+    if (act === 'respond-handover') return respondHandover(el.dataset.h, el.dataset.accept === '1');
     if (act === 'go-admin') { state.view = 'admin'; history.replaceState(null, '', '#/admin'); return renderShell(); }
     if (act === 'go-report') { state.view = 'report'; history.replaceState(null, '', '#/report'); return renderShell(); }
     if (act === 'logout') return logout();
