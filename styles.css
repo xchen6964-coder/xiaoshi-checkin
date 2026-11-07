@@ -1,6 +1,6 @@
 /* 小事打卡 · 设计令牌与布局
    今日页：轻孟菲斯小事看板
-   其余主界面：清爽数据卡片（方案 B，逐页迁移）
+   其余主界面：同源轻孟菲斯数据卡片
    打卡墙：便签拼贴（方案 C）
    A 纸张外观保留为可选主题 */
 
@@ -131,7 +131,7 @@ a { color: inherit; text-decoration: none; }
 }
 .brand-mark {
   width: 44px; height: 44px; border-radius: 12px;
-  background: var(--brand); color: #fff;
+  background: var(--brand); color: var(--on-brand);
   display: grid; place-items: center;
   font-size: 20px; font-weight: 700;
   margin-bottom: 18px;
@@ -170,6 +170,28 @@ a { color: inherit; text-decoration: none; }
 .hint { font-size: 12px; color: var(--faint); margin-top: 10px; }
 .error { font-size: 12.5px; color: var(--danger); margin-top: 10px; min-height: 18px; }
 .gate-foot { margin-top: auto; padding-top: 24px; font-size: 11.5px; color: var(--faint); line-height: 1.7; }
+
+body[data-view="login"],
+body[data-view="onboarding"] { background: var(--memphis-bg); }
+.gate .brand-mark {
+  border: 1.5px solid var(--outline); border-radius: 8px;
+  box-shadow: var(--offset-shadow);
+}
+.gate .seg {
+  background: var(--card); border: 1.5px solid var(--outline);
+  border-radius: 10px; box-shadow: var(--offset-shadow);
+}
+.gate .seg button { border-radius: 6px; }
+.gate .seg button.on {
+  background: var(--accent-mint); color: var(--outline);
+  border: 1px solid var(--outline); box-shadow: none;
+}
+.gate .input { border: 1.5px solid var(--outline); border-radius: 8px; }
+.gate .btn {
+  border: 1.5px solid var(--outline); border-radius: 8px;
+  box-shadow: var(--offset-shadow);
+}
+.gate .btn:active { box-shadow: none; transform: translate(3px, 3px); }
 
 /* 屏幕够高时把登录这块居中，别都堆在顶部 */
 @media (min-height: 720px) {
@@ -365,6 +387,113 @@ body[data-view="today"] { background: var(--memphis-bg); }
 .today-view .week-bar.today { border: 1px solid var(--outline); }
 .today-view .feed-shot { border: 1px solid var(--outline); }
 
+/* ---------- 其余页面 · 同源轻孟菲斯 ---------- */
+body[data-view="wall"],
+body[data-view="progress"],
+body[data-view="me"],
+body[data-view="admin"],
+body[data-view="report"] { background: var(--memphis-bg); }
+
+body[data-view="wall"] { --view-accent: var(--accent-yellow); }
+body[data-view="progress"] { --view-accent: var(--accent-blue); }
+body[data-view="me"] { --view-accent: var(--accent-pink); }
+body[data-view="admin"] { --view-accent: var(--accent-yellow); }
+body[data-view="report"] { --view-accent: var(--accent-mint); }
+
+.memphis-view .view-heading {
+  display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1;
+}
+.memphis-view .view-heading > div:last-child { min-width: 0; }
+.memphis-view .view-heading .day { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.memphis-view .view-mark {
+  width: 38px; height: 38px; border-radius: 8px; flex: none;
+  display: grid; place-items: center;
+  background: var(--view-accent); color: var(--outline);
+  border: 1.5px solid var(--outline); box-shadow: var(--offset-shadow);
+  font-size: 16px; font-weight: 700;
+}
+.memphis-view .topbar h1 { letter-spacing: 0; }
+.memphis-view .topbar > .avatar,
+.memphis-view .topbar > .btn {
+  flex: none; border: 1.5px solid var(--outline); border-radius: 8px;
+}
+.memphis-view .topbar > .avatar { background: var(--view-accent); color: var(--outline); }
+.memphis-view .card {
+  border: 1.5px solid var(--outline); border-radius: 10px;
+  box-shadow: var(--offset-shadow);
+}
+.memphis-view .btn { border: 1.5px solid var(--outline); border-radius: 8px; box-shadow: var(--offset-shadow); }
+.memphis-view .btn:active { box-shadow: none; transform: translate(2px, 2px); }
+.memphis-view .btn.ghost { background: var(--card); }
+.memphis-view .input { border: 1.5px solid var(--outline); border-radius: 8px; }
+.memphis-view .seg {
+  background: var(--card); border: 1.5px solid var(--outline); border-radius: 10px;
+  box-shadow: var(--offset-shadow); padding: 4px;
+}
+.memphis-view .seg button { border-radius: 6px; }
+.memphis-view .seg button.on {
+  background: var(--view-accent); color: var(--outline);
+  border: 1px solid var(--outline); box-shadow: none;
+}
+.memphis-view .chip {
+  border: 1px solid var(--outline); border-radius: 6px;
+  background: var(--accent-yellow); color: var(--outline); font-weight: 600;
+}
+.memphis-view .chip.warn { background: var(--accent-pink); color: var(--outline); }
+.memphis-view .chip.plain { background: var(--soft); color: var(--muted); }
+.memphis-view .icon-btn { border: 1px solid var(--outline); border-radius: 7px; }
+
+.wall-view .note {
+  border: 1.5px solid var(--outline);
+  box-shadow: var(--offset-shadow);
+}
+.wall-view .strip-p { border: 1px solid var(--outline); }
+.wall-view .strip-p.on { background: var(--view-accent); color: var(--outline); }
+.wall-view .wall-gap {
+  display: inline-flex; padding: 5px 9px; border: 1px solid var(--outline);
+  border-radius: 6px; background: var(--accent-mint); color: var(--outline);
+}
+
+.progress-view .matrix th { background: var(--accent-blue); color: var(--outline); }
+.progress-view .matrix th:first-child { border-radius: 6px 0 0 0; }
+.progress-view .matrix th:last-child { border-radius: 0 6px 0 0; }
+.progress-view .dot-mark { border: 1px solid var(--outline); border-radius: 6px; }
+.progress-view .dot-mark.ok { background: var(--accent-mint); color: var(--outline); }
+.progress-view .dot-mark.late { background: var(--accent-pink); color: var(--outline); }
+.progress-view .dot-mark.ex { background: var(--accent-yellow); color: var(--outline); }
+
+.me-view .me-card { background: var(--accent-pink); }
+.me-view .me-avatar { border: 1.5px solid var(--outline); background: var(--card); color: var(--outline); }
+.me-view .me-avatar-edit { border: 1.5px solid var(--outline); background: var(--accent-yellow); color: var(--outline); }
+.me-view .kpi,
+.report-view .kpi { border: 1px solid var(--outline); border-radius: 8px; }
+.me-view .kpi:nth-child(4n+1), .report-view .kpi:nth-child(4n+1) { background: var(--accent-mint); }
+.me-view .kpi:nth-child(4n+2), .report-view .kpi:nth-child(4n+2) { background: var(--accent-yellow); }
+.me-view .kpi:nth-child(4n+3), .report-view .kpi:nth-child(4n+3) { background: var(--accent-pink); }
+.me-view .kpi:nth-child(4n+4), .report-view .kpi:nth-child(4n+4) { background: var(--accent-blue); }
+.me-view .theme-opt { border: 1.5px solid var(--outline); border-radius: 8px; }
+.me-view .theme-opt.on { background: var(--accent-mint); }
+.me-view .invite { border: 1.5px dashed var(--outline); border-radius: 8px; background: var(--accent-yellow); }
+
+.admin-view .task .t-icon { border: 1.5px solid var(--outline); border-radius: 8px; color: var(--outline); }
+.admin-view .task.tone-0 .t-icon { background: var(--accent-yellow); }
+.admin-view .task.tone-1 .t-icon { background: var(--accent-blue); }
+.admin-view .task.tone-2 .t-icon { background: var(--accent-pink); }
+.admin-view .task.tone-3 .t-icon { background: var(--accent-mint); }
+.admin-view .switch i { border: 1px solid var(--outline); }
+.admin-view .switch input:checked + i { background: var(--accent-mint); }
+.admin-view .switch input:checked + i::after { background: var(--outline); }
+
+.report-view .summary-box {
+  background: var(--accent-mint); border: 1px solid var(--outline);
+  border-left-width: 4px; border-radius: 8px;
+}
+.report-view .stat-bar { height: 8px; border: 1px solid var(--outline); background: var(--card); }
+.report-view .stat-bar i { background: var(--view-accent); }
+.report-view .export-grid .btn:nth-child(2) { background: var(--accent-yellow); }
+.report-view .export-grid .btn:nth-child(3) { background: var(--accent-pink); }
+.report-view .export-grid .btn:nth-child(4) { background: var(--accent-blue); }
+
 .tabbar .ico svg {
   width: 18px; height: 18px; display: block; margin: 0 auto;
   fill: none; stroke: currentColor; stroke-width: 1.5;
@@ -373,15 +502,15 @@ body[data-view="today"] { background: var(--memphis-bg); }
 .tabbar .ico svg .fill { fill: currentColor; stroke: none; }
 
 @media (max-width: 1023px) {
-  body[data-view="today"] .tabbar {
+  body[data-view] .tabbar {
     background: var(--bar); border-top: 1.5px solid var(--outline);
     backdrop-filter: none;
   }
-  body[data-view="today"] .tabbar a {
+  body[data-view] .tabbar a {
     margin: 6px 4px; padding: 5px 0 4px; border-radius: 8px;
   }
-  body[data-view="today"] .tabbar a.on {
-    background: var(--accent-mint); color: var(--brand-ink);
+  body[data-view] .tabbar a.on {
+    background: var(--view-accent, var(--accent-mint)); color: var(--outline);
     border: 1.5px solid var(--outline);
   }
 }
@@ -396,17 +525,18 @@ body[data-view="today"] { background: var(--memphis-bg); }
 }
 
 @media (min-width: 1024px) {
-  .today-view .today-mark { display: none; }
-  body[data-view="today"] .side-brand .brand-mark,
-  body[data-view="today"] .tabbar a.on,
-  body[data-view="today"] .side .card {
+  .today-view .today-mark,
+  .memphis-view .view-mark { display: none; }
+  body[data-view] .side-brand .brand-mark,
+  body[data-view] .tabbar a.on,
+  body[data-view] .side .card {
     border: 1.5px solid var(--outline); box-shadow: var(--offset-shadow);
   }
-  body[data-view="today"] .side-brand .brand-mark { border-radius: 8px; }
-  body[data-view="today"] .tabbar a.on {
-    background: var(--accent-mint); border-radius: 8px;
+  body[data-view] .side-brand .brand-mark { border-radius: 8px; }
+  body[data-view] .tabbar a.on {
+    background: var(--view-accent, var(--accent-mint)); border-radius: 8px;
   }
-  body[data-view="today"] .side .card { border-radius: 10px; }
+  body[data-view] .side .card { border-radius: 10px; }
 }
 
 .empty {
@@ -645,14 +775,18 @@ body[data-view="today"] { background: var(--memphis-bg); }
 }
 @keyframes fade { from { opacity: 0; } }
 .sheet {
-  width: 100%; max-width: 560px; background: #fff;
+  width: 100%; max-width: 560px; background: var(--card);
   border-radius: 20px 20px 0 0; padding: 18px 18px calc(18px + env(safe-area-inset-bottom));
+  border: 1.5px solid var(--outline); border-bottom: none;
   animation: rise .22s cubic-bezier(.2,.8,.2,1);
 }
 @keyframes rise { from { transform: translateY(24px); opacity: .6; } }
 .sheet-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
 .sheet-head h3 { margin: 0; font-size: 16px; }
 .icon-btn { width: 30px; height: 30px; border-radius: 50%; color: var(--muted); background: var(--soft); font-size: 13px; }
+.sheet .icon-btn { border: 1px solid var(--outline); border-radius: 7px; }
+.sheet .input { border: 1.5px solid var(--outline); border-radius: 8px; }
+.sheet .btn { border: 1.5px solid var(--outline); border-radius: 8px; }
 textarea.input { height: auto; min-height: 96px; padding: 12px 14px; resize: vertical; line-height: 1.6; }
 
 /* 打卡照片 */

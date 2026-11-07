@@ -329,10 +329,11 @@
   /* ---------- 登录 ---------- */
   function renderLogin(errMsg) {
     state.view = 'login';
+    document.body.dataset.view = 'login';
     app.innerHTML = `
       <div class="gate">
         <div class="brand-mark">小</div>
-        <h1>小事打卡</h1>
+        <h1>小事打卡社区</h1>
         <p class="sub">到点交，交没交大家都看得见。</p>
 
         <div class="seg" id="login-seg">
@@ -450,6 +451,7 @@
   /* ---------- 建组 / 加入 ---------- */
   function renderOnboarding(initial) {
     state.view = 'onboarding';
+    document.body.dataset.view = 'onboarding';
     const back = state.groups.length
       ? `<button class="btn ghost block" id="ob-back" style="margin-top:10px">返回 ${esc(state.group ? state.group.name : '')}</button>`
       : '';
@@ -616,7 +618,7 @@
         <nav class="tabbar">
           <div class="side-brand">
             <div class="brand-mark">小</div>
-            <div class="sb-text"><b>小事打卡</b><span>${esc(state.group.name)}</span></div>
+            <div class="sb-text"><b>小事打卡社区</b><span>${esc(state.group.name)}</span></div>
           </div>
           <div class="nav-links">
             ${nav.map((n) => `<a href="#/${n.key}" data-nav="${n.key}" class="${state.view === n.key ? 'on' : ''}"><span class="ico">${n.icon}</span>${n.label}</a>`).join('')}
@@ -644,6 +646,13 @@
 
   function roleLabel(r) {
     return r === 'owner' ? '站长' : r === 'leader' ? '负责人' : '成员';
+  }
+
+  function viewHeading(mark, eyebrow, title) {
+    return `<div class="view-heading">
+      <div class="view-mark" aria-hidden="true">${mark}</div>
+      <div><div class="day">${eyebrow}</div><h1>${title}</h1></div>
+    </div>`;
   }
 
   function paintView() {
@@ -1229,6 +1238,7 @@
   }
 
   function renderWall(root) {
+    root.className = 'memphis-view wall-view';
     const hasPhoto = (c) => (state.attachments[c.id] || []).length > 0;
     const pool = state.wallTab === 'today'
       ? state.weekCheckins.filter((c) => c.date === todayStr())
@@ -1255,7 +1265,7 @@
 
     root.innerHTML = `
       <div class="topbar">
-        <div><div class="day">${state.wallTab === 'today' ? fmtDateCn(todayStr()) : '本周'}</div><h1>打卡墙</h1></div>
+        ${viewHeading('墙', state.wallTab === 'today' ? fmtDateCn(todayStr()) : '本周', '打卡墙')}
         <div class="avatar">${avatarInner(state.me.nickname, state.me.avatar_url)}</div>
       </div>
       <div class="seg">
@@ -1318,6 +1328,7 @@
 
   /* ---------- 进度 ---------- */
   function renderProgress(root) {
+    root.className = 'memphis-view progress-view';
     const tasks = state.tasks;
     const members = state.members;
     const cell = (uid, tid) => {
@@ -1335,7 +1346,7 @@
 
     root.innerHTML = `
       <div class="topbar">
-        <div><div class="day">${fmtDateCn(todayStr())}</div><h1>今日进度</h1></div>
+        ${viewHeading('进', fmtDateCn(todayStr()), '今日进度')}
         <button class="btn ghost small" data-act="copy-progress">复制</button>
       </div>
 
@@ -1453,6 +1464,7 @@
 
   /* ---------- 我的 ---------- */
   function renderMe(root) {
+    root.className = 'memphis-view me-view';
     const mine = state.myCheckins || [];
     const daySet = new Set(mine.map((c) => c.date));
     const nowD = new Date(todayStr() + 'T00:00:00+08:00');
@@ -1484,9 +1496,7 @@
     }
 
     root.innerHTML = `
-      <div class="topbar">
-        <div><div class="day">${esc(state.group.name)}</div><h1>我的</h1></div>
-      </div>
+      <div class="topbar">${viewHeading('我', esc(state.group.name), '我的')}</div>
 
       <div class="card me-card">
         <label class="me-avatar" for="me-avatar-file" title="点头像换一张">
@@ -1607,17 +1617,16 @@
 
   /* ---------- 管理 ---------- */
   function renderAdmin(root) {
+    root.className = 'memphis-view admin-view';
     if (!isAdmin()) { root.innerHTML = '<div class="card"><div class="empty"><b>没有权限</b>只有负责人和站长能进这里。</div></div>'; return; }
     const excusedSet = new Set(state.todayCheckins.filter((c) => c.status === 'excused').map((c) => c.user_id));
     root.innerHTML = `
-      <div class="topbar">
-        <div><div class="day">负责人 / 站长</div><h1>管理</h1></div>
-      </div>
+      <div class="topbar">${viewHeading('管', '负责人 / 站长', '管理')}</div>
 
       <div class="card">
         <div class="card-head"><h2>任务与截止时间</h2><span class="meta">${state.tasks.length} 项</span></div>
         ${state.tasks.map((t, i) => `
-          <div class="task">
+          <div class="task tone-${i % 4}">
             <div class="t-icon">${esc(t.emoji || '·')}</div>
             <div class="t-main">
               <div class="t-title">${esc(t.title)}</div>
@@ -1939,12 +1948,11 @@
   }
 
   function renderReport(root) {
+    root.className = 'memphis-view report-view';
     if (!isAdmin()) { root.innerHTML = '<div class="card"><div class="empty"><b>没有权限</b>只有负责人和站长能看报告。</div></div>'; return; }
     const r = reportState();
     root.innerHTML = `
-      <div class="topbar">
-        <div><div class="day">负责人 / 站长</div><h1>报告</h1></div>
-      </div>
+      <div class="topbar">${viewHeading('报', '负责人 / 站长', '报告')}</div>
 
       <div class="card">
         <div class="card-head"><h2>时间范围</h2><span class="meta">最长 92 天</span></div>
