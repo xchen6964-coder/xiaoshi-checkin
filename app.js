@@ -1219,6 +1219,12 @@
       </div>
 
       <div class="card">
+        <div class="card-head"><h2>手机日历提醒</h2></div>
+        <p class="hint" style="margin-top:0">导出后导入手机日历，每天到点由手机自己提醒，不用打开网页。改了任务要重新导入；删掉的任务不会自动从日历里消失，得自己在日历里删。</p>
+        <button class="btn ghost block" data-act="export-ics">导出日历文件</button>
+      </div>
+
+      <div class="card">
         <div class="card-head"><h2>我的组</h2><span class="meta">${state.groups.length} 个</span></div>
         <div class="list-row" data-act="open-groups" style="cursor:pointer">
           <div>
@@ -1258,6 +1264,24 @@
 
     const fileEl = document.getElementById('me-avatar-file');
     if (fileEl) fileEl.addEventListener('change', onAvatarPick);
+  }
+
+  function exportIcs() {
+    const tasks = (state.tasks || []).filter((t) => !t.archived);
+    if (!tasks.length) { toast('还没有任务，先去管理里加一条'); return; }
+    try {
+      const ics = CheckinExport.buildIcs({
+        groupName: state.group.name,
+        today: todayStr(),
+        baseUrl: location.origin + location.pathname + (location.search || ''),
+        tasks
+      });
+      downloadBlob(new Blob([ics], { type: 'text/calendar;charset=utf-8' }), `小事打卡-${state.group.name}.ics`);
+      toast('已导出，用手机打开导入日历');
+    } catch (err) {
+      console.error('[ics]', err);
+      toast('导出失败：' + (err.message || '未知错误'));
+    }
   }
 
   async function onAvatarPick(e) {
@@ -1991,6 +2015,7 @@
     if (act === 'open-custom') return openCustomSheet();
     if (act === 'submit-custom') return submitCustom();
     if (act === 'copy-invite') return copyText(state.group.invite_code);
+    if (act === 'export-ics') return exportIcs();
     if (act === 'copy-progress') return copyProgress();
     if (act === 'remind') return remind();
     if (act === 'add-task') return addTask();

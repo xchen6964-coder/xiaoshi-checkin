@@ -259,7 +259,85 @@
     return await Packer.toBlob(doc);
   }
 
-  const api = { buildCsv, buildHtml, buildXlsx, buildDocx, pct, STATUS_TEXT };
+  /* ---------------- ICS 日历 ---------------- */
+  function icsEsc(s) {
+    return String(s == null ? '' : s)
+      .replace(/\\/g, '\\\\')
+      .replace(/;/g, '\\;')
+      .replace(/,/g, '\\,')
+      .replace(/\r?\n/g, '\\n');
+  }
+
+  // RFC 5545 每行不超过 75 字节，超出折行；按字符切，避免把一个汉字劈开
+  function fold(line) {
+    const enc = new TextEncoder();
+    const parts = [];
+    let cur = '';
+    let bytes = 0;
+    for (const ch of line) {
+      const b = enc.encode(ch).length;
+      if (bytes + b > 73) {
+        parts.push(cur);
+        cur = ' ';
+        bytes = 1;
+      }
+      cur += ch;
+      bytes += b;
+    }
+    parts.push(cur);
+    return parts.join('\r\n');
+  }
+
+  function icsStamp(dt) {
+    return dt.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+  }
+
+  // data: { groupName, today: 'YYYY-MM-DD', baseUrl, tasks: [{id,title,deadline_time,reminder_offset}] }
+  function buildIcs(data) {
+    const out = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//xiaoshi-checkin//xiaoshi checkin//CN',
+      'CALSCALE:GREGORIAN',
+      'METHOD:PUBLISH',
+      'X-WR-CALNAME:' + icsEsc('小事打卡 · ' + data.groupName),
+      'X-WR-TIMEZONE:Asia/Shanghai'
+    ];
+
+    (data.tasks || []).forEach((t) => {
+      const hm = String(t.deadline_time || '23:59').slice(0, 5);
+      const start = new Date(`${data.today}T${hm}:00+08:00`);
+      if (isNaN(start.getTime())) return;
+      const end = new Date(start.getTime() + 30 * 60000);
+      const offset = Number(t.reminder_offset || 0);
+      out.push(
+        'BEGIN:VEVENT',
+        'UID:' + (t.id || 'x') + '@xiaoshi-checkin',
+        'DTSTAMP:' + icsStamp(new Date()),
+        'DTSTART:' + icsStamp(start),
+        'DTEND:' + icsStamp(end),
+        'RRULE:FREQ=DAILY',
+        'SUMMARY:' + icsEsc(`${t.title || '打卡'}（${hm} 截止）`),
+        'DESCRIPTION:' + icsEsc(`每天 ${hm} 前打卡。打开：${data.baseUrl}`)
+      );
+      if (data.baseUrl) out.push('URL:' + data.baseUrl);
+      if (offset > 0) {
+        out.push(
+          'BEGIN:VALARM',
+          'TRIGGER:-PT' + offset + 'M',
+          'ACTION:DISPLAY',
+          'DESCRIPTION:' + icsEsc(`该打卡了：${t.title || '打卡'}`),
+          'END:VALARM'
+        );
+      }
+      out.push('END:VEVENT');
+    });
+
+    out.push('END:VCALENDAR');
+    return out.map(fold).join('\r\n') + '\r\n';
+  }
+
+  const api = { buildCsv, buildHtml, buildXlsx, buildDocx, buildIcs, pct, STATUS_TEXT };
   root.CheckinExport = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(typeof window !== 'undefined' ? window : globalThis);
