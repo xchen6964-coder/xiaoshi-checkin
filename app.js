@@ -28,15 +28,13 @@
     session: null,
     me: null,
     group: null,
+    groups: [],
     tasks: [],
     members: [],
     todayCheckins: [],
     weekCheckins: [],
     attachments: {},
     notifications: [],
-    secrets: null,
-    models: [],
-    modelsLoaded: false,
     unread: 0,
     pendingPhotos: [],
     view: 'today',
@@ -117,12 +115,45 @@
       console.error('[context]', error);
       return renderLogin('读取身份失败：' + (error.message || '未知错误'));
     }
-    if (!data) return renderOnboarding();
+    if (!data || !data.group) return renderOnboarding();
     state.me = data.user;
     state.group = data.group;
+    state.groups = data.groups || [];
     state.view = 'today';
     await loadAll();
     renderShell();
+  }
+
+  async function switchGroup(groupId) {
+    if (!groupId || (state.group && groupId === state.group.id)) {
+      closeSheet();
+      return;
+    }
+    const { error } = await cloud.database.rpc('switch_group', { p_group_id: groupId });
+    if (error) { toast(error.message || '切换失败'); return; }
+    closeSheet();
+    await enterApp();
+    toast('已切换');
+  }
+
+  function openGroupsSheet() {
+    const list = state.groups || [];
+    const rows = list.map((g) => `
+      <div class="list-row" data-act="switch-group" data-group="${g.group_id}" style="cursor:pointer">
+        <div>
+          <div>${esc(g.group_name)}${g.is_current ? ' <span class="chip">当前</span>' : ''}</div>
+          <div class="label">${roleLabel(g.role)} · 邀请码 ${esc(g.invite_code)}</div>
+        </div>
+        <span class="val">${g.is_current ? '' : '切换 ›'}</span>
+      </div>`).join('');
+    openSheet('我的组', `
+      ${rows || '<p class="rail-empty">还没有组。</p>'}
+      <div class="row-2" style="margin-top:14px">
+        <button class="btn ghost" data-act="new-group" style="flex:1">创建新组</button>
+        <button class="btn ghost" data-act="join-group" style="flex:1">用邀请码加入</button>
+      </div>
+      <p class="hint" style="margin-top:10px">一个人可以待在多个组，切过去就是那个组的身份和数据，互不影响。</p>
+    `);
   }
 
   async function loadAll() {
@@ -140,17 +171,6 @@
     state.weekCheckins = weekRes.data || [];
     await loadAttachmentUrls([...state.todayCheckins, ...state.weekCheckins]);
     await refreshNotifications();
-    if (isAdmin()) await loadSecrets();
-  }
-
-  async function loadSecrets() {
-    try {
-      const { data } = await cloud.database.from('group_secrets').select('*').eq('group_id', state.group.id).maybeSingle();
-      state.secrets = data || null;
-    } catch (err) {
-      console.error('[secrets]', err);
-      state.secrets = null;
-    }
   }
 
   async function refreshNotifications() {
@@ -326,16 +346,19 @@
   }
 
   /* ---------- 建组 / 加入 ---------- */
-  function renderOnboarding() {
+  function renderOnboarding(initial) {
     state.view = 'onboarding';
+    const back = state.groups.length
+      ? `<button class="btn ghost block" id="ob-back" style="margin-top:10px">返回 ${esc(state.group ? state.group.name : '')}</button>`
+      : '';
     app.innerHTML = `
       <div class="gate">
         <div class="brand-mark">小</div>
         <h1>先选一下</h1>
         <p class="sub">你要开一个新组，还是加入别人的组？</p>
 
-        <div class="seg">
-          <button class="on" data-mode="create">创建新组</button>
+        <div class="seg" id="ob-seg">
+          <button data-mode="create">创建新组</button>
           <button data-mode="join">用邀请码加入</button>
         </div>
 
@@ -343,14 +366,16 @@
         <div class="error" id="ob-error"></div>
         <button class="btn block" id="ob-submit">创建并进入</button>
         <p class="hint" id="ob-hint">你会成为这个组的站长，拥有全部权限。</p>
+        ${back}
       </div>`;
 
-    let mode = 'create';
+    let mode = initial === 'join' ? 'join' : 'create';
     const fields = document.getElementById('ob-fields');
     const submit = document.getElementById('ob-submit');
     const hint = document.getElementById('ob-hint');
 
     function paint() {
+      document.querySelectorAll('#ob-seg button').forEach((x) => x.classList.toggle('on', x.dataset.mode === mode));
       fields.innerHTML = mode === 'create' ? `
         <div class="field">
           <label for="ob-name">组名</label>
@@ -369,18 +394,22 @@
           <input id="ob-nick" class="input" maxlength="12" placeholder="组内唯一，2–12 个字">
         </div>`;
       submit.textContent = mode === 'create' ? '创建并进入' : '加入';
-      hint.textContent = mode === 'create' ? '你会成为这个组的站长，拥有全部权限。' : '昵称在组内不能重复。';
+      hint.textContent = mode === 'create'
+        ? (state.groups.length ? '你会成为新组的站长，建好后自动切过去，原来的组还在。' : '你会成为这个组的站长，拥有全部权限。')
+        : '昵称在组内不能重复。';
       document.getElementById('ob-error').textContent = '';
     }
 
-    document.querySelectorAll('.seg button').forEach((b) => {
+    document.querySelectorAll('#ob-seg button').forEach((b) => {
       b.addEventListener('click', () => {
         mode = b.dataset.mode;
-        document.querySelectorAll('.seg button').forEach((x) => x.classList.toggle('on', x === b));
         paint();
       });
     });
     paint();
+
+    const backBtn = document.getElementById('ob-back');
+    if (backBtn) backBtn.addEventListener('click', () => enterApp());
 
     submit.addEventListener('click', async () => {
       const err = document.getElementById('ob-error');
@@ -509,7 +538,7 @@
     if (state.view === 'wall') return renderWall(view);
     if (state.view === 'progress') return renderProgress(view);
     if (state.view === 'me') return renderMe(view);
-    if (state.view === 'admin') { renderAdmin(view); loadModels(); return; }
+    if (state.view === 'admin') { renderAdmin(view); return; }
     if (state.view === 'report') return renderReport(view);
     renderToday(view);
   }
@@ -1020,6 +1049,17 @@
       </div>
 
       <div class="card">
+        <div class="card-head"><h2>我的组</h2><span class="meta">${state.groups.length} 个</span></div>
+        <div class="list-row" data-act="open-groups" style="cursor:pointer">
+          <div>
+            <div>${esc(state.group.name)}</div>
+            <div class="label">当前 · ${roleLabel(state.me.role)}</div>
+          </div>
+          <span class="val">切换 ›</span>
+        </div>
+      </div>
+
+      <div class="card">
         <div class="card-head"><h2>邀请成员</h2></div>
         <p class="hint" style="margin-top:0">把这个码发给对方，他登录后选「用邀请码加入」。</p>
         <div class="invite">
@@ -1106,42 +1146,6 @@
         <button class="btn ghost block" data-act="save-settings">保存设置</button>
       </div>
 
-      <div class="card" id="model-card">
-        <div class="card-head"><h2>总结用哪个模型</h2><span class="meta" id="model-meta">读取中…</span></div>
-        <div class="field">
-          <label for="model-select">平台模型</label>
-          <select class="input" id="model-select"><option value="">自动（优先免费）</option></select>
-        </div>
-        <p class="hint" id="model-hint">标 0 的是免费档；扣的是平台额度，不是这个网站的。</p>
-        <button class="btn ghost block" data-act="save-model">保存选择</button>
-      </div>
-
-      <div class="card">
-        <div class="card-head"><h2>外部模型（可选）</h2><span class="meta">${state.secrets && state.secrets.ext_key ? '已配置' : '未配置'}</span></div>
-        <p class="hint" style="margin:0 0 12px">留空就用平台自带的免费模型。要接外部接口，填 OpenAI 兼容的地址。密钥只存在数据库里，只有负责人和站长能读。</p>
-        <div class="field">
-          <label for="ex-name">显示名（可空）</label>
-          <input class="input" id="ex-name" maxlength="24" placeholder="例如 OpenRouter 免费" value="${esc((state.secrets && state.secrets.ext_name) || '')}">
-        </div>
-        <div class="field">
-          <label for="ex-base">接口地址（Base URL）</label>
-          <input class="input" id="ex-base" placeholder="https://openrouter.ai/api/v1" value="${esc((state.secrets && state.secrets.ext_base) || '')}">
-        </div>
-        <div class="field">
-          <label for="ex-model">模型名</label>
-          <input class="input" id="ex-model" placeholder="例如 deepseek/deepseek-chat-v3:free" value="${esc((state.secrets && state.secrets.ext_model) || '')}">
-        </div>
-        <div class="field">
-          <label for="ex-key">API Key</label>
-          <input class="input" id="ex-key" type="password" placeholder="sk-..." value="${esc((state.secrets && state.secrets.ext_key) || '')}">
-        </div>
-        <div class="row-2">
-          <button class="btn ghost" data-act="test-ext" style="flex:1">测试连通</button>
-          <button class="btn" data-act="save-ext" style="flex:1">保存</button>
-        </div>
-        <div class="hint" id="ex-msg" style="margin-top:8px">智谱、Groq 不允许浏览器直连；OpenRouter、阿里百炼、DeepSeek 可以。</div>
-      </div>
-
       <div class="card">
         <div class="card-head"><h2>成员</h2><span class="meta">${state.members.length} 人</span></div>
         ${state.members.map((m) => `
@@ -1155,67 +1159,6 @@
           </div>`).join('')}
       </div>
     `;
-  }
-
-  async function loadModels() {
-    if (!isAdmin()) return;
-    if (state.modelsLoaded) { paintModelCard(); return; }
-    try {
-      const res = await cloud.llm.models.list();
-      const list = Array.isArray(res) ? res : (res && res.data) || [];
-      state.models = list.filter((m) => m && m.disabled !== true && m.enabled !== false);
-      state.modelsLoaded = true;
-    } catch (err) {
-      console.error('[models]', err);
-      state.models = [];
-    }
-    paintModelCard();
-  }
-
-  function isFreeModel(m) {
-    return /x?0(\.0+)?\s*credits?/i.test(String((m && m.credits) || ''));
-  }
-
-  function paintModelCard() {
-    const sel = document.getElementById('model-select');
-    if (!sel) return;
-    const meta = document.getElementById('model-meta');
-    const hint = document.getElementById('model-hint');
-    if (!state.models.length) {
-      if (meta) meta.textContent = '读取失败';
-      if (hint) hint.textContent = '拿不到模型目录，先按自动（优先免费）走。刷新页面再试。';
-      return;
-    }
-    const free = state.models.filter(isFreeModel);
-    const paid = state.models.filter((m) => !isFreeModel(m));
-    const opt = (m) => `<option value="${esc(m.id)}">${esc(m.name || m.id)} · ${esc(String(m.credits || '倍率未知'))}</option>`;
-    sel.innerHTML = '<option value="">自动（优先免费）</option>'
-      + (free.length ? `<optgroup label="免费">${free.map(opt).join('')}</optgroup>` : '')
-      + (paid.length ? `<optgroup label="按倍率计费">${paid.map(opt).join('')}</optgroup>` : '');
-    sel.value = state.group.llm_model || '';
-    if (meta) meta.textContent = `${state.models.length} 个可用`;
-    if (hint) {
-      const cur = state.models.find((m) => m.id === sel.value);
-      hint.textContent = cur
-        ? `当前：${cur.name || cur.id}，倍率 ${cur.credits || '未知'}${isFreeModel(cur) ? '（免费档）' : ''}`
-        : '标 0 的是免费档；扣的是平台额度，不是这个网站的。';
-    }
-    sel.onchange = () => {
-      const cur = state.models.find((m) => m.id === sel.value);
-      if (hint) hint.textContent = cur
-        ? `当前：${cur.name || cur.id}，倍率 ${cur.credits || '未知'}${isFreeModel(cur) ? '（免费档）' : ''}`
-        : '选了自动：优先用免费档，免费档不可用时才退到其它模型。';
-    };
-  }
-
-  async function saveModelChoice() {
-    const sel = document.getElementById('model-select');
-    if (!sel) return;
-    const val = sel.value || null;
-    const { data, error } = await cloud.database.from('groups').update({ llm_model: val }).eq('id', state.group.id).select();
-    if (error || !data || !data.length) { toast((error && error.message) || '保存失败'); return; }
-    state.group = data[0];
-    toast(val ? '已固定这个模型' : '已设为自动');
   }
 
   async function addTask() {
@@ -1297,93 +1240,6 @@
     if (error || !data || !data.length) { toast('归档失败'); return; }
     await refresh();
     toast('已归档');
-  }
-
-  function readExtForm() {
-    return {
-      ext_name: (document.getElementById('ex-name').value || '').trim() || null,
-      ext_base: (document.getElementById('ex-base').value || '').trim(),
-      ext_model: (document.getElementById('ex-model').value || '').trim(),
-      ext_key: (document.getElementById('ex-key').value || '').trim()
-    };
-  }
-
-  function extEndpoint(base) {
-    const b = String(base || '').replace(/\/+$/, '');
-    return /\/chat\/completions$/.test(b) ? b : b + '/chat/completions';
-  }
-
-  async function callExternal(messages, maxTokens) {
-    const sec = state.secrets || {};
-    const url = extEndpoint(sec.ext_base);
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 60000);
-    let res;
-    try {
-      res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + (sec.ext_key || '') },
-        body: JSON.stringify({
-          model: sec.ext_model,
-          messages,
-          temperature: 0.3,
-          max_tokens: maxTokens || 600,
-          stream: false
-        }),
-        signal: controller.signal
-      });
-    } catch (err) {
-      if (err && err.name === 'AbortError') throw new Error('外部接口超过 60 秒没响应');
-      throw new Error('连不上这个接口。多半是它不允许浏览器直连（CORS），换 OpenRouter / 阿里百炼 / DeepSeek 试试');
-    } finally {
-      clearTimeout(timer);
-    }
-    if (!res.ok) {
-      const body = await res.text().catch(() => '');
-      throw new Error('接口返回 ' + res.status + '：' + String(body).slice(0, 140));
-    }
-    const json = await res.json();
-    const text = json && json.choices && json.choices[0] && json.choices[0].message && json.choices[0].message.content;
-    if (!text) throw new Error('接口没返回内容，检查模型名是否正确');
-    return String(text).trim();
-  }
-
-  async function saveExt() {
-    const f = readExtForm();
-    if (!f.ext_base || !f.ext_model || !f.ext_key) { toast('地址、模型名、Key 都要填'); return; }
-    const { data, error } = await cloud.database.from('group_secrets').upsert({
-      group_id: state.group.id,
-      ext_name: f.ext_name,
-      ext_base: f.ext_base,
-      ext_model: f.ext_model,
-      ext_key: f.ext_key,
-      updated_at: new Date().toISOString()
-    }).select();
-    if (error || !data || !data.length) { toast((error && error.message) || '保存失败'); return; }
-    state.secrets = data[0];
-    toast('已保存，总结会优先用它');
-    renderShell();
-  }
-
-  async function testExt() {
-    const msg = document.getElementById('ex-msg');
-    const f = readExtForm();
-    if (!f.ext_base || !f.ext_model || !f.ext_key) { msg.textContent = '地址、模型名、Key 都要填'; return; }
-    msg.textContent = '测试中…';
-    const backup = state.secrets;
-    state.secrets = f;
-    const t0 = Date.now();
-    try {
-      const out = await callExternal([
-        { role: 'system', content: '只回复两个字：可用' },
-        { role: 'user', content: 'ping' }
-      ], 20);
-      msg.textContent = `通了，${Date.now() - t0} ms，返回：${out.slice(0, 40)}`;
-    } catch (err) {
-      msg.textContent = '失败：' + (err.message || err);
-    } finally {
-      state.secrets = backup;
-    }
   }
 
   async function saveSettings() {
@@ -1696,6 +1552,25 @@
     return lines.join('\n');
   }
 
+  const SUMMARY_SYSTEM_PROMPT = [
+    '你是打卡小组的数据记录员。用户会给你一组已经算好的统计数字，你要把它写成一段给组内成员看的中文说明。',
+    '',
+    '口径（必须遵守，不要自己重算）：',
+    '- 应完成 = 区间内每天的生效任务数 × 成员数 − 豁免数。',
+    '- 按时率 = 按时数 ÷ 应完成；完成率 = (按时 + 补记) ÷ 应完成。',
+    '- 「补记」只进完成率，不进按时率；「豁免」两边都不计。',
+    '',
+    '写作要求：',
+    '1. 只用输入里出现的数字和人名，不推算、不补全、不编造。',
+    '2. 先写整体：区间、成员与任务数、应完成条数、按时率、完成率。',
+    '3. 再点出最需要留意的 1–2 处事实，例如某成员连续未完成、某项任务完成率偏低。',
+    '4. 只陈述事实。禁止评价（如「态度不积极」「值得表扬」）、禁止排名、禁止比较谁比谁好、禁止鼓励或批评。',
+    '5. 不用比喻、不用感叹号、不用「大家」「加油」这类口语。',
+    '6. 分 2–3 句，总长 230 字以内，简体中文。',
+    '7. 某项为 0 或缺失就直接略过，不要写「数据缺失」。',
+    '8. 只输出这一段话本身，不要标题、不要列表符号、不要 Markdown。'
+  ].join('\n');
+
   const FREE_MODEL_IDS = ['hy4free', 'hy3'];
 
   function pickFreeModel(list) {
@@ -1722,22 +1597,9 @@
     r.busy = true; r.error = '';
     paintReportBody();
     try {
-      if (state.secrets && state.secrets.ext_base && state.secrets.ext_model && state.secrets.ext_key) {
-        const out = await callExternal([
-          { role: 'system', content: '你是打卡数据统计助手。只根据给定数字陈述事实与异常，不评价、不排名、不夸张、不编造。用简体中文，230 字以内，分 2 到 3 句。' },
-          { role: 'user', content: factsForModel(r.payload) }
-        ], 600);
-        r.summary = out;
-        r.modelLabel = (state.secrets.ext_name || state.secrets.ext_model) + '（外部）';
-        r.busy = false;
-        paintReportBody();
-        return;
-      }
-
       const models = await cloud.llm.models.list();
       const list = Array.isArray(models) ? models : (models && models.data) || [];
-      const wanted = state.group && state.group.llm_model;
-      const model = (wanted && list.find((m) => m.id === wanted && m.disabled !== true)) || pickFreeModel(list);
+      const model = pickFreeModel(list);
       if (!model) throw new Error('这个应用没有可用模型');
       r.modelLabel = model.name || model.id;
       let text = '';
@@ -1747,7 +1609,7 @@
         for await (const chunk of cloud.llm.chat.completions.create({
           model: model.id,
           messages: [
-            { role: 'system', content: '你是打卡数据统计助手。只根据给定数字陈述事实与异常，不评价、不排名、不夸张、不编造。用简体中文，230 字以内，分 2 到 3 句。' },
+            { role: 'system', content: SUMMARY_SYSTEM_PROMPT },
             { role: 'user', content: factsForModel(r.payload) }
           ],
           stream: true,
@@ -1860,9 +1722,10 @@
     if (act === 'save-task') return saveTask(el.dataset.task);
     if (act === 'archive-task') return archiveTask(el.dataset.task);
     if (act === 'save-settings') return saveSettings();
-    if (act === 'save-model') return saveModelChoice();
-    if (act === 'save-ext') return saveExt();
-    if (act === 'test-ext') return testExt();
+    if (act === 'open-groups') return openGroupsSheet();
+    if (act === 'switch-group') return switchGroup(el.dataset.group);
+    if (act === 'new-group') { closeSheet(); return renderOnboarding('create'); }
+    if (act === 'join-group') { closeSheet(); return renderOnboarding('join'); }
     if (act === 'set-leader') return setLeader(el.dataset.user);
     if (act === 'go-admin') { state.view = 'admin'; history.replaceState(null, '', '#/admin'); return renderShell(); }
     if (act === 'go-report') { state.view = 'report'; history.replaceState(null, '', '#/report'); return renderShell(); }
