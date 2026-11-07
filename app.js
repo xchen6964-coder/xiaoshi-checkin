@@ -35,6 +35,8 @@
     weekCheckins: [],
     attachments: {},
     notifications: [],
+    likes: [],
+    wallTab: 'today',
     unread: 0,
     pendingPhotos: [],
     view: 'today',
@@ -169,6 +171,14 @@
     state.members = membersRes.data || [];
     state.todayCheckins = todayRes.data || [];
     state.weekCheckins = weekRes.data || [];
+    const ids = state.weekCheckins.map((c) => c.id);
+    if (ids.length) {
+      const { data: likesData, error: likesErr } = await cloud.database.from('likes').select('*').in('checkin_id', ids);
+      if (likesErr) console.error('[likes]', likesErr);
+      state.likes = likesData || [];
+    } else {
+      state.likes = [];
+    }
     await loadAttachmentUrls([...state.todayCheckins, ...state.weekCheckins]);
     await refreshNotifications();
   }
@@ -911,27 +921,106 @@
   }
 
   /* ---------- 打卡墙 ---------- */
+  const memberName = (id) => (state.members.find((m) => m.id === id) || {}).nickname || '成员';
+  const taskName = (id) => (state.tasks.find((t) => t.id === id) || {}).title || '';
+  const noteTitle = (c) => c.title || taskName(c.task_id) || '小事';
+  const likeCount = (cid) => (state.likes || []).filter((l) => l.checkin_id === cid).length;
+  const likedByMe = (cid) => (state.likes || []).some((l) => l.checkin_id === cid && l.user_id === state.me.id);
+
+  function noteHTML(c) {
+    const photo = (state.attachments[c.id] || [])[0];
+    return `
+      <div class="note" data-act="open-post" data-checkin="${c.id}">
+        ${photo && photo.url ? `<img class="note-img" src="${photo.url}" alt="">` : ''}
+        <div class="n-title">${esc(noteTitle(c))}</div>
+        ${c.note ? `<div class="n-body">${esc(c.note)}</div>` : ''}
+        <div class="n-foot">
+          <span class="n-who">${esc(memberName(c.user_id))} · ${timeOf(c.done_at)}</span>
+          <button class="like ${likedByMe(c.id) ? 'on' : ''}" data-act="toggle-like" data-checkin="${c.id}">♡ ${likeCount(c.id)}</button>
+        </div>
+      </div>`;
+  }
+
   function renderWall(root) {
     const hasPhoto = (c) => (state.attachments[c.id] || []).length > 0;
-    const items = state.weekCheckins.filter((c) => c.note || !c.task_id || hasPhoto(c));
-    const nameOf = (id) => (state.members.find((m) => m.id === id) || {}).nickname || '成员';
-    const taskOf = (id) => (state.tasks.find((t) => t.id === id) || {}).title || '';
+    const pool = state.wallTab === 'today'
+      ? state.weekCheckins.filter((c) => c.date === todayStr())
+      : state.weekCheckins;
+    const items = pool.filter((c) => c.note || !c.task_id || hasPhoto(c))
+      .sort((a, b) => String(b.done_at || '').localeCompare(String(a.done_at || '')));
+    const doneSet = new Set(state.todayCheckins.map((c) => c.user_id));
+
+    let body = state.wallTab === 'today'
+      ? '<div class="card"><div class="empty"><b>今天还没有内容</b>打卡时写一句或传张照片，就会贴到这里。</div></div>'
+      : '<div class="card"><div class="empty"><b>这周还没有内容</b>打卡时写一句或传张照片，就会贴到这里。</div></div>';
+
+    if (items.length) {
+      if (state.wallTab === 'today') {
+        body = `<div class="wall">${items.map(noteHTML).join('')}</div>`;
+      } else {
+        const byDay = {};
+        items.forEach((c) => { (byDay[c.date] = byDay[c.date] || []).push(c); });
+        body = Object.keys(byDay).sort().reverse().map((d) => `
+          <div class="wall-day">${fmtDateCn(d)}</div>
+          <div class="wall">${byDay[d].map(noteHTML).join('')}</div>`).join('');
+      }
+    }
 
     root.innerHTML = `
       <div class="topbar">
-        <div><div class="day">本周</div><h1>打卡墙</h1></div>
+        <div><div class="day">${state.wallTab === 'today' ? fmtDateCn(todayStr()) : '本周'}</div><h1>打卡墙</h1></div>
         <div class="avatar">${initials(state.me.nickname)}</div>
       </div>
-      ${items.length === 0 ? `
-        <div class="card"><div class="empty"><b>这周还没有内容</b>打卡时写一句或传张照片，就会贴到这里。</div></div>
-      ` : `<div class="wall">${items.map((c) => `
-        <div class="note">
-          ${hasPhoto(c) && state.attachments[c.id][0].url ? `<img class="note-img" src="${state.attachments[c.id][0].url}" data-act="view-photo" data-src="${state.attachments[c.id][0].url}" alt="">` : ''}
-          <div class="n-title">${esc(c.title || taskOf(c.task_id) || '小事')}</div>
-          ${c.note ? `<div class="n-body">${esc(c.note)}</div>` : ''}
-          <div class="n-foot"><span>${esc(nameOf(c.user_id))}</span><span>${timeOf(c.done_at)}</span></div>
-        </div>`).join('')}</div>`}
+      <div class="seg">
+        <button data-act="wall-tab" data-tab="today" class="${state.wallTab === 'today' ? 'on' : ''}">今天</button>
+        <button data-act="wall-tab" data-tab="week" class="${state.wallTab === 'week' ? 'on' : ''}">本周</button>
+      </div>
+      <div class="strip">
+        ${state.members.map((m) => `<span class="strip-p ${doneSet.has(m.id) ? 'on' : ''}" title="${esc(m.nickname)}">${initials(m.nickname)}</span>`).join('')}
+      </div>
+      ${body}
     `;
+  }
+
+  async function toggleLike(checkinId) {
+    if (!state.me) return;
+    const mine = (state.likes || []).find((l) => l.checkin_id === checkinId && l.user_id === state.me.id);
+    if (mine) {
+      const { error } = await cloud.database.from('likes').delete().eq('id', mine.id);
+      if (error) { toast(error.message || '取消失败'); return; }
+      state.likes = state.likes.filter((l) => l.id !== mine.id);
+    } else {
+      const { data, error } = await cloud.database.from('likes').insert({ checkin_id: checkinId, user_id: state.me.id }).select();
+      if (error || !data || !data.length) { toast((error && error.message) || '点赞失败'); return; }
+      state.likes = [...(state.likes || []), data[0]];
+    }
+    if (!sheetEl.hidden) openPostSheet(checkinId);
+    else if (state.view === 'wall') renderWall(document.getElementById('view'));
+  }
+
+  function openPostSheet(checkinId) {
+    const c = [...state.weekCheckins, ...state.todayCheckins].find((x) => x.id === checkinId);
+    if (!c) return;
+    const photos = (state.attachments[c.id] || []).filter((p) => p.url);
+    const names = (state.likes || []).filter((l) => l.checkin_id === c.id).map((l) => memberName(l.user_id));
+    const mine = c.user_id === state.me.id;
+    openSheet(noteTitle(c), `
+      ${photos.length ? `<div class="post-photos">${photos.map((p) => `<img src="${p.url}" alt="">`).join('')}</div>` : ''}
+      ${c.note ? `<div class="post-body">${esc(c.note)}</div>` : ''}
+      <div class="post-meta">${esc(memberName(c.user_id))} · ${fmtDateCn(c.date)} ${timeOf(c.done_at)}${c.status === 'late' ? ' · 补记' : ''}</div>
+      <div class="post-likes">${names.length ? '♡ ' + names.map(esc).join('、') : '还没有人点赞'}</div>
+      <button class="btn ghost block" data-act="toggle-like" data-checkin="${c.id}">${likedByMe(c.id) ? '取消点赞' : '♡ 点赞'}</button>
+      ${mine ? `<button class="btn ghost block" data-act="del-checkin" data-checkin="${c.id}" style="margin-top:8px">取消这条打卡</button>` : ''}
+    `);
+  }
+
+  async function delCheckin(checkinId) {
+    if (!confirm('取消这条打卡？记录会被删除。')) return;
+    const { data, error } = await cloud.database.from('checkins').delete().eq('id', checkinId).select();
+    if (error || !data || !data.length) { toast('删除失败，可能不是你的记录'); return; }
+    closeSheet();
+    await refresh();
+    toast('已取消');
   }
 
   /* ---------- 进度 ---------- */
@@ -1708,6 +1797,10 @@
     if (act === 'submit-checkin') return submitCheckin(el.dataset.task);
     if (act === 'del-photo') { state.pendingPhotos.splice(Number(el.dataset.i), 1); return paintShots(); }
     if (act === 'view-photo') return openPhoto(el.dataset.src);
+    if (act === 'wall-tab') { state.wallTab = el.dataset.tab; return renderWall(document.getElementById('view')); }
+    if (act === 'open-post') return openPostSheet(el.dataset.checkin);
+    if (act === 'toggle-like') return toggleLike(el.dataset.checkin);
+    if (act === 'del-checkin') return delCheckin(el.dataset.checkin);
     if (act === 'open-notifs') return openNotifications();
     if (act === 'run-report') return runReport();
     if (act === 'gen-summary') return generateSummary();
