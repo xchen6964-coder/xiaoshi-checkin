@@ -87,8 +87,66 @@
     sheetBody.innerHTML = '';
   }
 
+  /* ---------- 外观主题 ---------- */
+  const THEME_KEY = 'xs-theme';
+
+  function currentTheme() {
+    try { return localStorage.getItem(THEME_KEY) === 'paper' ? 'paper' : 'fresh'; } catch (e) { return 'fresh'; }
+  }
+
+  function applyTheme(name) {
+    const t = name === 'paper' ? 'paper' : 'fresh';
+    if (t === 'paper') document.documentElement.dataset.theme = 'paper';
+    else delete document.documentElement.dataset.theme;
+    try { localStorage.setItem(THEME_KEY, t); } catch (e) { /* 隐私模式下存不了，只影响本次 */ }
+  }
+
+  function openThemeSheet() {
+    const cur = currentTheme();
+    openSheet('外观', `
+      <p class="hint" style="margin-top:0">只换配色与圆角，布局和功能都不变。设置只存在这台设备上，换手机要重新选。</p>
+      <button class="theme-opt ${cur === 'fresh' ? 'on' : ''}" data-act="pick-theme" data-theme="fresh">
+        <span class="sw sw-fresh"></span>
+        <span class="tx"><b>清爽卡片</b><span>冷白底 · 青绿主色</span></span>
+        <span class="tick">✓</span>
+      </button>
+      <button class="theme-opt ${cur === 'paper' ? 'on' : ''}" data-act="pick-theme" data-theme="paper">
+        <span class="sw sw-paper"></span>
+        <span class="tx"><b>纸质手账</b><span>米黄纸底 · 印章红</span></span>
+        <span class="tick">✓</span>
+      </button>
+    `);
+  }
+
+  /* ---------- 改昵称 ---------- */
+  function openNicknameSheet() {
+    openSheet('改昵称', `
+      <div class="field">
+        <label>组里的人都看到这个名字，最多 12 个字</label>
+        <input class="input" id="nk-input" maxlength="12" value="${esc(state.me.nickname)}">
+      </div>
+      <button class="btn block" data-act="save-nickname">保存</button>
+    `);
+    const el = document.getElementById('nk-input');
+    if (el) { el.focus(); el.select(); }
+  }
+
+  async function saveNickname() {
+    const el = document.getElementById('nk-input');
+    const v = (el ? el.value : '').trim();
+    if (!v) { toast('昵称不能为空'); return; }
+    if (v === state.me.nickname) { closeSheet(); return; }
+    const { data, error } = await cloud.database.from('users').update({ nickname: v }).eq('id', state.me.id).select();
+    if (error || !data || !data.length) { toast(error ? (error.message || '保存失败') : '保存失败，可能没有权限'); return; }
+    state.me = Object.assign({}, state.me, { nickname: v });
+    closeSheet();
+    await refresh();
+    toast('昵称已改');
+  }
+
   /* ---------- 启动 ---------- */
   async function boot() {
+    applyTheme(currentTheme());
     if (!cloud) return renderFatal('核心脚本没加载成功，可能是网络被挡了');
     try {
       const { data: session } = await withTimeout(cloud.auth.getSession(), 10000, 'session');
@@ -671,8 +729,8 @@
       <div class="card hero">
         <div class="ring">
           <svg width="96" height="96" viewBox="0 0 96 96">
-            <circle cx="48" cy="48" r="40" fill="none" stroke="#E6EEF7" stroke-width="9"/>
-            <circle cx="48" cy="48" r="40" fill="none" stroke="#12B5A5" stroke-width="9" stroke-linecap="round"
+            <circle cx="48" cy="48" r="40" fill="none" style="stroke:var(--ring-track)" stroke-width="9"/>
+            <circle cx="48" cy="48" r="40" fill="none" style="stroke:var(--brand)" stroke-width="9" stroke-linecap="round"
               stroke-dasharray="${(C * ratio).toFixed(1)} ${C.toFixed(1)}"/>
           </svg>
           <div class="num"><b>${done}/${total}</b><span>已完成</span></div>
@@ -1342,7 +1400,38 @@
     }));
     const { error } = await cloud.database.from('notifications').insert(rows);
     if (error) { toast(error.message || '发送失败'); return; }
-    toast(`已提醒 ${missing.length} 人`);
+    const pushed = pushWecom(missing);
+    toast(pushed ? `已提醒 ${missing.length} 人，并同步到企微群` : `已提醒 ${missing.length} 人`);
+  }
+
+  // 浏览器直接发给企微机器人。no-cors 只能发不能读回执，
+  // 所以这里只负责发出，不判断成败（配错 key 也看不出来，见管理页说明）
+  function pushWecom(missing) {
+    const hook = ((state.group && state.group.wecom_webhook) || '').trim();
+    if (!hook) return false;
+    const lines = [
+      `**小事打卡 · ${state.group.name}**`,
+      `> ${fmtDateCn(todayStr())} · 还差 ${missing.length} 人`,
+      ''
+    ];
+    state.tasks.forEach((t) => {
+      const done = state.todayCheckins.filter((c) => c.task_id === t.id).length;
+      lines.push(`- ${t.title}：${done}/${state.members.length}`);
+    });
+    lines.push('', `未交：${missing.map((m) => m.nickname).join('、')}`);
+    const link = location.origin + location.pathname + location.search;
+    if (/^https?:/.test(link)) lines.push('', `[去打卡](${link})`);
+    try {
+      fetch(hook, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+        body: JSON.stringify({ msgtype: 'markdown', markdown: { content: lines.join('\n') } })
+      }).catch(() => {});
+      return true;
+    } catch (e) {
+      return false;
+    }
   }
 
   /* ---------- 我的 ---------- */
@@ -1389,7 +1478,7 @@
         </label>
         <input type="file" id="me-avatar-file" accept="image/*" hidden>
         <div class="me-info">
-          <b>${esc(state.me.nickname)}</b>
+          <b data-act="edit-nickname" class="me-name">${esc(state.me.nickname)}<i class="edit-pen">改</i></b>
           <span>${roleLabel(state.me.role)} · ${(state.me.created_at || '').slice(0, 10)} 加入</span>
         </div>
       </div>
@@ -1438,7 +1527,7 @@
 
       <div class="card">
         <div class="list-row"><span class="label">通知</span><span class="val">站内已开${state.group.wecom_webhook ? ' · 企微已配' : ' · 企微未配'}</span></div>
-        <div class="list-row"><span class="label">外观</span><span class="val">清爽卡片</span></div>
+        <div class="list-row" data-act="open-theme" style="cursor:pointer"><span class="label">外观</span><span class="val">${currentTheme() === 'paper' ? '纸质手账' : '清爽卡片'} ›</span></div>
       </div>
 
       ${isAdmin() ? `
@@ -1561,7 +1650,7 @@
           <input class="input" id="set-cd" type="time" value="${parseHM(state.group.custom_deadline || '23:59')}" style="width:108px;text-align:center;flex:none">
         </div>
         <div class="field" style="margin-top:14px">
-          <label for="set-webhook">企业微信群机器人地址（暂不生效，见 PRD 4.5.3）</label>
+          <label for="set-webhook">企业微信群机器人地址（填了之后，点「催一下」会同时发到群里）</label>
           <input class="input" id="set-webhook" placeholder="https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=..." value="${esc(state.group.wecom_webhook || '')}">
         </div>
         <button class="btn ghost block" data-act="save-settings">保存设置</button>
@@ -2296,6 +2385,15 @@
     if (act === 'regen-invite') return regenInvite();
     if (act === 'excuse-today') return excuseToday(el.dataset.user, el.dataset.on === '1');
     if (act === 'save-settings') return saveSettings();
+    if (act === 'open-theme') return openThemeSheet();
+    if (act === 'pick-theme') {
+      applyTheme(el.dataset.theme || 'fresh');
+      closeSheet();
+      renderShell();
+      return toast(currentTheme() === 'paper' ? '已换成纸质手账' : '已换成清爽卡片');
+    }
+    if (act === 'edit-nickname') return openNicknameSheet();
+    if (act === 'save-nickname') return saveNickname();
     if (act === 'open-groups') return openGroupsSheet();
     if (act === 'switch-group') return switchGroup(el.dataset.group);
     if (act === 'new-group') { closeSheet(); return renderOnboarding('create'); }
