@@ -169,6 +169,11 @@ a { color: inherit; text-decoration: none; }
 
 .hint { font-size: 12px; color: var(--faint); margin-top: 10px; }
 .error { font-size: 12.5px; color: var(--danger); margin-top: 10px; min-height: 18px; }
+.load-fail { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--soft); border: 1px solid var(--line); border-left: 3px solid var(--danger); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 14px; }
+.load-fail .lf-text { min-width: 0; }
+.load-fail b { display: block; font-size: 13.5px; font-weight: 500; color: var(--ink); }
+.load-fail .lf-msg { font-size: 11.5px; color: var(--muted); margin-top: 3px; word-break: break-all; line-height: 1.5; }
+.load-fail .btn { flex: none; }
 .gate-foot { margin-top: auto; padding-top: 24px; font-size: 11.5px; color: var(--faint); line-height: 1.7; }
 
 body[data-view="login"],

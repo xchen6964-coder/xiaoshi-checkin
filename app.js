@@ -40,6 +40,7 @@
     myCheckins: [],
     inactive: [],
     avatarUrls: {},
+    loadError: '',
     wallTab: 'today',
     unread: 0,
     pendingPhotos: [],
@@ -235,6 +236,9 @@
       cloud.database.from('checkins').select('*').eq('group_id', gid).eq('date', day),
       cloud.database.from('checkins').select('*').eq('group_id', gid).gte('date', weekStart()).order('done_at', { ascending: false })
     ]);
+    const failed = [tasksRes, membersRes, inactiveRes, todayRes, weekRes].filter((r) => r && r.error);
+    state.loadError = failed.length ? (failed[0].error.message || '数据没读出来') : '';
+    if (failed.length) console.error('[loadAll]', failed.map((r) => r.error));
     state.tasks = tasksRes.data || [];
     state.members = membersRes.data || [];
     state.inactive = inactiveRes.data || [];
@@ -658,13 +662,23 @@
   function paintView() {
     const view = document.getElementById('view');
     if (!view) return;
-    if (state.view === 'today') return renderToday(view);
-    if (state.view === 'wall') return renderWall(view);
-    if (state.view === 'progress') return renderProgress(view);
-    if (state.view === 'me') return renderMe(view);
-    if (state.view === 'admin') { renderAdmin(view); return; }
-    if (state.view === 'report') return renderReport(view);
-    renderToday(view);
+    if (state.view === 'wall') renderWall(view);
+    else if (state.view === 'progress') renderProgress(view);
+    else if (state.view === 'me') renderMe(view);
+    else if (state.view === 'admin') renderAdmin(view);
+    else if (state.view === 'report') renderReport(view);
+    else renderToday(view);
+    if (state.loadError) view.insertAdjacentHTML('afterbegin', loadFailHTML());
+  }
+
+  function loadFailHTML() {
+    return `<div class="load-fail">
+      <div class="lf-text">
+        <b>数据没读出来</b>
+        <div class="lf-msg">${esc(state.loadError)}</div>
+      </div>
+      <button class="btn ghost small" data-act="retry-load">重试</button>
+    </div>`;
   }
 
   /* ---------- 今日 ---------- */
@@ -1214,6 +1228,11 @@
   async function refresh() {
     await loadAll();
     renderShell();
+  }
+
+  async function retryLoad() {
+    await refresh();
+    toast(state.loadError ? '还是读不出来，稍后再点一次' : '已恢复');
   }
 
   /* ---------- 打卡墙 ---------- */
@@ -2380,6 +2399,7 @@
     if (!el) return;
     const act = el.dataset.act;
     if (act === 'toggle-task') return toggleTask(el.dataset.task, el.dataset.checkin);
+    if (act === 'retry-load') return retryLoad();
     if (act === 'submit-checkin') return submitCheckin(el.dataset.task);
     if (act === 'del-photo') { state.pendingPhotos.splice(Number(el.dataset.i), 1); return paintShots(); }
     if (act === 'view-photo') return openPhoto(el.dataset.src);
