@@ -608,11 +608,40 @@
     return (bh * 60 + bm) - (ah * 60 + am);
   }
 
+  function dateOffset(days) {
+    const d = new Date(Date.now() + days * 86400000);
+    return d.toLocaleDateString('sv-SE', { timeZone: 'Asia/Shanghai' });
+  }
+
   function renderToday(root) {
     const done = myToday().length;
     const total = state.tasks.length;
     const ratio = total ? done / total : 0;
     const C = 2 * Math.PI * 40;
+
+    // 全组进度：按人算「今天所有任务都交齐」，不是按条数
+    const taskCheckins = state.todayCheckins.filter((c) => c.task_id);
+    const fullDone = total ? state.members.filter((m) => {
+      const mine = new Set(taskCheckins.filter((c) => c.user_id === m.id).map((c) => c.task_id));
+      return mine.size >= total;
+    }).length : 0;
+    const gap = state.members.length - fullDone;
+
+    // 较昨日此刻：只比到同一时刻，避免早上一打开就显示「-13」
+    const yKey = dateOffset(-1);
+    const inWeek = yKey >= weekStart();
+    const nowStr = nowHM();
+    const yCount = inWeek
+      ? state.weekCheckins.filter((c) => c.task_id && c.date === yKey && timeOf(c.done_at) <= nowStr).length
+      : null;
+    const todayCount = taskCheckins.length;
+    let cmpHTML = '';
+    if (yCount !== null && (todayCount || yCount)) {
+      const diff = todayCount - yCount;
+      const cls = diff > 0 ? '' : diff < 0 ? ' warn' : ' plain';
+      const txt = diff === 0 ? '与昨日此刻持平' : `${diff > 0 ? '+' : ''}${diff} 较昨日此刻`;
+      cmpHTML = `<span class="chip${cls}">${txt}</span>`;
+    }
 
     root.innerHTML = `
       <div class="topbar">
@@ -639,9 +668,13 @@
           <div class="num"><b>${done}/${total}</b><span>已完成</span></div>
         </div>
         <div class="hero-side">
-          <div class="line1">全组今天 ${state.todayCheckins.filter((c) => c.task_id).length} 条打卡</div>
-          <div class="line2">${state.members.length} 人在组</div>
-          <span class="chip">${state.group.allow_member_custom ? '可以加自己的小事' : '自定义已关闭'}</span>
+          <div class="line1">全组今天 ${todayCount} 条打卡</div>
+          <div class="line2">${total === 0 ? `${state.members.length} 人在组` : gap === 0 ? '全员已交齐' : `还差 ${gap} 人交齐`}</div>
+          <div class="hero-chips">
+            ${cmpHTML}
+            ${state.group.allow_member_custom ? '' : '<span class="chip plain">自定义已关闭</span>'}
+          </div>
+          ${total === 0 ? '' : `<button class="hero-link" data-act="open-progress">${gap > 0 ? '看谁还没交 ›' : '看全部 ›'}</button>`}
         </div>
       </div>
 
@@ -659,6 +692,13 @@
           </div>` : state.tasks.map((t) => {
             const c = findCheckin(t.id);
             const ds = deadlineState(t);
+            const ids = new Set(taskCheckins.filter((x) => x.task_id === t.id).map((x) => x.user_id));
+            const dotsHTML = state.members.length <= 8
+              ? `<div class="t-dots">
+                  <span class="dots">${state.members.map((m) => `<i class="${ids.has(m.id) ? 'on' : ''}"></i>`).join('')}</span>
+                  <span class="dot-n">${ids.size}/${state.members.length} 人</span>
+                </div>`
+              : `<span class="t-count">${ids.size}/${state.members.length}</span>`;
             return `
             <div class="task ${c ? 'done' : ''}">
               <div class="t-icon">${esc(t.emoji || '·')}</div>
@@ -666,7 +706,7 @@
                 <div class="t-title">${esc(t.title)} ${c && c.status === 'late' ? '<span class="chip warn" style="height:18px;font-size:10px">补记</span>' : ''}</div>
                 <div class="t-sub ${c ? 'late' : ds.cls}">${c ? `已打卡 ${timeOf(c.done_at)}` : ds.text}</div>
               </div>
-              <span class="t-count">${state.todayCheckins.filter((x) => x.task_id === t.id).length}/${state.members.length}</span>
+              ${dotsHTML}
               <button class="check ${c ? 'on' : ''}" data-act="toggle-task" data-task="${t.id}" data-checkin="${c ? c.id : ''}" aria-label="${c ? '取消打卡' : '打卡'}">
                 <svg width="15" height="15" viewBox="0 0 16 16"><path d="M3 8.5l3.2 3.2L13 5" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
               </button>
@@ -705,12 +745,17 @@
             });
             const max = Math.max(1, ...days.map((x) => x.n));
             const today = todayStr();
-            return days.map((x) => `
+            return days.map((x) => {
+              const h = x.n ? 8 + Math.round(62 * x.n / max) : 4;
+              return `
               <div class="week-col">
-                <div class="week-bar ${x.n ? 'has' : ''} ${x.key === today ? 'today' : ''}" style="height:${6 + Math.round(46 * x.n / max)}px"></div>
-                <div class="week-num">${x.n || ''}</div>
-                <div class="week-day">${x.lb}</div>
-              </div>`).join('');
+                <div class="week-track">
+                  <div class="week-num ${x.key === today ? 'now' : ''}">${x.n || ''}</div>
+                  <div class="week-bar ${x.n ? 'has' : ''} ${x.key === today ? 'today' : ''}" style="height:${h}px"></div>
+                </div>
+                <div class="week-day ${x.key === today ? 'now' : ''}">${x.lb}</div>
+              </div>`;
+            }).join('');
           })()}
         </div>
       </div>
@@ -2231,6 +2276,7 @@
     if (act === 'respond-handover') return respondHandover(el.dataset.h, el.dataset.accept === '1');
     if (act === 'go-admin') { state.view = 'admin'; history.replaceState(null, '', '#/admin'); return renderShell(); }
     if (act === 'go-report') { state.view = 'report'; history.replaceState(null, '', '#/report'); return renderShell(); }
+    if (act === 'open-progress') { state.view = 'progress'; history.replaceState(null, '', '#/progress'); return renderShell(); }
     if (act === 'logout') return logout();
   });
 
