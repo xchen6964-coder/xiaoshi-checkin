@@ -220,6 +220,12 @@ body[data-view="onboarding"] { background: var(--memphis-bg); }
   max-width: 720px; margin: 0 auto;
 }
 
+/* 各页 render 时用 root.className 覆盖掉了 .main 类，底部留白要单独兜一层，
+   否则最后那个「退出登录」会被固定底栏压住 */
+@media (max-width: 1023px) {
+  #view { padding-bottom: calc(112px + env(safe-area-inset-bottom)); }
+}
+
 .topbar { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 18px; }
 .topbar-actions { display: flex; align-items: center; gap: 10px; }
 .bell {
