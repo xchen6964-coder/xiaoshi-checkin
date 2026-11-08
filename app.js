@@ -2055,7 +2055,7 @@
           <div><div>自定义小事默认截止</div><div class="label">超过这个时间记为补记</div></div>
           <input class="input" id="set-cd" type="time" value="${parseHM(state.group.custom_deadline || '23:59')}" style="width:108px;text-align:center;flex:none">
         </div>
-        ${state.me.role === 'owner' ? `
+        ${isAdmin() ? `
         <div class="list-row" style="margin-top:12px">
           <div><div>教师码</div><div class="label">老师用这个码加入，直接就是教师</div></div>
           <span style="display:flex;gap:6px;align-items:center;flex:none">
