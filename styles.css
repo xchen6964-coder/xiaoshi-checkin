@@ -683,6 +683,7 @@ body[data-view="report"] { --view-accent: var(--accent-mint); }
 .mg-c.ok { background: var(--heat-3); }
 .mg-c.lt { background: var(--warn); }
 .mg-c.ex { background: var(--dot-off); }
+.m-del { margin-top: 18px; border-top: 1px solid var(--soft); padding-top: 14px; }
 
 /* 我的 */
 .list-row {

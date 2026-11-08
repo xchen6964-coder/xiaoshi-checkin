@@ -1378,6 +1378,63 @@
     renderShell();
   }
 
+  /* 按 40 个一批删，避免 in(...) 的 URL 过长被拒 */
+  async function delIn(table, col, values) {
+    for (let i = 0; i < values.length; i += 40) {
+      const { error } = await cloud.database.from(table).delete().in(col, values.slice(i, i + 40));
+      if (error) console.error('[delIn]', table, error);
+    }
+  }
+
+  async function deleteMember(userId) {
+    const m = state.members.find((x) => x.id === userId) || state.inactive.find((x) => x.id === userId);
+    if (!m) return;
+    if (!isAdmin()) { toast('只有负责人能删人'); return; }
+    if (userId === state.me.id) { toast('不能删自己'); return; }
+    const ok = confirm(`确定删除「${m.nickname}」？\n\n他的打卡、照片、点赞、交接记录会一起删掉，无法恢复。\n只是暂时不让他打卡的话，用「停用」更合适。`);
+    if (!ok) return;
+
+    const btn = document.querySelector('[data-act="del-member"]');
+    if (btn) { btn.disabled = true; btn.textContent = '删除中…'; }
+
+    const { data: rows, error: qErr } = await cloud.database
+      .from('checkins').select('id').eq('group_id', state.group.id).eq('user_id', userId);
+    if (qErr) {
+      if (btn) { btn.disabled = false; btn.textContent = '删除此人'; }
+      toast('读取他的打卡失败：' + (qErr.message || ''));
+      return;
+    }
+    const ids = (rows || []).map((r) => r.id);
+
+    if (ids.length) {
+      for (let i = 0; i < ids.length; i += 40) {
+        const chunk = ids.slice(i, i + 40);
+        const { data: atts } = await cloud.database.from('attachments').select('id,path').in('checkin_id', chunk);
+        const paths = (atts || []).map((a) => a.path).filter(Boolean);
+        if (atts && atts.length) await cloud.database.from('attachments').delete().in('checkin_id', chunk);
+        if (paths.length) cloud.storage.remove(paths).catch(() => {});
+        await cloud.database.from('likes').delete().in('checkin_id', chunk);
+      }
+      await cloud.database.from('likes').delete().eq('user_id', userId);
+      await delIn('checkins', 'id', ids);
+    } else {
+      await cloud.database.from('likes').delete().eq('user_id', userId);
+    }
+
+    await cloud.database.from('handovers').delete().eq('from_user_id', userId);
+    await cloud.database.from('handovers').delete().eq('to_user_id', userId);
+
+    const { data: del, error } = await cloud.database.from('users').delete().eq('id', userId).select();
+    if (error || !del || !del.length) {
+      await refresh();
+      toast('打卡和照片已清掉，但删成员这步没成功：' + ((error && error.message) || '权限不足'));
+      return;
+    }
+    closeSheet();
+    await refresh();
+    toast('已删除 ' + m.nickname);
+  }
+
   async function retryLoad() {
     await refresh();
     toast(state.loadError ? '还是读不出来，稍后再点一次' : '已恢复');
@@ -1753,6 +1810,10 @@
       <div class="field" style="margin-top:16px"><label>最近打卡</label></div>
       ${recent || '<p class="hint" style="margin:0">还没有打卡记录。</p>'}
       <p class="hint" style="margin-top:14px">只能看，不能替别人打。</p>
+      ${uid === state.me.id ? '' : `<div class="m-del">
+        <button class="btn ghost danger block" data-act="del-member" data-user="${uid}">删除此人及其全部数据</button>
+        <p class="hint" style="margin:8px 0 0">只是暂时不让打卡就用「停」，历史会留着。</p>
+      </div>`}
     `;
   }
 
@@ -2639,6 +2700,7 @@
     if (act === 'toggle-task') return toggleTask(el.dataset.task, el.dataset.checkin);
     if (act === 'retry-load') return retryLoad();
     if (act === 'open-member') return openMemberSheet(el.dataset.user);
+    if (act === 'del-member') return deleteMember(el.dataset.user);
     if (act === 'submit-checkin') return submitCheckin(el.dataset.task);
     if (act === 'del-photo') { state.pendingPhotos.splice(Number(el.dataset.i), 1); return paintShots(); }
     if (act === 'view-photo') return openPhoto(el.dataset.src);
