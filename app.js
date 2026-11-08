@@ -342,22 +342,40 @@
         <p class="sub">到点交，交没交大家都看得见。</p>
 
         <div class="seg" id="login-seg">
-          <button class="on" data-kind="phone">手机号</button>
-          <button data-kind="email">邮箱</button>
+          <button class="on" data-kind="email">邮箱</button>
           <button data-kind="pwd">密码</button>
         </div>
 
         <div id="gate-body"></div>
         <div class="error" id="gate-error">${errMsg ? esc(errMsg) : ''}</div>
+        <div id="gate-alt"></div>
         <div class="gate-foot">这个站只服务一个熟人小组。登录后需要邀请码才能进组。</div>
       </div>`;
 
-    let kind = 'phone';
+    let kind = 'email';
     let mode = 'otp';
 
     function paint() {
       const body = document.getElementById('gate-body');
       document.getElementById('gate-error').textContent = '';
+
+      document.querySelectorAll('#login-seg button').forEach((x) => {
+        x.classList.toggle('on', x.dataset.kind === kind);
+      });
+
+      const alt = document.getElementById('gate-alt');
+      if (mode === 'reset') {
+        alt.innerHTML = '';
+      } else {
+        alt.innerHTML = `<p class="hint"><a href="#" class="link-btn" id="alt-link">${kind === 'phone' ? '返回邮箱登录' : '用手机号登录'}</a></p>`;
+        document.getElementById('alt-link').addEventListener('click', (e) => {
+          e.preventDefault();
+          kind = kind === 'phone' ? 'email' : 'phone';
+          mode = 'otp';
+          state.pendingOtp = null;
+          paint();
+        });
+      }
 
       if (mode === 'reset') {
         body.innerHTML = `
