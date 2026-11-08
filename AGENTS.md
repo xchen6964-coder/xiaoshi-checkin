@@ -14,7 +14,7 @@
 | 本地目录 | `D:\WorkBuddy\小事打卡社区` |
 | 仓库 | https://github.com/xchen6964-coder/xiaoshi-checkin （公开，直接推 main） |
 | 线上 | https://xiaoshi-checkin.app.workbuddy.host/ （需带分享码，分享码不写进仓库，向项目负责人索取） |
-| 当前提交 | `25edb56`（2026-11-08 09:51，已上线） |
+| 当前提交 | 以 `git log -1` 为准（2026-11-08 09:55 刷新时为 `25edb56`） |
 | 技术形态 | **静态站**：原生 HTML/CSS/JS，无框架、无构建、无 npm 依赖 |
 
 线上资源必须带 `?sharecode=` 才能取到，裸路径返回 403（分享链接的访问机制）。
