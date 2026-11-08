@@ -216,7 +216,7 @@ body[data-view="onboarding"] { background: var(--memphis-bg); }
 /* ---------- 主框架 ---------- */
 .shell { min-height: 100vh; }
 .main {
-  padding: 20px 16px calc(84px + env(safe-area-inset-bottom));
+  padding: 20px 16px calc(112px + env(safe-area-inset-bottom));
   max-width: 720px; margin: 0 auto;
 }
 
