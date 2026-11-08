@@ -2046,6 +2046,31 @@
       </div>
 
       <div class="card">
+        <div class="card-head"><h2>邀请</h2><span class="meta">把对应的码发给对方</span></div>
+        <div class="code-row">
+          <div class="code-info">
+            <div class="code-lab">成员码</div>
+            <div class="code-hint">用这个加入，需要打卡</div>
+          </div>
+          <span class="code-box">
+            <code>${esc(state.group.invite_code)}</code>
+            <button class="btn ghost small" data-act="copy-invite">复制</button>
+          </span>
+        </div>
+        <div class="code-row teacher">
+          <div class="code-info">
+            <div class="code-lab">教师码 <span class="chip">教师</span></div>
+            <div class="code-hint">用这个加入：有管理权限，不打卡</div>
+          </div>
+          <span class="code-box">
+            <code>${esc(state.group.teacher_code || '—')}</code>
+            <button class="btn ghost small" data-act="copy-teacher">复制</button>
+            ${state.me.role === 'owner' ? `<button class="icon-btn" data-act="regen-teacher-code" aria-label="换一个教师码">↻</button>` : ''}
+          </span>
+        </div>
+      </div>
+
+      <div class="card">
         <div class="card-head"><h2>组设置</h2></div>
         <div class="list-row">
           <div><div>允许成员自己加小事</div><div class="label">关掉后，成员只能做固定任务</div></div>
@@ -2055,14 +2080,6 @@
           <div><div>自定义小事默认截止</div><div class="label">超过这个时间记为补记</div></div>
           <input class="input" id="set-cd" type="time" value="${parseHM(state.group.custom_deadline || '23:59')}" style="width:108px;text-align:center;flex:none">
         </div>
-        ${isAdmin() ? `
-        <div class="list-row" style="margin-top:12px">
-          <div><div>教师码</div><div class="label">老师用这个码加入，直接就是教师</div></div>
-          <span style="display:flex;gap:6px;align-items:center;flex:none">
-            <code style="font-size:13px;letter-spacing:1.5px">${esc(state.group.teacher_code || '—')}</code>
-            <button class="icon-btn" data-act="regen-teacher-code" aria-label="重新生成教师码">↻</button>
-          </span>
-        </div>` : ''}
         <div class="field" style="margin-top:14px">
           <label for="set-webhook">企业微信群机器人地址（填了之后，点「催一下」会同时发到群里）</label>
           <input class="input" id="set-webhook" placeholder="https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=..." value="${esc(state.group.wecom_webhook || '')}">
@@ -2789,6 +2806,7 @@
     if (act === 'open-custom') return openCustomSheet();
     if (act === 'submit-custom') return submitCustom();
     if (act === 'copy-invite') return copyText(state.group.invite_code);
+    if (act === 'copy-teacher') return copyText(state.group.teacher_code || '');
     if (act === 'export-ics') return exportIcs();
     if (act === 'copy-progress') return copyProgress();
     if (act === 'remind') return remind();

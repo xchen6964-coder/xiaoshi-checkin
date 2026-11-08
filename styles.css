@@ -694,6 +694,24 @@ body[data-view="report"] { --view-accent: var(--accent-mint); }
 .list-row .label { color: var(--muted); font-size: 13px; }
 .list-row .val { font-variant-numeric: tabular-nums; }
 
+/* 邀请码 / 教师码 并列卡片 */
+.code-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 14px; border-radius: 12px; margin-bottom: 10px;
+  background: var(--tint); border: 1px solid var(--line);
+}
+.code-row:last-child { margin-bottom: 0; }
+.code-row.teacher { background: var(--brand-soft); border-color: var(--brand); }
+.code-info { min-width: 0; }
+.code-lab { font-size: 13.5px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+.code-hint { font-size: 11.5px; color: var(--muted); margin-top: 3px; }
+.code-box { display: flex; align-items: center; gap: 8px; flex: none; }
+.code-box code { font-size: 17px; letter-spacing: 2.5px; font-weight: 600; font-variant-numeric: tabular-nums; }
+@media (max-width: 420px) {
+  .code-row { flex-direction: column; align-items: stretch; gap: 10px; }
+  .code-box { justify-content: space-between; }
+}
+
 .invite {
   display: flex; align-items: center; justify-content: space-between;
   background: var(--tint); border: 1px dashed var(--check-line); border-radius: 12px;
