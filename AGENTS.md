@@ -23,9 +23,9 @@
 
 | 文件 | 行数 | 作用 |
 |---|---|---|
-| `app.js` | 2440 | 单文件 IIFE，所有页面渲染 + 全部交互 |
-| `styles.css` | 652 | 设计令牌 + 所有组件样式，分区块注释 |
-| `index.html` | 44 | 入口，只有骨架和三个 `?v=N` 版本号 |
+| `app.js` | 2724 | 单文件 IIFE，所有页面渲染 + 全部交互 |
+| `styles.css` | 953 | 设计令牌 + 所有组件样式，分区块注释 |
+| `index.html` | 44 | 入口，只有骨架和三个文件版本号（`styles.css?v=23` 这类） |
 | `export.js` | 343 | 四种导出（HTML/Word/CSV/Excel）与 .ics 日历 |
 
 外部依赖只在 `vendor/`：云 SDK、docx、xlsx。**不要引入任何新依赖**。
@@ -96,7 +96,7 @@ console.log('有处理无按钮:',[...js].filter(x=>!html.has(x)).join(' ')||'�
 
 ### 5. 改样式必须升版本号
 
-`index.html` 里 `styles.css?v=16`、`app.js?v=21`（`export.js?v=10`）。**只要改到就 +1**，微信内置浏览器缓存极顽固。
+`index.html` 里现在是 `styles.css?v=23`、`app.js?v=28`、`export.js?v=10`，以文件里的实际值为准。**只要改到就 +1**，微信内置浏览器缓存极顽固。
 
 ### 6. `[hidden]` 规则不能删
 
