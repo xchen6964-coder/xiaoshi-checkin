@@ -39,6 +39,8 @@
     handovers: [],
     myCheckins: [],
     inactive: [],
+    allUsers: [],
+    teachers: [],
     avatarUrls: {},
     loadError: '',
     wallTab: 'today',
@@ -241,7 +243,10 @@
     state.loadError = failed.length ? (failed[0].error.message || '数据没读出来') : '';
     if (failed.length) console.error('[loadAll]', failed.map((r) => r.error));
     state.tasks = tasksRes.data || [];
-    state.members = membersRes.data || [];
+    const activeUsers = membersRes.data || [];
+    state.allUsers = activeUsers;
+    state.members = activeUsers.filter((m) => m.role !== 'teacher');
+    state.teachers = activeUsers.filter((m) => m.role === 'teacher');
     state.inactive = inactiveRes.data || [];
     state.todayCheckins = todayRes.data || [];
     state.weekCheckins = weekRes.data || [];
@@ -266,7 +271,7 @@
 
   async function loadAvatarUrls() {
     state.avatarUrls = {};
-    const paths = [...new Set((state.members || []).map((m) => m.avatar_url).filter(Boolean))];
+    const paths = [...new Set((state.allUsers || []).map((m) => m.avatar_url).filter(Boolean))];
     if (!paths.length) return;
     try {
       const res = await cloud.storage.createSignedUrls(paths, 3600);
@@ -329,7 +334,8 @@
     return d.toLocaleDateString('sv-SE', { timeZone: 'Asia/Shanghai' });
   }
 
-  const isAdmin = () => state.me && (state.me.role === 'owner' || state.me.role === 'leader');
+  const isAdmin = () => state.me && (state.me.role === 'owner' || state.me.role === 'leader' || state.me.role === 'teacher');
+  const isTeacher = () => state.me && state.me.role === 'teacher';
 
   /* ---------- 登录 ---------- */
   function renderLogin(errMsg) {
@@ -639,7 +645,7 @@
           <input id="ob-nick" class="input" maxlength="12" placeholder="组内唯一，2–12 个字">
         </div>` : `
         <div class="field">
-          <label for="ob-invite">邀请码</label>
+          <label for="ob-invite">邀请码 / 教师码</label>
           <input id="ob-invite" class="input" maxlength="6" placeholder="6 位字母或数字" style="text-transform:uppercase">
         </div>
         <div class="field">
@@ -649,7 +655,7 @@
       submit.textContent = mode === 'create' ? '创建并进入' : '加入';
       hint.textContent = mode === 'create'
         ? (state.groups.length ? '你会成为新组的站长，建好后自动切过去，原来的组还在。' : '你会成为这个组的站长，拥有全部权限。')
-        : '昵称在组内不能重复。';
+        : '老师请用站长给你的教师码：进来就是教师身份，有管理权限但不用打卡。';
       document.getElementById('ob-error').textContent = '';
     }
 
@@ -796,7 +802,7 @@
   }
 
   function roleLabel(r) {
-    return r === 'owner' ? '站长' : r === 'leader' ? '负责人' : '成员';
+    return r === 'owner' ? '站长' : r === 'leader' ? '负责人' : r === 'teacher' ? '教师' : '成员';
   }
 
   function viewHeading(mark, eyebrow, title) {
@@ -880,6 +886,7 @@
 
   function renderToday(root) {
     root.className = 'today-view';
+    const teacher = isTeacher();
     const done = myToday().length;
     const total = state.tasks.length;
     const ratio = total ? done / total : 0;
@@ -892,6 +899,11 @@
       return mine.size >= total;
     }).length : 0;
     const gap = state.members.length - fullDone;
+
+    // 教师不打卡：环改成全组交齐比例，不显示「我的完成度」
+    const ringNum = teacher ? `${fullDone}/${state.members.length}` : `${done}/${total}`;
+    const ringLabel = teacher ? '人交齐' : '已完成';
+    const ringRatio = teacher ? (state.members.length ? fullDone / state.members.length : 0) : ratio;
 
     const todayCount = taskCheckins.length;
     const cmpHTML = compareChip(todayCount);
@@ -919,9 +931,9 @@
           <svg width="96" height="96" viewBox="0 0 96 96">
             <circle cx="48" cy="48" r="40" fill="none" style="stroke:var(--ring-track)" stroke-width="9"/>
             <circle cx="48" cy="48" r="40" fill="none" style="stroke:var(--brand)" stroke-width="9" stroke-linecap="round"
-              stroke-dasharray="${(C * ratio).toFixed(1)} ${C.toFixed(1)}"/>
+              stroke-dasharray="${(C * ringRatio).toFixed(1)} ${C.toFixed(1)}"/>
           </svg>
-          <div class="num"><b>${done}/${total}</b><span>已完成</span></div>
+          <div class="num"><b>${ringNum}</b><span>${ringLabel}</span></div>
         </div>
         <div class="hero-side">
           <div class="line1">全组今天 ${todayCount} 条打卡</div>
@@ -946,7 +958,7 @@
             <p>${isAdmin() ? '设一条带截止时间的任务，比如「早起 08:30」。成员到点前提交，谁没交一眼看到。' : '负责人正在设置任务，过一会儿刷新看看。'}</p>
             ${isAdmin() ? '<button class="btn" data-act="go-admin">去添加任务</button>' : ''}
           </div>` : state.tasks.map((t, index) => {
-            const c = findCheckin(t.id);
+            const c = teacher ? null : findCheckin(t.id);
             const ds = deadlineState(t);
             const ids = new Set(taskCheckins.filter((x) => x.task_id === t.id).map((x) => x.user_id));
             const dotsHTML = state.members.length <= 8
@@ -963,12 +975,12 @@
                 <div class="t-sub ${c ? 'late' : ds.cls}">${c ? `已打卡 ${timeOf(c.done_at)}` : ds.text}</div>
               </div>
               ${dotsHTML}
-              <button class="check ${c ? 'on' : ''}" data-act="toggle-task" data-task="${t.id}" data-checkin="${c ? c.id : ''}" aria-label="${c ? '取消打卡' : '打卡'}">
+              ${teacher ? `<span class="t-count sub">${parseHM(t.deadline_time)}</span>` : `<button class="check ${c ? 'on' : ''}" data-act="toggle-task" data-task="${t.id}" data-checkin="${c ? c.id : ''}" aria-label="${c ? '取消打卡' : '打卡'}">
                 <svg width="15" height="15" viewBox="0 0 16 16"><path d="M3 8.5l3.2 3.2L13 5" fill="none" style="stroke:var(--on-brand)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              </button>
+              </button>`}
             </div>`;
           }).join('')}
-        ${state.group.allow_member_custom ? `<button class="add-row" data-act="open-custom">＋ 加一件小事</button>` : ''}
+        ${state.group.allow_member_custom && !teacher ? `<button class="add-row" data-act="open-custom">＋ 加一件小事</button>` : ''}
       </div>
 
       ${customToday().length ? `
@@ -1020,7 +1032,7 @@
       <div class="card today-recent">
         <div class="card-head"><h2>最近打卡</h2><span class="meta">全组 · ${state.weekCheckins.length} 条</span></div>
         ${state.weekCheckins.slice(0, 6).map((c) => {
-          const who = (state.members.find((m) => m.id === c.user_id) || {}).nickname || '成员';
+          const who = ((state.allUsers || []).find((m) => m.id === c.user_id) || {}).nickname || '成员';
           const task = c.task_id ? (state.tasks.find((t) => t.id === c.task_id) || {}).title : '';
           const d = new Date(c.done_at);
           const isToday = c.date === todayStr();
@@ -1147,6 +1159,7 @@
   }
 
   async function submitCheckin(taskId) {
+    if (isTeacher()) { toast('教师不需要打卡'); return; }
     const task = state.tasks.find((t) => t.id === taskId);
     const noteEl = document.getElementById('ck-note');
     const note = noteEl ? noteEl.value.trim() : '';
@@ -1234,6 +1247,7 @@
   }
 
   async function submitCustom() {
+    if (isTeacher()) { toast('教师不需要打卡'); return; }
     const el = document.getElementById('cs-title');
     const title = el ? el.value.trim() : '';
     if (!title) { toast('写点什么再提交'); return; }
@@ -1254,6 +1268,7 @@
   }
 
   async function toggleTask(taskId, checkinId) {
+    if (isTeacher()) { toast('教师不需要打卡'); return; }
     if (!checkinId) return openCheckinSheet(taskId);
     return openEditSheet(checkinId);
   }
@@ -1387,7 +1402,7 @@
   }
 
   async function deleteMember(userId) {
-    const m = state.members.find((x) => x.id === userId) || state.inactive.find((x) => x.id === userId);
+    const m = (state.allUsers || []).find((x) => x.id === userId) || state.inactive.find((x) => x.id === userId);
     if (!m) return;
     if (!isAdmin()) { toast('只有负责人能删人'); return; }
     if (userId === state.me.id) { toast('不能删自己'); return; }
@@ -1441,7 +1456,7 @@
   }
 
   /* ---------- 打卡墙 ---------- */
-  const memberName = (id) => (state.members.find((m) => m.id === id) || {}).nickname || '成员';
+  const memberName = (id) => ((state.allUsers || []).find((m) => m.id === id) || {}).nickname || '成员';
   const taskName = (id) => (state.tasks.find((t) => t.id === id) || {}).title || '';
   const noteTitle = (c) => c.title || taskName(c.task_id) || '小事';
   const likeCount = (cid) => (state.likes || []).filter((l) => l.checkin_id === cid).length;
@@ -1706,7 +1721,7 @@
       state.me.role === 'owner' && m.role === 'leader' ? '<button class="btn ghost small" data-act="clear-leader">收回负责人</button>' : '',
       state.me.role === 'leader' && m.role === 'member' ? `<button class="btn ghost small" data-act="request-handover" data-user="${m.id}">交接给他</button>` : '',
       m.role === 'member' && excused ? `<button class="btn ghost small" data-act="excuse-today" data-user="${m.id}" data-on="0">取消豁免</button>` : '',
-      m.role === 'member' ? `<button class="icon-btn" data-act="set-active" data-user="${m.id}" data-on="0" aria-label="停用">停</button>` : ''
+      (m.role === 'member' || m.role === 'teacher') ? `<button class="icon-btn" data-act="set-active" data-user="${m.id}" data-on="0" aria-label="停用">停</button>` : ''
     ].join('');
   }
 
@@ -1714,20 +1729,24 @@
     root.className = 'memphis-view members-view';
     const exp = weekExpected();
     const outHandover = (state.handovers || []).find((h) => h.from_user_id === state.me.id);
-    const whoHandover = outHandover ? ((state.members.find((x) => x.id === outHandover.to_user_id) || {}).nickname || '对方') : '';
+    const whoHandover = outHandover ? ((state.allUsers.find((x) => x.id === outHandover.to_user_id) || {}).nickname || '对方') : '';
+    const people = [...state.members, ...(state.teachers || [])];
+    const headMeta = state.teachers.length
+      ? `${esc(state.group.name)} · ${state.members.length} 人 + 教师 ${state.teachers.length}`
+      : `${esc(state.group.name)} · ${state.members.length} 人`;
 
     root.innerHTML = `
-      <div class="topbar">${viewHeading('员', `${esc(state.group.name)} · ${state.members.length} 人`, '成员')}</div>
+      <div class="topbar">${viewHeading('员', headMeta, '成员')}</div>
 
       <div class="card">
         <div class="card-head"><h2>在组的人</h2><span class="meta">${isAdmin() ? '点一行看他的打卡' : '本周完成数'}</span></div>
-        ${state.members.map((m) => `
+        ${people.map((m) => `
           <div class="list-row m-row">
             <div class="m-who" data-act="open-member" data-user="${m.id}">
               <span class="avatar" style="width:30px;height:30px;font-size:12px">${avatarInner(m.nickname, m.avatar_url)}</span>
               <div class="m-info">
                 <div class="m-name">${esc(m.nickname)}<span class="chip ${m.role === 'member' ? 'plain' : ''}">${roleLabel(m.role)}</span></div>
-                <div class="label">本周 ${memberWeekDone(m.id)}/${exp}</div>
+                <div class="label">${m.role === 'teacher' ? '有管理权限 · 不打卡' : `本周 ${memberWeekDone(m.id)}/${exp}`}</div>
               </div>
             </div>
             <span class="m-ops">${memberOps(m)}</span>
@@ -1751,7 +1770,7 @@
   }
 
   async function openMemberSheet(uid) {
-    const m = state.members.find((x) => x.id === uid);
+    const m = (state.allUsers || []).find((x) => x.id === uid);
     if (!m) return;
     if (!isAdmin()) { toast('只有负责人能看别人的打卡'); return; }
     openSheet(`${m.nickname} 的打卡`, '<p class="hint" style="margin:0">正在读取…</p>');
@@ -1809,8 +1828,10 @@
       <div class="mg-wrap">${grid || '<p class="hint" style="margin:0">还没有任务。</p>'}</div>
       <div class="field" style="margin-top:16px"><label>最近打卡</label></div>
       ${recent || '<p class="hint" style="margin:0">还没有打卡记录。</p>'}
-      <p class="hint" style="margin-top:14px">只能看，不能替别人打。</p>
+      <p class="hint" style="margin-top:14px">${m.role === 'teacher' ? '教师身份：有管理权限，不打卡，也不计入成员统计。' : '只能看，不能替别人打。'}</p>
       ${uid === state.me.id ? '' : `<div class="m-del">
+        ${state.me.role === 'owner' && m.role === 'member' ? `<button class="btn ghost block" data-act="set-role" data-user="${uid}" data-role="teacher" style="margin-bottom:8px">设为教师（不打卡，有管理权限）</button>` : ''}
+        ${state.me.role === 'owner' && m.role === 'teacher' ? `<button class="btn ghost block" data-act="set-role" data-user="${uid}" data-role="member" style="margin-bottom:8px">改回普通成员</button>` : ''}
         <button class="btn ghost danger block" data-act="del-member" data-user="${uid}">删除此人及其全部数据</button>
         <p class="hint" style="margin:8px 0 0">只是暂时不让打卡就用「停」，历史会留着。</p>
       </div>`}
@@ -1865,6 +1886,11 @@
         </div>
       </div>
 
+      ${isTeacher() ? `
+      <div class="card">
+        <div class="card-head"><h2>教师身份</h2></div>
+        <p class="hint" style="margin:0">你不参与打卡，也不计入成员统计。管理权限和负责人一样：管任务、看报告、催人、改成员。</p>
+      </div>` : `
       <div class="card">
         <div class="kpis">
           <div class="kpi"><b>${streak}</b><span>连续天数</span></div>
@@ -1876,7 +1902,7 @@
           ${heatCells.map((x) => `<i class="heat-c h${x.lvl}${x.future ? ' fut' : ''}" title="${x.d}${x.n ? ' · ' + x.n + ' 条' : ' · 没打卡'}"></i>`).join('')}
         </div>
         <p class="hint" style="margin:10px 0 0">最近 5 周，${heatCells.filter((x) => x.n > 0).length} 天有打卡。颜色越深，当天打卡越多；灰色是没打卡。</p>
-      </div>
+      </div>`}
 
       <div class="card">
         <div class="card-head"><h2>手机日历提醒</h2></div>
@@ -2023,12 +2049,20 @@
         <div class="card-head"><h2>组设置</h2></div>
         <div class="list-row">
           <div><div>允许成员自己加小事</div><div class="label">关掉后，成员只能做固定任务</div></div>
-          <label class="switch"><input type="checkbox" id="set-custom" ${state.group.allow_member_custom ? 'checked' : ''}><i></i></label>
+          <label class="switch" data-act="toggle-custom"><input type="checkbox" id="set-custom" ${state.group.allow_member_custom ? 'checked' : ''}><i></i></label>
         </div>
         <div class="list-row" style="margin-top:12px">
           <div><div>自定义小事默认截止</div><div class="label">超过这个时间记为补记</div></div>
           <input class="input" id="set-cd" type="time" value="${parseHM(state.group.custom_deadline || '23:59')}" style="width:108px;text-align:center;flex:none">
         </div>
+        ${state.me.role === 'owner' ? `
+        <div class="list-row" style="margin-top:12px">
+          <div><div>教师码</div><div class="label">老师用这个码加入，直接就是教师</div></div>
+          <span style="display:flex;gap:6px;align-items:center;flex:none">
+            <code style="font-size:13px;letter-spacing:1.5px">${esc(state.group.teacher_code || '—')}</code>
+            <button class="icon-btn" data-act="regen-teacher-code" aria-label="重新生成教师码">↻</button>
+          </span>
+        </div>` : ''}
         <div class="field" style="margin-top:14px">
           <label for="set-webhook">企业微信群机器人地址（填了之后，点「催一下」会同时发到群里）</label>
           <input class="input" id="set-webhook" placeholder="https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=..." value="${esc(state.group.wecom_webhook || '')}">
@@ -2125,6 +2159,26 @@
     toast('已归档');
   }
 
+  async function toggleAllowCustom(val, box) {
+    const { data, error } = await cloud.database.from('groups')
+      .update({ allow_member_custom: val }).eq('id', state.group.id).select();
+    if (error || !data || !data.length) {
+      if (box) box.checked = !val;
+      toast('没保存上：' + ((error && error.message) || '可能没有权限'));
+      return;
+    }
+    state.group = data[0];
+    toast(val ? '已允许成员自己加小事' : '已关闭，成员只能做固定任务');
+  }
+
+  async function regenTeacherCode() {
+    if (!confirm('换一个新的教师码？旧码立即失效，已经进来的老师不受影响。')) return;
+    const { data, error } = await cloud.database.rpc('regenerate_teacher_code');
+    if (error) { toast(error.message || '换码失败'); return; }
+    await refresh();
+    toast('新教师码：' + ((data && data.teacher_code) || ''));
+  }
+
   async function saveSettings() {
     const allow = document.getElementById('set-custom').checked;
     const webhook = document.getElementById('set-webhook').value.trim();
@@ -2161,8 +2215,24 @@
     toast('已调整顺序');
   }
 
+  async function setRole(uid, role) {
+    const m = (state.allUsers || []).find((x) => x.id === uid);
+    if (!m) return;
+    const toTeacher = role === 'teacher';
+    const ok = confirm(toTeacher
+      ? `把 ${m.nickname} 设为教师？\n\n他会拿到和负责人一样的管理权限（管任务、看报告、删成员），但不再需要打卡，也不计入任何统计。`
+      : `把 ${m.nickname} 改回普通成员？\n\n他会重新需要打卡，并计入统计。`);
+    if (!ok) return;
+    const { error } = await cloud.database.rpc('set_member_role', { p_user_id: uid, p_role: role });
+    if (error) { toast(error.message || '操作失败'); return; }
+    closeSheet();
+    await refresh();
+    toast(toTeacher ? '已设为教师' : '已改回成员');
+  }
+
   async function setMemberActive(userId, on) {
-    const m = state.inactive.find((x) => x.id === userId) || state.members.find((x) => x.id === userId);
+    const m = state.inactive.find((x) => x.id === userId)
+      || (state.allUsers || []).find((x) => x.id === userId);
     if (!on && !confirm(`停用 ${m ? m.nickname : '该成员'}？他不能再打卡，历史记录保留。`)) return;
     const { error } = await cloud.database.rpc('set_member_active', { p_user_id: userId, p_active: on });
     if (error) { toast(error.message || '操作失败'); return; }
@@ -2728,9 +2798,12 @@
     if (act === 'archive-task') return archiveTask(el.dataset.task);
     if (act === 'move-task') return moveTask(el.dataset.task, Number(el.dataset.dir));
     if (act === 'set-active') return setMemberActive(el.dataset.user, el.dataset.on === '1');
+    if (act === 'set-role') return setRole(el.dataset.user, el.dataset.role);
     if (act === 'regen-invite') return regenInvite();
     if (act === 'excuse-today') return excuseToday(el.dataset.user, el.dataset.on === '1');
     if (act === 'save-settings') return saveSettings();
+    if (act === 'toggle-custom') { const box = el.querySelector('input'); return toggleAllowCustom(box.checked, box); }
+    if (act === 'regen-teacher-code') return regenTeacherCode();
     if (act === 'open-theme') return openThemeSheet();
     if (act === 'pick-theme') {
       applyTheme(el.dataset.theme || 'fresh');
