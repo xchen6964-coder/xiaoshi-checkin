@@ -12,7 +12,7 @@
 
 ```
 .
-├── index.html     入口，骨架 + 三个 ?v=N 版本号
+├── index.html     入口，骨架 + 三个版本号（见下方「版本号」）
 ├── styles.css     设计令牌与全部组件样式（含 paper 主题覆盖）
 ├── app.js         单文件 IIFE，所有页面渲染与交互
 ├── config.js      云服务公开配置（endpoint / publishableKey）
@@ -67,11 +67,24 @@ console.log('有处理无按钮:',[...js].filter(x=>!html.has(x)).join(' ')||'�
 视觉验收用无头 Chrome 截图，两个坑：
 
 1. 最小视口是 500，`--window-size=390` 拍出来是被裁的假象。要验真机宽度，把 `html,body{width:390px}` 写进页面再用 512 窗口拍。
-2. 无头实例会缓存旧 CSS，`?v=N` 不足以绕过。用 CDP 截图时必须先 `Network.setCacheDisabled` + `Page.reload({ignoreCache:true})`，否则会把「没生效」和「缓存了旧文件」混为一谈。
+2. 无头实例会缓存旧 CSS，光靠改版本号（下一节）不足以绕过。用 CDP 截图时必须先 `Network.setCacheDisabled` + `Page.reload({ignoreCache:true})`，否则会把「没生效」和「缓存了旧文件」混为一谈。
+
+## 版本号
+
+`index.html` 里引用的每个文件后面都挂着一个数字，当前是：
+
+```html
+<link rel="stylesheet" href="styles.css?v=23">
+<script src="app.js?v=28"></script>
+```
+
+这个 `?v=23` 不是文件内容的一部分，是写在地址后面的标记。浏览器会把 `styles.css?v=23` 和 `styles.css?v=24` 当成两个不同的文件，所以数字一变，它就不得不重新下载；数字不动，它就继续用缓存里那份旧的。
+
+微信内置浏览器的缓存尤其顽固，所以**只要改到 `styles.css` 或 `app.js`，就必须把这个数字加一**，否则用户手机上看到的还是老样子。
 
 ## 部署
 
-用 WorkBuddy 的发布能力部署静态站，线上链接需带分享码访问（分享码不进仓库）。改完样式或脚本必须升 `index.html` 里的 `?v=N`，微信内置浏览器缓存极顽固。
+用 WorkBuddy 的发布能力部署静态站，线上链接需带分享码访问（分享码不进仓库）。改完样式或脚本记得按上一节升版本号。
 
 ## 协作约定
 
