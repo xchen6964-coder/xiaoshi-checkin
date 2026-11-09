@@ -1528,6 +1528,14 @@
     `;
   }
 
+  async function setCheckinStatus(checkinId, status) {
+    const { error } = await cloud.database.rpc('set_checkin_status', { p_checkin_id: checkinId, p_status: status });
+    if (error) { toast(error.message || '改不了这条'); return; }
+    closeSheet();
+    await refresh();
+    toast(status === 'on_time' ? '已改为按时' : '已改回补记');
+  }
+
   async function toggleLike(checkinId) {
     if (!state.me) return;
     const mine = (state.likes || []).find((l) => l.checkin_id === checkinId && l.user_id === state.me.id);
@@ -1556,6 +1564,7 @@
       <div class="post-meta">${esc(memberName(c.user_id))} · ${fmtDateCn(c.date)} ${timeOf(c.done_at)}${c.status === 'late' ? ' · 补记' : ''}</div>
       <div class="post-likes">${names.length ? '♡ ' + names.map(esc).join('、') : '还没有人点赞'}</div>
       <button class="btn ghost block" data-act="toggle-like" data-checkin="${c.id}">${likedByMe(c.id) ? '取消点赞' : '♡ 点赞'}</button>
+      ${isAdmin() && c.task_id && !mine && (c.status === 'on_time' || c.status === 'late') ? `<button class="btn ghost block" data-act="set-checkin-status" data-checkin="${c.id}" data-status="${c.status === 'late' ? 'on_time' : 'late'}" style="margin-top:8px">${c.status === 'late' ? '改为按时' : '改回补记'}</button>` : ''}
       ${mine ? `<button class="btn ghost block" data-act="del-checkin" data-checkin="${c.id}" style="margin-top:8px">取消这条打卡</button>` : ''}
     `);
   }
@@ -2798,6 +2807,7 @@
     if (act === 'wall-tab') { state.wallTab = el.dataset.tab; return renderWall(document.getElementById('view')); }
     if (act === 'open-post') return openPostSheet(el.dataset.checkin);
     if (act === 'toggle-like') return toggleLike(el.dataset.checkin);
+    if (act === 'set-checkin-status') return setCheckinStatus(el.dataset.checkin, el.dataset.status);
     if (act === 'del-checkin') return delCheckin(el.dataset.checkin);
     if (act === 'save-edit') return saveEdit();
     if (act === 'ed-del-keep') { if (state.edit) { state.edit.keep[Number(el.dataset.i)].removed = true; paintEditShots(); } return; }
