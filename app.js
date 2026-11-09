@@ -1747,7 +1747,7 @@
     const excused = state.todayCheckins.some((c) => c.user_id === m.id && c.status === 'excused');
     return [
       state.me.role === 'owner' && m.role === 'member' ? `<button class="btn ghost small" data-act="set-leader" data-user="${m.id}">设为负责人</button>` : '',
-      state.me.role === 'owner' && m.role === 'leader' ? '<button class="btn ghost small" data-act="clear-leader">收回负责人</button>' : '',
+      state.me.role === 'owner' && m.role === 'leader' ? `<button class="btn ghost small" data-act="unset-leader" data-user="${m.id}">取消负责人</button>` : '',
       state.me.role === 'leader' && m.role === 'member' ? `<button class="btn ghost small" data-act="request-handover" data-user="${m.id}">交接给他</button>` : '',
       m.role === 'member' && excused ? `<button class="btn ghost small" data-act="excuse-today" data-user="${m.id}" data-on="0">取消豁免</button>` : '',
       (m.role === 'member' || m.role === 'teacher') ? `<button class="icon-btn" data-act="set-active" data-user="${m.id}" data-on="0" aria-label="停用">停</button>` : ''
@@ -2240,11 +2240,21 @@
   }
 
   async function setLeader(userId) {
-    if (!confirm('把负责人交给这个人？你作为站长仍然保留全部权限。')) return;
+    const m = (state.allUsers || []).find((x) => x.id === userId);
+    if (!confirm(`把 ${m ? m.nickname : '他'} 设为负责人？他会拿到管理权限，其他负责人不受影响。`)) return;
     const { error } = await cloud.database.rpc('set_leader', { p_user_id: userId });
     if (error) { toast(error.message || '设置失败'); return; }
     await enterApp();
-    toast('已更换负责人');
+    toast('已设为负责人');
+  }
+
+  async function unsetLeader(userId) {
+    const m = (state.allUsers || []).find((x) => x.id === userId);
+    if (!confirm(`取消 ${m ? m.nickname : '他'} 的负责人？他会变回普通成员，要重新打卡。`)) return;
+    const { error } = await cloud.database.rpc('unset_leader', { p_user_id: userId });
+    if (error) { toast(error.message || '取消失败'); return; }
+    await enterApp();
+    toast('已取消负责人');
   }
 
   async function moveTask(id, dir) {
@@ -2301,14 +2311,6 @@
     const n = (data && data.affected) || 0;
     if (on && !n) toast('他今天已经打过卡，无需豁免');
     else toast(on ? '已豁免今天' : '已取消豁免');
-  }
-
-  async function clearLeader() {
-    if (!confirm('收回负责人权限？他会马上变回普通成员，组里暂时没有负责人，管理由你代管。')) return;
-    const { error } = await cloud.database.rpc('clear_leader');
-    if (error) { toast(error.message || '收回失败'); return; }
-    await enterApp();
-    toast('已收回负责人');
   }
 
   async function requestHandover(userId) {
@@ -2866,7 +2868,7 @@
     if (act === 'new-group') { closeSheet(); return renderOnboarding('create'); }
     if (act === 'join-group') { closeSheet(); return renderOnboarding('join'); }
     if (act === 'set-leader') return setLeader(el.dataset.user);
-    if (act === 'clear-leader') return clearLeader();
+    if (act === 'unset-leader') return unsetLeader(el.dataset.user);
     if (act === 'request-handover') return requestHandover(el.dataset.user);
     if (act === 'respond-handover') return respondHandover(el.dataset.h, el.dataset.accept === '1');
     if (act === 'go-admin') { state.view = 'admin'; history.replaceState(null, '', '#/admin'); return renderShell(); }
