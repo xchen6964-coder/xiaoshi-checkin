@@ -710,7 +710,7 @@
         const map = {
           invite_invalid: '邀请码不对，或这个组不存在',
           teacher_code_invalid: '这个不是教师码，找站长要教师码（成员码在「用邀请码加入」里填）',
-          nickname_taken: '这个昵称已经有人用了，换一个',
+          nickname_taken: '这个昵称已被占用。老成员请返回登录，用原来的手机号或邮箱进来，不要重新加入',
           nickname_invalid: '昵称要 2–12 个字',
           already_in_group: '你已经在组里了'
         };
@@ -1859,8 +1859,8 @@
       ${recent || '<p class="hint" style="margin:0">还没有打卡记录。</p>'}
       <p class="hint" style="margin-top:14px">${m.role === 'teacher' ? '教师身份：有管理权限，不打卡，也不计入成员统计。' : '只能看，不能替别人打。'}</p>
       ${uid === state.me.id ? '' : `<div class="m-del">
-        ${state.me.role === 'owner' && m.role === 'member' ? `<button class="btn ghost block" data-act="set-role" data-user="${uid}" data-role="teacher" style="margin-bottom:8px">设为教师（不打卡，有管理权限）</button>` : ''}
-        ${state.me.role === 'owner' && m.role === 'teacher' ? `<button class="btn ghost block" data-act="set-role" data-user="${uid}" data-role="member" style="margin-bottom:8px">改回普通成员</button>` : ''}
+        ${isAdmin() && m.role === 'member' ? `<button class="btn ghost block" data-act="set-role" data-user="${uid}" data-role="teacher" style="margin-bottom:8px">设为教师（不打卡，有管理权限）</button>` : ''}
+        ${isAdmin() && m.role === 'teacher' ? `<button class="btn ghost block" data-act="set-role" data-user="${uid}" data-role="member" style="margin-bottom:8px">改回普通成员</button>` : ''}
         <button class="btn ghost danger block" data-act="del-member" data-user="${uid}">删除此人及其全部数据</button>
         <p class="hint" style="margin:8px 0 0">只是暂时不让打卡就用「停」，历史会留着。</p>
       </div>`}
