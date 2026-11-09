@@ -612,7 +612,7 @@
       : '';
     app.innerHTML = `
       <div class="gate">
-        <button class="gate-back" id="ob-logout" type="button">‹ 返回登录</button>
+        <button class="gate-back" id="ob-logout" type="button">← 返回登录</button>
         <div class="brand-mark">小</div>
         <h1>先选一下</h1>
         <p class="sub">你要开一个新组，还是加入别人的组？</p>

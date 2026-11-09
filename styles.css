@@ -131,14 +131,14 @@ a { color: inherit; text-decoration: none; }
   position: relative;
 }
 .gate-back {
-  position: absolute; top: 8px; left: 12px;
-  display: inline-flex; align-items: center;
-  font-family: inherit; font-size: 13px;
-  color: var(--brand-ink); background: none;
-  border: 0; padding: 8px 10px; border-radius: 8px;
-  cursor: pointer;
+  position: absolute; top: 12px; left: 14px;
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: inherit; font-size: 15px; font-weight: 600;
+  color: var(--brand-ink); background: var(--brand-soft);
+  border: 1.5px solid var(--brand); padding: 11px 18px;
+  border-radius: 12px; cursor: pointer;
 }
-.gate-back:active { background: var(--tint); }
+.gate-back:active { transform: translateY(1px); background: var(--tint); }
 .brand-mark {
   width: 44px; height: 44px; border-radius: 12px;
   background: var(--brand); color: var(--on-brand);
