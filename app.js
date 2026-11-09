@@ -338,7 +338,7 @@
   const isTeacher = () => state.me && state.me.role === 'teacher';
 
   /* ---------- 登录 ---------- */
-  function renderLogin(errMsg) {
+  function renderLogin(errMsg, initialKind) {
     state.view = 'login';
     document.body.dataset.view = 'login';
     app.innerHTML = `
@@ -358,7 +358,7 @@
         <div class="gate-foot">这个站只服务一个熟人小组。登录后需要邀请码才能进组。</div>
       </div>`;
 
-    let kind = 'email';
+    let kind = initialKind || 'email';
     let mode = 'otp';
 
     function paint() {
@@ -612,6 +612,7 @@
       : '';
     app.innerHTML = `
       <div class="gate">
+        <button class="gate-back" id="ob-logout" type="button">‹ 返回登录</button>
         <div class="brand-mark">小</div>
         <h1>先选一下</h1>
         <p class="sub">你要开一个新组，还是加入别人的组？</p>
@@ -626,7 +627,6 @@
         <button class="btn block" id="ob-submit">创建并进入</button>
         <p class="hint" id="ob-hint">你会成为这个组的站长，拥有全部权限。</p>
         ${back}
-        <p class="hint" style="margin-top:16px"><a href="#" class="link-btn" id="ob-logout">返回登录</a></p>
       </div>`;
 
     let mode = initial === 'join' ? 'join' : 'create';
@@ -672,10 +672,7 @@
     if (backBtn) backBtn.addEventListener('click', () => enterApp());
 
     const outBtn = document.getElementById('ob-logout');
-    if (outBtn) outBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      if (confirm('返回登录界面？这里填的内容不会保存，重新登录要再收一次验证码。')) logout();
-    });
+    if (outBtn) outBtn.addEventListener('click', () => logout('pwd'));
 
     submit.addEventListener('click', async () => {
       const err = document.getElementById('ob-error');
@@ -2314,10 +2311,10 @@
     toast(accept ? '你已经是负责人' : '已拒绝这次交接');
   }
 
-  async function logout() {
+  async function logout(initialKind) {
     await cloud.auth.signOut();
     state.me = null; state.group = null;
-    renderLogin();
+    renderLogin('', initialKind || 'email');
   }
 
 
