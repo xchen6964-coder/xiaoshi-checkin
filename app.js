@@ -1564,7 +1564,7 @@
       <div class="post-meta">${esc(memberName(c.user_id))} · ${fmtDateCn(c.date)} ${timeOf(c.done_at)}${c.status === 'late' ? ' · 补记' : ''}</div>
       <div class="post-likes">${names.length ? '♡ ' + names.map(esc).join('、') : '还没有人点赞'}</div>
       <button class="btn ghost block" data-act="toggle-like" data-checkin="${c.id}">${likedByMe(c.id) ? '取消点赞' : '♡ 点赞'}</button>
-      ${isAdmin() && c.task_id && !mine && (c.status === 'on_time' || c.status === 'late') ? `<button class="btn ghost block" data-act="set-checkin-status" data-checkin="${c.id}" data-status="${c.status === 'late' ? 'on_time' : 'late'}" style="margin-top:8px">${c.status === 'late' ? '改为按时' : '改回补记'}</button>` : ''}
+      ${isAdmin() && c.task_id && (c.status === 'on_time' || c.status === 'late') ? `<button class="btn ghost block" data-act="set-checkin-status" data-checkin="${c.id}" data-status="${c.status === 'late' ? 'on_time' : 'late'}" style="margin-top:8px">${c.status === 'late' ? '改为按时' : '改回补记'}</button>` : ''}
       ${mine ? `<button class="btn ghost block" data-act="del-checkin" data-checkin="${c.id}" style="margin-top:8px">取消这条打卡</button>` : ''}
     `);
   }
