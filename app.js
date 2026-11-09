@@ -620,6 +620,7 @@
         <div class="seg" id="ob-seg">
           <button data-mode="create">创建新组</button>
           <button data-mode="join">用邀请码加入</button>
+          <button data-mode="teacher">教师加入</button>
         </div>
 
         <div id="ob-fields"></div>
@@ -644,19 +645,29 @@
         <div class="field">
           <label for="ob-nick">你的昵称</label>
           <input id="ob-nick" class="input" maxlength="12" placeholder="组内唯一，2–12 个字">
+        </div>` : mode === 'teacher' ? `
+        <div class="field">
+          <label for="ob-invite">教师码</label>
+          <input id="ob-invite" class="input" maxlength="6" placeholder="向站长索取" style="text-transform:uppercase">
+        </div>
+        <div class="field">
+          <label for="ob-nick">你的昵称</label>
+          <input id="ob-nick" class="input" maxlength="12" placeholder="组内唯一，2–12 个字">
         </div>` : `
         <div class="field">
-          <label for="ob-invite">邀请码 / 教师码</label>
+          <label for="ob-invite">邀请码</label>
           <input id="ob-invite" class="input" maxlength="6" placeholder="6 位字母或数字" style="text-transform:uppercase">
         </div>
         <div class="field">
           <label for="ob-nick">你的昵称</label>
           <input id="ob-nick" class="input" maxlength="12" placeholder="组内唯一，2–12 个字">
         </div>`;
-      submit.textContent = mode === 'create' ? '创建并进入' : '加入';
+      submit.textContent = mode === 'create' ? '创建并进入' : mode === 'teacher' ? '以教师身份加入' : '加入';
       hint.textContent = mode === 'create'
         ? (state.groups.length ? '你会成为新组的站长，建好后自动切过去，原来的组还在。' : '你会成为这个组的站长，拥有全部权限。')
-        : '老师请用站长给你的教师码：进来就是教师身份，有管理权限但不用打卡。';
+        : mode === 'teacher'
+          ? '教师码由站长提供。进来能管任务、看全组打卡，但不用打卡，也不计入统计。'
+          : '昵称在组内不能重复。老师请改用「教师加入」。';
       document.getElementById('ob-error').textContent = '';
     }
 
@@ -684,6 +695,10 @@
       if (mode === 'create') {
         const name = document.getElementById('ob-name').value.trim();
         res = await cloud.database.rpc('create_group', { p_name: name, p_nickname: nick });
+      } else if (mode === 'teacher') {
+        const code = document.getElementById('ob-invite').value.trim().toUpperCase();
+        if (code.length !== 6) { submit.disabled = false; submit.textContent = '以教师身份加入'; err.textContent = '教师码是 6 位'; return; }
+        res = await cloud.database.rpc('join_as_teacher', { p_code: code, p_nickname: nick });
       } else {
         const invite = document.getElementById('ob-invite').value.trim().toUpperCase();
         if (invite.length !== 6) { submit.disabled = false; submit.textContent = '加入'; err.textContent = '邀请码是 6 位'; return; }
@@ -691,9 +706,10 @@
       }
       if (res.error) {
         submit.disabled = false;
-        submit.textContent = mode === 'create' ? '创建并进入' : '加入';
+        submit.textContent = mode === 'create' ? '创建并进入' : mode === 'teacher' ? '以教师身份加入' : '加入';
         const map = {
           invite_invalid: '邀请码不对，或这个组不存在',
+          teacher_code_invalid: '这个不是教师码，找站长要教师码（成员码在「用邀请码加入」里填）',
           nickname_taken: '这个昵称已经有人用了，换一个',
           nickname_invalid: '昵称要 2–12 个字',
           already_in_group: '你已经在组里了'
