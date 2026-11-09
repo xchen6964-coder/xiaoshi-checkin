@@ -626,6 +626,7 @@
         <button class="btn block" id="ob-submit">创建并进入</button>
         <p class="hint" id="ob-hint">你会成为这个组的站长，拥有全部权限。</p>
         ${back}
+        <p class="hint" style="margin-top:16px"><a href="#" class="link-btn" id="ob-logout">返回登录</a></p>
       </div>`;
 
     let mode = initial === 'join' ? 'join' : 'create';
@@ -669,6 +670,12 @@
 
     const backBtn = document.getElementById('ob-back');
     if (backBtn) backBtn.addEventListener('click', () => enterApp());
+
+    const outBtn = document.getElementById('ob-logout');
+    if (outBtn) outBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      if (confirm('返回登录界面？这里填的内容不会保存，重新登录要再收一次验证码。')) logout();
+    });
 
     submit.addEventListener('click', async () => {
       const err = document.getElementById('ob-error');
