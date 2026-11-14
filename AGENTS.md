@@ -1,103 +1,74 @@
-# 交接 · 小事打卡（xiaoshi-checkin）UI 设计交给 Codex
+# AGENTS.md · 小事打卡（xiaoshi-checkin）
 
-> 生成时间：2026-11-07 22:40，2026-11-08 09:55 刷新（补成员页、登录页改造、手机端导航收项、底部留白修复）。下一个会话（Codex）的职责：**在既有设计体系内做 UI 设计与实现**，不是重新定风格。
-> 本文就是这个仓库根目录的 `AGENTS.md`。只写"你需要知道什么"，细节一律指向仓库里的文件，不重复抄。
+> 最后刷新：2026-11-14 20:00。**这一天项目换了后端**：从 WorkBuddy 托管云迁到自己的 Supabase，并加了同源反代解决国内访问。
+> 本文只写"接手的人必须知道什么"，细节指向仓库里的文件。
 
 ---
 
-## 一、这个项目是什么
+## 一、这是什么
 
-一个给小组用的「每日小事打卡」网页应用。负责人设几条带截止时间的小事，成员到点前打卡（可写文字、传照片），有打卡墙、进度矩阵、成员页、周报导出、站内提醒。
+给一个熟人小组用的每日小事打卡网页。负责人设几条带截止时间的小事，成员到点前打卡（文字 + 照片），有打卡墙、进度矩阵、成员页、周报导出、站内提醒。
 
 | 项 | 值 |
 |---|---|
 | 本地目录 | `D:\WorkBuddy\小事打卡社区` |
 | 仓库 | https://github.com/xchen6964-coder/xiaoshi-checkin （公开，直接推 main） |
-| 线上 | https://xiaoshi-checkin.app.workbuddy.host/ （需带分享码，分享码不写进仓库，向项目负责人索取） |
-| 当前提交 | 以 `git log -1` 为准（2026-11-08 09:55 刷新时为 `25edb56`） |
-| 技术形态 | **静态站**：原生 HTML/CSS/JS，无框架、无构建、无 npm 依赖 |
+| 线上 | https://xiaoshi-checkin.app.workbuddy.host/?sharecode=UWJWMDUQ2R |
+| App ID | `wbapp_jEnLgK2Qgw4V4yfcJpyUPT`（发布走 `workbuddy_sites_deploy`） |
+| 后端 | 自己的 Supabase 项目 `mtkuieogemgpdvacphhs`（Singapore） |
+| 形态 | **Node 单端口服务**：静态文件 + `/sb/*` 反代到 Supabase，无 npm 运行时依赖 |
 
-线上资源必须带 `?sharecode=` 才能取到，裸路径返回 403（分享链接的访问机制）。
+线上必须带 `?sharecode=` 打开一次（平台据此种 cookie），之后同源请求才放行；裸域名返回「链接不完整」。
 
-## 二、代码结构（就这五个文件）
+## 二、为什么有 server.js（不能退回纯静态）
 
-| 文件 | 行数 | 作用 |
+Supabase 域名在国内移动网络经常连不上（手机登录报 `Failed to fetch`），而小组成员不可能都有代理。所以浏览器只跟本站说话，由服务器转发。
+
+```
+浏览器 ──> https://xiaoshi-checkin.app.workbuddy.host
+              ├─ /            静态文件（自己 gzip）
+              └─ /sb/*        ──> https://mtkuieogemgpdvacphhs.supabase.co/*
+```
+
+**两个必须保留的细节，动了就坏**：
+
+1. **`Authorization` 会被平台 Edge 改写**。实测：同一秒签发的 JWT 回传后连 GoTrue 自己都报 `signature invalid`，PostgREST 报 `PGRST301`。所以前端把 token 放进 `x-sb-auth` 头（`vendor/cloud-adapter.js` 的 wrapped fetch），`server.js` 再还原成 `Authorization` 转发。
+2. **转发前删掉 `Accept-Encoding`**。PostgREST 的 JSON 是 gzip 的，Node 只透传不解压；若删了 `content-encoding` 又传 gzip 字节，浏览器拿到乱码。
+
+静态资源由 `server.js` 自己 gzip（`zlib.gzipSync` + 内存缓存）：`supabase.js` 220KB→56KB、`app.js` 145KB→36KB。手机流量慢时这一步很关键。
+
+## 三、代码结构
+
+| 文件 | 作用 |
+|---|---|
+| `index.html` | 入口骨架 + 五个脚本的版本号 |
+| `app.js` | 单文件 IIFE，所有页面渲染 + 交互（约 2900 行） |
+| `styles.css` | 设计令牌 + 组件样式 |
+| `export.js` | 四种导出（HTML/Word/CSV/Excel）与 .ics |
+| `server.js` | 单端口服务：静态 + gzip + `/sb/*` 反代（**部署入口**） |
+| `config.js` | `supabaseUrl`（同源 `/sb`）+ `supabaseKey`（publishable，公开值） |
+| `vendor/supabase.js` | supabase-js UMD 构建 |
+| `vendor/cloud-adapter.js` | 把 `database/storage/auth` 转成 Supabase，**app.js 几百处调用因此不用改** |
+| `sql/01~06*.sql` | 建表 / 权限 / 16 个函数 / 存储桶 / 注册确认 / 定时提醒，顺序见 `sql/README.md` |
+| `sql/verify*.mjs` | 本地 WASM PostgreSQL 跑的三套测试（92 项） |
+| `tests/adapter-test.html` | 适配层契约测试（假 supabase 客户端，17 项） |
+| `package.json` | **只为测试**声明 devDependencies，站点本身没有构建 |
+
+## 四、必须遵守的约束
+
+### 1. 视觉方向已锁定（未变）
+
+| 界面 | 方案 | 示意图 |
 |---|---|---|
-| `app.js` | 2724 | 单文件 IIFE，所有页面渲染 + 全部交互 |
-| `styles.css` | 953 | 设计令牌 + 所有组件样式，分区块注释 |
-| `index.html` | 44 | 入口，只有骨架和三个文件版本号（`styles.css?v=23` 这类） |
-| `export.js` | 343 | 四种导出（HTML/Word/CSV/Excel）与 .ics 日历 |
-| `config.js` | 6 | 云服务公开配置（endpoint / publishableKey），可安全放前端 |
+| 今日 / 进度 / 我的 / 管理 / 报告 | B 清爽数据卡片 | `docs/07-*` |
+| 打卡墙 | C 便签拼贴 | `docs/08-*` |
+| 可选皮肤 | A 纸质手账（只换令牌） | `docs/06-*` |
 
-外部依赖只在 `vendor/`：云 SDK、docx、xlsx。**不要引入任何新依赖**。
+不加渐变、玻璃拟态、发光、装饰插画、动效炫技。动效只允许弹层 `rise` 与按钮按下缩放。颜色只走 `:root` 令牌，两个主题都要给值。
 
-`app.js` 里的页面渲染函数（改 UI 基本只会碰这些）：
-`renderToday` / `renderWall` / `renderProgress` / `renderMembers` / `renderMe` / `renderAdmin` / `renderReport`，弹层统一走 `openSheet`（成员打卡详情是 `openMemberSheet`）。
+### 2. 所有按钮走 `data-act` + 全局事件委托
 
-**注意**：每个 render 函数开头都写 `root.className = 'memphis-view xxx-view'`，这会把 `<main>` 上的 `main` 类覆盖掉 —— 所以 `.main` 的 `padding` 在页面渲染后是失效的，尺寸相关的约束要落到 `#view` 上（底部留白就是这么修的）。
-
-## 三、必须遵守的约束（违反会被打回）
-
-### 1. 视觉方向已锁定，不要再定方向
-
-| 界面 | 采用的方案 | 示意图 |
-|---|---|---|
-| 今日 / 进度 / 我的 / 管理 / 报告 | **B 清爽数据卡片** | `docs/07-风格B-清爽数据卡片.svg` |
-| 打卡墙 | **C 便签拼贴** | `docs/08-风格C-便签拼贴墙.svg` |
-| 可选皮肤 | **A 纸质手账**（同一套布局，只换令牌） | `docs/06-风格A-纸质手账.svg` |
-
-立场：安静、数据为主、不加装饰。**不要加渐变、玻璃拟态、发光、大圆角胶囊、装饰性插画、动效炫技**。动效只允许两处：弹层上滑 `rise`、按钮按下缩放。
-
-### 2. 颜色只能用令牌，不许写十六进制魔法值
-
-`:root` 里有 37 个令牌，`:root[data-theme="paper"]` 覆盖同样的 37 个 —— **纸质主题就是靠这一层覆盖实现的，所以新样式必须用 `var(--x)`，否则换主题时会露馅**。
-
-```
-底色 --bg / 卡片 --card / 描边 --line
-正文 --ink / 次级 --muted / 弱化 --faint
-品牌 --brand / 品牌文字 --brand-ink / 品牌底 --brand-soft
-警示 --warn / --warn-soft / --warn-ink    危险 --danger
-圆角 --radius      阴影 --shadow
-中性：--soft --tile --track --dot-off --ring-track --tint --tint-line --seg-bg --check-line --bar --bar-has --heat-1..3
-```
-
-新颜色先问"有没有现成令牌"，没有就加令牌，**两个主题都要给值**。
-
-**还没令牌化的残留（组件区实测 66 处 hex，可作为第一批活）**：
-
-- `#fff` 15 处（弹层底、勾选圆底、便签点赞底等）—— 纸质主题下应是暖白
-- 便签四色与 `.sw-fresh` / `.sw-paper` 主题预览色块 —— **有意保留，别动**
-- 其余是 paper 主题的零星暖色：`#F2EADB` 3 处、`#FFFDF6` 2 处、`#C0523A` 2 处、`#EFE4CF` 2 处，以及 `.detail-table .st.late` 的 `#B45309`、`.note .like.on` 的 `#E5484D`、`.handover-ask` 边框 `#BFEDE6`、`.btn.ghost.danger` 边框 `#F1C6C8`
-
-数字会随改动变，动手前先重数（Git Bash / PowerShell 通用）：
-
-```bash
-node -e "
-const s=require('fs').readFileSync('styles.css','utf8');
-const body=s.slice(s.indexOf('}',s.indexOf(':root {')));
-const hex=body.match(/#[0-9a-fA-F]{3,8}\b/g)||[];
-const c={};hex.forEach(h=>c[h.toLowerCase()]=(c[h.toLowerCase()]||0)+1);
-console.log('组件区 hex 总数:',hex.length);
-console.log(Object.entries(c).sort((a,b)=>b[1]-a[1]).slice(0,10));
-"
-```
-
-坑：SVG 的 `stroke="#E6EEF7"` 这种属性写法**不解析 var()**，必须写 `style="stroke:var(--ring-track)"`。进度环已经踩过。
-
-### 3. 断点固定三档，别改
-
-```
-<1024  手机：单列 max 720 居中，底部 tab
-≥1024  两栏：232 左导航(sticky) + 主列 max 780
-≥1280  三栏：236 + 主列 760 + 320 右栏
-```
-`.main` 在桌面必须 `margin:0; width:100%` —— 一旦留 `margin:0 auto`，网格项会退化成内容宽度（曾把 723px 挤成 281px）。
-桌面右栏 `<1280` 直接隐藏，不要硬缩主列。
-
-### 4. 所有按钮走 `data-act` + 全局事件委托
-
-不写 `addEventListener`，不写 inline `onclick`（`renderFatal` 里那一处是历史遗留，别学）。
-改完必须跑对齐检查，两边数量必须相等（当前 49 / 49）：
+不写 `addEventListener` 绑页面元素、不写 inline onclick。改完必须跑对齐检查，两边数量必须相等（当前 55 / 55）：
 
 ```bash
 node -e "
@@ -108,110 +79,70 @@ console.log('未接处理:',[...html].filter(x=>!js.has(x)).join(' ')||'无');
 console.log('有处理无按钮:',[...js].filter(x=>!html.has(x)).join(' ')||'无');
 "
 ```
-（上面两行命令在 Git Bash / PowerShell 都能跑；用户机器上两个终端都有，给命令时要标明是哪个。）
 
-### 5. 改样式必须升版本号
+### 3. 改了就要升版本号
 
-`index.html` 里现在是 `styles.css?v=23`、`app.js?v=28`、`export.js?v=10`，以文件里的实际值为准。**只要改到就 +1**，微信内置浏览器缓存极顽固。
+`index.html` 里每个脚本都带 `?v=N`，改到哪个就 +1。手机浏览器缓存极顽固，不升版本号等于没改。
 
-### 6. `[hidden]` 规则不能删
+### 4. `[hidden]` 规则不能删
 
-`styles.css` 顶部有 `[hidden]{display:none!important}`。曾经因为 `.sheet-mask` 的 `display:flex` 吃掉 `hidden`，整页蒙灰。
+`styles.css` 顶部 `[hidden]{display:none!important}`。曾因 `.sheet-mask` 的 `display:flex` 吃掉 `hidden`，整页蒙灰。
 
-### 7. 不要碰数据层
+### 5. 数据层：改了函数必须重跑 SQL
 
-数据库是云开发 PostgreSQL（9 张表，RLS 全开），前端通过 `cloud.database` 直连。**UI 任务不需要、也不应该动表结构、RLS 策略或 RPC 函数**。
-举例：改昵称那条 `users_update` 策略是 `auth_uid = auth.uid()`，只能改自己那行 —— 这类信息 UI 侧看不到，别猜测权限。
+表结构、权限策略、16 个函数都在 `sql/`。**改 `03-functions.sql` 不重跑，线上库不会变**，症状是 cron 日志里 `ERROR: not_authenticated` 之类。执行顺序与重跑时机见 `sql/README.md`。
 
-## 四、先读这些（不要凭记忆重写）
+权限分三层，缺一层就漏：表级 grant（新表默认全锁）→ 列级 grant（`update` 按列给，否则成员能自封站长）→ 行级策略（10 张表全开 RLS）。
 
-| 文件 | 内容 |
-|---|---|
-| `docs/PRD.md` | v0.5.2，29 条决策表（含被推翻的）、9 张表、未做清单。**权威需求文档** |
-| `styles.css` 顶部 | 令牌表 + 两套主题，改前先看 |
-| `docs/07/08/06-风格*.svg` | 三套风格的原始示意图 |
-| `docs/12-今日页改稿.svg` | 最近一次 UI 改稿的写法范例（左边 1:1 手机版 + 右边逐条说明） |
-| `docs/13-其余四页同源调整.svg` | 逐页改动清单的写法范例 |
+### 6. 不要把这些写进前端
 
-## 五、当前 UI 状态（2026-11-08 09:55 已上线）
+`sb_secret_…` / `service_role` key、数据库密码。前端只用 publishable key，权限由 RLS 决定。
 
-**导航**：手机端底部 5 项（今日 / 打卡墙 / 进度 / 成员 / 我的），「管理」「报告」在手机上不占 tab，走「我的」页里已有的入口；桌面端左侧 7 项全列。原因：6 个 tab 在 390–512 宽下会被挤出屏幕右边缘，根本点不到。
-
-- 今日页：进度环（本人完成度）+ 缺口数字（还差 N 人交齐）+ 与昨日此刻对比 chip；任务行右侧成员点阵（≤8 人，超过退回数字）
-- 进度页：矩阵，列头带该项 `x/6`，行末带本人 `x/3`，卡片头是缺口口径
-- 打卡墙：便签四色轮换，顶部一行「今天 5/6 人已打卡 · 还差 1 人」
-- **成员页**：在组的人（头像 / 名字 / 角色 / 本周完成数）+ 已停用分组；原管理页那套「设为负责人 / 收回 / 交接 / 停用 / 豁免」整体搬到这里。点某人打开 `openMemberSheet`：连续天数、总打卡、按时率、「任务 × 七天」格子（绿按时 / 橙补记 / 浅灰豁免 / 更深灰没打）、最近 6 条记录
-- 我的：四块 KPI（连续天数/总打卡/按时率/本周+较上周）、5 周热力图、外观主题切换、改昵称、退出登录
-- 管理：任务增删改与排序、截止时间、提醒提前量、组设置、企微 webhook、日历导出（成员卡片已移出）
-- 报告：时间范围 → 四指标 → 模型总结 → 成员/任务条形（带 `done/expected`）→ 明细表 → 四种导出
-- **登录页**：主入口两项（邮箱 / 密码），手机号收在底部一行小字「用手机号登录」。邮箱注册时可顺手设密码；密码 tab 下有「忘了密码」，走邮件验证码重设
-
-平台限制（别试图绕过）：密码**只能在新用户注册那一次**设置（`isExistingUser === false` 时才随 `verifyOtp` 提交）；已存在的账号无法补设，管理端也没有重置接口；手机号不支持找回密码，邮箱支持。
-
-## 六、验收怎么做（这里没有自动化测试）
+## 五、验收怎么做
 
 ```bash
-node --check app.js          # 语法
-# 再跑第三节第 4 条的 data-act 对齐检查
+npm i                        # 只装测试用的两个包
+node sql/verify.mjs          # 23 项 表结构与约束
+node sql/verify-rls.mjs      # 25 项 四种身份的行级权限
+node sql/verify-fn.mjs       # 44 项 16 个函数 + cron 分支
+chrome --headless --dump-dom tests/adapter-test.html   # 17 项 适配层契约
+node --check app.js && node --check server.js
 ```
 
-视觉验收靠无头 Chrome 截图。**两个坑必须知道**：
+三套 SQL 测试跑在 WASM 版 PostgreSQL（PGlite）上，不用装数据库；用 `create role anon/authenticated` + `request.jwt.claims` 模拟身份。
 
-1. 无头 Chrome 的**最小视口是 500**，用 `--window-size=390` 拍出来的图是被裁的假象，不是真溢出。要验 390 真实排版，得在页面里写 `html,body{width:390px}`，再用 512 窗口拍。
-2. 静态页面没有登录态，`.side` 右栏不在校样里 —— 桌面三栏的右栏只能线上看。
-3. **无头实例会缓存旧 CSS，`?v=N` 不足以绕过。** 用 CDP 截图/测量前必须先关缓存并强制重载，否则会把「改动没生效」和「缓存了旧文件」混为一谈（踩过一次，白改了一版）：
+**视觉验收**用无头 Chrome 截图。三个坑：
 
-```js
-await send('Network.enable');
-await send('Network.setCacheDisabled', { cacheDisabled: true });
-await send('Page.reload', { ignoreCache: true });
-```
+1. 无头 Chrome 最小视口 500，`--window-size=390` 拍出来是被裁的假象；要验 390 真排版，页面里写 `html,body{width:390px}` 再用 512 窗口拍。
+2. 无头实例会缓存旧文件，**先用 CDP `Network.setCacheDisabled` + `Page.reload{ignoreCache:true}`**，否则会把"改了没生效"和"缓存了旧文件"混为一谈。
+3. 线上要带 `?sharecode=` 并拿到 cookie 才能访问 `/sb/*`；curl 断言前先 `curl -c cookie` 访问一次首页。
 
-判断「修好没有」最好量数值而不是看图：`getComputedStyle(el).paddingBottom`、`el.getBoundingClientRect()` 与 `.tabbar.getBoundingClientRect()` 相减，比肉眼可靠。
+**端到端**：`.workbuddy/tmp/cdp-login-test.mjs` 用 CDP 驱动无头 Chrome 打线上站点，跑完 注册→登录→建组→今日页。改完登录或数据层建议跑一次。
 
-```bash
-# Git Bash 版
-"/c/Program Files/Google/Chrome/Application/chrome.exe" --headless=new --disable-gpu \
-  --hide-scrollbars --window-size=512,1200 --force-device-scale-factor=2 \
-  --screenshot="out.png" "file:///D:/WorkBuddy/小事打卡社区/preview.html"
-```
+## 六、用户协作规矩
 
-**不建议交给 Codex 做的两件事**：发布上线（要 appId 和账号，由用户与本会话的 agent 执行）、真机验收（只有用户手机能看）。
-
-## 七、用户协作规矩（这部分最容易踩）
-
-1. **动手前先给方案或示意图**，等确认再写代码。用户偏好 SVG 示意图，不喜欢长文字。
-2. **主观判断先问**。新增评价性结论、新增比较维度、替用户选定方案，都要先说明动机征得同意。
-3. **不说「已完成」，要说怎么验证的**。没验证的明说没验证。
-4. **只做被点名的事**。发现范围外的问题，报告并询问，不悄悄修。
-5. **给命令必须标明是 Git Bash 还是 PowerShell**（两个终端都有）。
+1. 动手前先给方案或示意图，等确认再写代码。用户偏好 SVG 示意图，不喜欢长文字。
+2. 主观判断先问。新增评价性结论、新增比较维度、替用户选定方案，都要先说明动机。
+3. 不说「已完成」，要说怎么验证的。没验证的明说没验证。
+4. 只做被点名的事；发现范围外的问题，报告并询问。
+5. 给命令必须标明 Git Bash 还是 PowerShell（两个终端都有）。
 6. 每完成一个功能：`git commit` + `git push origin main`；**发布要单独征得同意**。
-7. 用户是科研零基础，术语首次出现补一句白话解释；不要用意象化比喻。
+7. 用户非技术背景，术语首次出现补一句白话解释；不要用意象化比喻。
 
-## 八、第一批适合接的活（按性价比排序）
+## 七、还没做的
 
-1. **样式收拾**：组件区还有 66 处硬编码色值（清单与统计命令见第三节），抽成令牌并把 `paper` 主题补齐（机械、量大、风险低）。注意便签四色与主题预览色块是有意写死的，别动。
-2. **单页重画**：用户指定一页，先出 1:1 的 SVG 改稿（参照 `docs/12`），确认后落代码
-3. **可访问性**：`aria-label`、焦点态、键盘 Tab、对比度
-4. **移动端密度**：390 宽下任务行、矩阵、报告的挤压问题（需要真机反馈，先别动）
-
-## 九、访问方式（Codex 当前读不到仓库）
-
-Codex 那边环境被策略禁网（`git clone`/`curl` 都被拦，也没有 GitHub 文件读取工具），所以只有两条路：
-
-1. 在 Codex 里打开本地目录 `D:\WorkBuddy\小事打卡社区`（推荐，读写都方便）
-2. 上传桌面重新打的 zip（不含 `.git`、不含截图，含五个源文件 + `vendor/` + PRD + 全部 SVG + 本文件）。**打之前先 `git pull`**，包名带日期，旧包会立刻过期。
-
-第一种方式下 Codex 打开项目会先读根目录的 `AGENTS.md`（就是本文）。
-
-## 十、建议调用的 skill
-
-| skill | 什么时候用 |
+| 事 | 说明 |
 |---|---|
-| `sites` / `workbuddy_sites_deploy` | 发布或下线（appId `wbapp_jEnLgK2Qgw4V4yfcJpyUPT`，须用户明确同意） |
-| `cloud-service` | 只有真的动数据库时才需要；纯 UI 任务不该触发 |
-| `widget_guidelines` + `show_widget` | 给用户出方案时画 SVG 示意图（用户吃这一套） |
+| 90 天照片清理 | 删 storage 里的文件需要 service key，不能只删数据库行。1 GB 免费额度按现在用量够 8–10 个月，不急 |
+| 老照片补缩略图 | 不做回填，等它们被清理 |
+| 手机端排版微调 | 390 宽下的挤压，需要真机反馈 |
 
----
+## 八、历史决定（别推翻）
 
-**一句话定位**：这是一套已经上线、已经锁定视觉方向的小产品。你要做的是在现有令牌与组件体系里把它打磨得更好，而不是重做一遍。
+- 2026-11-07：视觉方向锁定 B/C + A 皮肤，不再重新定风格。
+- 2026-11-09：教师角色（`teacher`）与教师码分离；教师不打卡、不计统计、不能当负责人。
+- 2026-11-09：负责人可多个；站长指定是累加，负责人交接是移交。
+- 2026-11-14：**不续费 WorkBuddy 云，迁到自有 Supabase**；旧数据不要（完整记录见 `.workbuddy/memory/2026-11-14.md`）。
+- 2026-11-14：登录改邮箱 + 密码自助注册（无验证码、无手机号），注册即确认靠 `sql/05`。
+- 2026-11-14：照片 1280/0.72 + 单独存 400px 缩略图，列表只用缩略图。
+- 2026-11-14：加 `server.js` 同源反代，因为国内直连 supabase 不通。
