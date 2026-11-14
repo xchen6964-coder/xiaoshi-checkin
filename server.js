@@ -79,6 +79,17 @@ function serveStatic(req, res) {
   let rel = decodeURIComponent((req.url || '/').split('?')[0].split('#')[0]);
   if (rel === '/' || rel === '') rel = '/index.html';
 
+  // 站点是公开的（拿到分享链接就能访问），这些目录/文件不该被下载：
+  // 建表脚本与文档、测试、发布标记、.git、以及 server.js 自己。
+  const BLOCKED_DIRS = ['/sql', '/tests', '/docs', '/.git', '/.workbuddy', '/node_modules'];
+  const BLOCKED_FILES = ['/server.js', '/package.json', '/package-lock.json', '/AGENTS.md', '/README.md', '/.gitignore'];
+  const hasDotSegment = rel.split('/').some((seg) => seg.indexOf('.') === 0 && seg !== '');
+  if (hasDotSegment || BLOCKED_FILES.indexOf(rel) >= 0 ||
+      BLOCKED_DIRS.some((d) => rel === d || rel.indexOf(d + '/') === 0)) {
+    res.writeHead(404, { 'content-type': 'text/plain; charset=utf-8' });
+    return res.end('not found');
+  }
+
   const full = path.normalize(path.join(ROOT, rel));
   if (!full.startsWith(ROOT)) {
     res.writeHead(403, { 'content-type': 'text/plain; charset=utf-8' });
