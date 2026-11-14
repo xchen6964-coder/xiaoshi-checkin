@@ -1,87 +1,85 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1240" height="758" viewBox="0 0 1240 758" font-family="PingFang SC,Hiragino Sans GB,Microsoft YaHei,sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" width="1240" height="792" viewBox="0 0 1240 792" font-family="PingFang SC,Hiragino Sans GB,Microsoft YaHei,sans-serif">
   <defs>
     <pattern id="p-dot" width="22" height="22" patternUnits="userSpaceOnUse">
       <circle cx="1" cy="1" r="1" fill="#D7E0EC"/>
     </pattern>
   </defs>
-  <rect width="1240" height="758" fill="#F1F4F9"/>
-  <rect width="1240" height="758" fill="url(#p-dot)" opacity="0.8"/>
+  <rect width="1240" height="792" fill="#F1F4F9"/>
+  <rect width="1240" height="792" fill="url(#p-dot)" opacity="0.8"/>
 
-  <text x="70" y="52" font-size="25" font-weight="700" fill="#0F172A">免费额度能用多久（9 人 → 以后 20 人）</text>
-  <text x="70" y="78" font-size="13" fill="#64748B">额度数字取自 Supabase 定价页（2026-11 现状）。用量是按你项目的实际写法推算：照片压到 1600px、JPEG 质量 0.82，平均约 350KB 一张。</text>
+  <text x="70" y="50" font-size="25" font-weight="700" fill="#0F172A">按每人每天 2–3 张重算：结论变了</text>
+  <text x="70" y="76" font-size="13" fill="#64748B">上一版按 1 张估的，偏乐观。这一版按 2.5 张/人/天算 —— 免费版两项都不够，且不止存储那一项。</text>
 
-  <!-- 1 数据库 -->
-  <rect x="70" y="102" width="1100" height="106" rx="14" fill="#FFFFFF" stroke="#E3E9F2"/>
-  <text x="94" y="132" font-size="14" font-weight="700" fill="#0F172A">数据库 500 MB</text>
-  <text x="94" y="152" font-size="11" fill="#94A3B8">存文字打卡、任务、成员</text>
-  <rect x="94" y="164" width="196" height="10" rx="5" fill="#EFF3F8"/><rect x="94" y="164" width="7" height="10" rx="3" fill="#0E9C8E"/>
-  <text x="300" y="173" font-size="11" fill="#0E9C8E">9 人：一年约 5 MB（1%）</text>
-  <rect x="94" y="180" width="196" height="10" rx="5" fill="#EFF3F8"/><rect x="94" y="180" width="12" height="10" rx="4" fill="#0E9C8E"/>
-  <text x="300" y="189" font-size="11" fill="#0E9C8E">20 人：一年约 11 MB（2%）</text>
+  <rect x="70" y="98" width="1100" height="56" rx="12" fill="#FFF7F7" stroke="#F3D6D8"/>
+  <text x="94" y="122" font-size="13" font-weight="700" fill="#B42318">两个先要知道的事实</text>
+  <text x="94" y="142" font-size="12" fill="#7A2A2A">① 9 人就要 2.9 GB/年，1 GB 免费空间 4 个月满　② 更要命的是流量：列表直接加载原图，9 人 2–3 张/天就已超过 5 GB/月</text>
 
-  <rect x="560" y="120" width="580" height="70" rx="10" fill="#F1FBF7" stroke="#BFE7D8"/>
-  <text x="574" y="142" font-size="12.5" font-weight="700" fill="#0F6B52">这一项二十年都不用管</text>
-  <text x="574" y="163" font-size="11.5" fill="#256B57">一行打卡记录连索引不到 1 KB。加多少人都不影响，</text>
-  <text x="574" y="180" font-size="11.5" fill="#256B57">它不是瓶颈 —— 别把注意力放在这里。</text>
+  <!-- 存储 -->
+  <rect x="70" y="170" width="1100" height="196" rx="14" fill="#FFFFFF" stroke="#E3E9F2"/>
+  <text x="94" y="198" font-size="14" font-weight="700" fill="#0F172A">照片存储 1 GB　<tspan font-size="11.5" font-weight="400" fill="#64748B">横条 = 撑满 1 GB 需要几个月（满格 12 个月）</tspan></text>
 
-  <!-- 2 照片存储 -->
-  <rect x="70" y="220" width="1100" height="106" rx="14" fill="#FFFFFF" stroke="#E3E9F2"/>
-  <text x="94" y="250" font-size="14" font-weight="700" fill="#0F172A">照片存储 1 GB　<tspan font-size="11.5" font-weight="400" fill="#E5484D">← 真正的瓶颈</tspan></text>
-  <text x="94" y="270" font-size="11" fill="#94A3B8">一人一天一张就够呛</text>
-  <rect x="94" y="282" width="196" height="10" rx="5" fill="#EFF3F8"/><rect x="94" y="282" width="196" height="10" rx="5" fill="#D97706"/>
-  <text x="300" y="291" font-size="11" fill="#B45309">9 人：第 10 个月满（一年要 1.1 GB）</text>
-  <rect x="94" y="298" width="196" height="10" rx="5" fill="#EFF3F8"/><rect x="94" y="298" width="196" height="10" rx="5" fill="#DC2626"/>
-  <text x="300" y="307" font-size="11" fill="#B42318">20 人：第 4–5 个月满（一年要 2.5 GB）</text>
+  <text x="94" y="226" font-size="11" fill="#94A3B8">现状：1600px / 质量 0.82，约 350 KB 一张</text>
+  <rect x="94" y="234" width="440" height="12" rx="6" fill="#EFF3F8"/><rect x="94" y="234" width="158" height="12" rx="6" fill="#DC2626"/>
+  <text x="548" y="244" font-size="11.5" fill="#B42318">9 人：4.3 个月满（2.9 GB/年）</text>
+  <rect x="94" y="252" width="440" height="12" rx="6" fill="#EFF3F8"/><rect x="94" y="252" width="73" height="12" rx="6" fill="#DC2626"/>
+  <text x="548" y="262" font-size="11.5" fill="#B42318">20 人：2 个月满（6.4 GB/年）</text>
 
-  <rect x="560" y="238" width="580" height="70" rx="10" fill="#FFF7F7" stroke="#F3D6D8"/>
-  <text x="574" y="260" font-size="12.5" font-weight="700" fill="#B42318">满了以后是「上传失败」，不会自动扩容</text>
-  <text x="574" y="281" font-size="11.5" fill="#7A2A2A">免费版不能单独加买空间，只能整档升 Pro。所以要么把照片</text>
-  <text x="574" y="298" font-size="11.5" fill="#7A2A2A">压小，要么接受半年后掏钱。</text>
+  <text x="94" y="290" font-size="11" fill="#94A3B8">压到 1280px / 0.72，约 150 KB 一张（另加 25 KB 缩略图）</text>
+  <rect x="94" y="298" width="440" height="12" rx="6" fill="#EFF3F8"/><rect x="94" y="298" width="260" height="12" rx="6" fill="#D97706"/>
+  <text x="548" y="308" font-size="11.5" fill="#B45309">9 人：8.5 个月满（1.2 GB/年）</text>
+  <rect x="94" y="316" width="440" height="12" rx="6" fill="#EFF3F8"/><rect x="94" y="316" width="121" height="12" rx="6" fill="#D97706"/>
+  <text x="548" y="326" font-size="11.5" fill="#B45309">20 人：4 个月满（2.7 GB/年）</text>
 
-  <!-- 3 出站流量 -->
-  <rect x="70" y="338" width="1100" height="106" rx="14" fill="#FFFFFF" stroke="#E3E9F2"/>
-  <text x="94" y="368" font-size="14" font-weight="700" fill="#0F172A">出站流量 5 GB / 月</text>
-  <text x="94" y="388" font-size="11" fill="#94A3B8">打开打卡墙时照片被下载的量</text>
-  <rect x="94" y="400" width="196" height="10" rx="5" fill="#EFF3F8"/><rect x="94" y="400" width="67" height="10" rx="5" fill="#0E9C8E"/>
-  <text x="300" y="409" font-size="11" fill="#0E9C8E">9 人：约 1.7 GB（34%）</text>
-  <rect x="94" y="416" width="196" height="10" rx="5" fill="#EFF3F8"/><rect x="94" y="416" width="149" height="10" rx="5" fill="#D97706"/>
-  <text x="300" y="425" font-size="11" fill="#B45309">20 人：约 3.8 GB（76%，仍未超）</text>
+  <rect x="820" y="212" width="326" height="126" rx="10" fill="#F1FBF7" stroke="#BFE7D8"/>
+  <text x="834" y="234" font-size="12.5" font-weight="700" fill="#0F6B52">压小只能延后，不能解决</text>
+  <text x="834" y="256" font-size="11.5" fill="#256B57">20 人一年 2.7 GB，1 GB 装不下。</text>
+  <text x="834" y="276" font-size="11.5" fill="#256B57">要么接受「只留最近 90 天照片」</text>
+  <text x="834" y="294" font-size="11.5" fill="#256B57">（稳定在 0.8 GB，永不超），</text>
+  <text x="834" y="312" font-size="11.5" fill="#256B57">要么照片搬出去，要么升 Pro。</text>
 
-  <rect x="560" y="356" width="580" height="70" rx="10" fill="#F7FBFF" stroke="#CFE3F2"/>
-  <text x="574" y="378" font-size="12.5" font-weight="700" fill="#0F172A">这项按「每人每天刷两次墙」估的，超了也只是慢、不封号</text>
-  <text x="574" y="399" font-size="11.5" fill="#334155">把墙上的照片改成缩略图、点开才加载原图，能直接砍掉六成。</text>
-  <text x="574" y="416" font-size="11.5" fill="#334155">这条不做也撑得住 20 人，属于优化项不是必需项。</text>
+  <!-- 流量 -->
+  <rect x="70" y="382" width="1100" height="196" rx="14" fill="#FFFFFF" stroke="#F3D6D8"/>
+  <text x="94" y="410" font-size="14" font-weight="700" fill="#0F172A">出站流量 5 GB / 月　<tspan font-size="11.5" font-weight="400" fill="#B42318">这一项 9 人就已经超了</tspan></text>
+  <text x="94" y="432" font-size="11" fill="#94A3B8">原因在写法：今日页「最近打卡」和打卡墙的便签，都直接把原图塞进 img（app.js 1064 与 1489 行）。</text>
 
-  <!-- 4 MAU -->
-  <rect x="70" y="456" width="1100" height="106" rx="14" fill="#FFFFFF" stroke="#E3E9F2"/>
-  <text x="94" y="486" font-size="14" font-weight="700" fill="#0F172A">月活用户 5 万 · 项目数 2 个</text>
-  <text x="94" y="506" font-size="11" fill="#94A3B8">这两项跟人多人少无关</text>
-  <rect x="94" y="518" width="196" height="10" rx="5" fill="#EFF3F8"/><rect x="94" y="518" width="3" height="10" rx="2" fill="#0E9C8E"/>
-  <text x="300" y="527" font-size="11" fill="#0E9C8E">9 人 = 0.02%　20 人 = 0.04%</text>
+  <text x="94" y="458" font-size="11" fill="#94A3B8">现状（原图直出）· 按每人每天看 2 次今日页 + 1 次本周墙</text>
+  <rect x="94" y="466" width="440" height="12" rx="6" fill="#EFF3F8"/><rect x="94" y="466" width="440" height="12" rx="6" fill="#DC2626"/>
+  <text x="548" y="476" font-size="11.5" fill="#B42318">9 人：7.4 GB/月（超 48%）</text>
+  <rect x="94" y="484" width="440" height="12" rx="6" fill="#EFF3F8"/><rect x="94" y="484" width="440" height="12" rx="6" fill="#DC2626"/>
+  <text x="548" y="494" font-size="11.5" fill="#B42318">20 人：31 GB/月（超 6 倍）</text>
 
-  <rect x="560" y="474" width="580" height="70" rx="10" fill="#F8FAFC" stroke="#E9EDF2"/>
-  <text x="574" y="496" font-size="12.5" font-weight="700" fill="#0F172A">唯一要留意的是「7 天没人用会休眠」</text>
-  <text x="574" y="517" font-size="11.5" fill="#334155">这个组天天打卡，不会触发。真休眠了进控制台点一下就</text>
-  <text x="574" y="534" font-size="11.5" fill="#334155">醒，数据不丢。</text>
+  <text x="94" y="522" font-size="11" fill="#94A3B8">列表改用 400px 缩略图（约 25 KB），点开才加载原图</text>
+  <rect x="94" y="530" width="440" height="12" rx="6" fill="#EFF3F8"/><rect x="94" y="530" width="48" height="12" rx="6" fill="#0E9C8E"/>
+  <text x="548" y="540" font-size="11.5" fill="#0E9C8E">9 人：0.53 GB/月（11%）</text>
+  <rect x="94" y="548" width="440" height="12" rx="6" fill="#EFF3F8"/><rect x="94" y="548" width="207" height="12" rx="6" fill="#D97706"/>
+  <text x="548" y="558" font-size="11.5" fill="#B45309">20 人：2.3 GB/月（47%）</text>
 
-  <!-- 结论 -->
-  <rect x="70" y="578" width="1100" height="132" rx="14" fill="#FFFFFF" stroke="#8FD9C9" stroke-width="1.6"/>
-  <text x="94" y="606" font-size="14" font-weight="700" fill="#0F172A">结论与三条路</text>
+  <rect x="820" y="424" width="326" height="126" rx="10" fill="#F7FBFF" stroke="#CFE3F2"/>
+  <text x="834" y="446" font-size="12.5" font-weight="700" fill="#0F172A">缩略图这一刀必须砍</text>
+  <text x="834" y="468" font-size="11.5" fill="#334155">这不是优化项。原图直出时，20 人</text>
+  <text x="834" y="486" font-size="11.5" fill="#334155">看一眼本周墙就是 50 MB 出去了。</text>
+  <text x="834" y="508" font-size="11.5" fill="#334155">免费版没有图片变换（自动缩图）能力，</text>
+  <text x="834" y="526" font-size="11.5" fill="#334155">所以缩略图得在上传时自己生成一张。</text>
 
-  <rect x="94" y="618" width="340" height="76" rx="10" fill="#F1FBF7" stroke="#BFE7D8"/>
-  <text x="108" y="640" font-size="12.5" font-weight="700" fill="#0F6B52">A · 什么都不改</text>
-  <text x="108" y="660" font-size="11.5" fill="#256B57">9 人可用约 10 个月；加到 20 人约 5 个月。</text>
-  <text x="108" y="678" font-size="11.5" fill="#256B57">到期必须升 Pro，没有别的免费出口。</text>
+  <!-- 三选一 -->
+  <rect x="70" y="594" width="1100" height="136" rx="14" fill="#FFFFFF" stroke="#8FD9C9" stroke-width="1.6"/>
+  <text x="94" y="620" font-size="14" font-weight="700" fill="#0F172A">三条路，代价不同（改的都是 app.js，等迁移完再动）</text>
 
-  <rect x="448" y="618" width="340" height="76" rx="10" fill="#F7FBFF" stroke="#CFE3F2"/>
-  <text x="462" y="640" font-size="12.5" font-weight="700" fill="#0F172A">B · 照片压小一档（推荐）</text>
-  <text x="462" y="660" font-size="11.5" fill="#334155">1600px/0.82 → 1280px/0.72，单张约 150KB。</text>
-  <text x="462" y="678" font-size="11.5" fill="#334155">20 人也能撑一年多，画质在手机上几乎看不出。</text>
+  <rect x="94" y="632" width="340" height="80" rx="10" fill="#F1FBF7" stroke="#BFE7D8"/>
+  <text x="108" y="654" font-size="12.5" font-weight="700" fill="#0F6B52">A · 压小 + 缩略图 + 只留 90 天</text>
+  <text x="108" y="674" font-size="11.5" fill="#256B57">20 人也能长期白用，存储稳定在 0.8 GB。</text>
+  <text x="108" y="692" font-size="11.5" fill="#B45309">代价：3 个月前的照片被清掉（文字记录保留）</text>
 
-  <rect x="802" y="618" width="344" height="76" rx="10" fill="#FFFBF5" stroke="#F0DFC6"/>
-  <text x="816" y="640" font-size="12.5" font-weight="700" fill="#0F172A">C · 照片搬去腾讯云 COS</text>
-  <text x="816" y="660" font-size="11.5" fill="#334155">存储按量约 ¥0.1/GB/月，一年几块钱。</text>
-  <text x="816" y="678" font-size="11.5" fill="#B45309">代价：多一套密钥和签名逻辑，复杂度上一个台阶。</text>
+  <rect x="448" y="632" width="340" height="80" rx="10" fill="#F7FBFF" stroke="#CFE3F2"/>
+  <text x="462" y="654" font-size="12.5" font-weight="700" fill="#0F172A">B · 压小 + 缩略图 + 照片搬 COS</text>
+  <text x="462" y="674" font-size="11.5" fill="#334155">照片全保留，1 GB 只放缩略图，空间压力没了。</text>
+  <text x="462" y="692" font-size="11.5" fill="#B45309">代价：多一套密钥与签名逻辑，一年多几十块</text>
 
-  <text x="70" y="740" font-size="11.5" fill="#64748B">参数依据：app.js 第 1128 行 compressImage（maxEdge 1600、quality 0.82）；照片上限每人每条最多 3 张。均为估算，上线后可在 Supabase 控制台的 Usage 页看真实占用。</text>
+  <rect x="802" y="632" width="344" height="80" rx="10" fill="#FFFBF5" stroke="#F0DFC6"/>
+  <text x="816" y="654" font-size="12.5" font-weight="700" fill="#0F172A">C · 什么都不改，直接用 Pro</text>
+  <text x="816" y="674" font-size="11.5" fill="#334155">100 GB 存储 + 250 GB 流量，怎么拍都够。</text>
+  <text x="816" y="692" font-size="11.5" fill="#B45309">代价：$25/月 ≈ ¥180 —— 比现在 70–99 还贵</text>
+
+  <text x="70" y="760" font-size="11.5" fill="#64748B">依据：app.js 1128 行 compressImage（1600px / 0.82）；1064 行今日页 feed-shot、1489 行墙便签 note-img 均为原图直出；每条打卡最多 3 张。</text>
+  <text x="70" y="778" font-size="11.5" fill="#64748B">全部为估算，行为假设写在每行标题后面。真实数字要等上线后在 Supabase 控制台 Usage 页看。</text>
 </svg>
