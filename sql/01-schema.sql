@@ -103,6 +103,7 @@ create table if not exists attachments (
   id         uuid primary key default gen_random_uuid(),
   checkin_id uuid not null references checkins(id) on delete cascade,
   path       text not null,
+  thumb_path text,                                     -- 400px 缩略图的对象路径，可空（老数据没有）
   width      int,
   height     int,
   bytes      int,

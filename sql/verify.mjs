@@ -95,9 +95,16 @@ await expectOk('手动通知（task_id 空）不受去重限制', `
    ('11111111-1111-1111-1111-111111111111','aaaaaaaa-0000-0000-0000-000000000001','manual','公告一'),
    ('11111111-1111-1111-1111-111111111111','aaaaaaaa-0000-0000-0000-000000000001','manual','公告二')`);
 
+await expectOk('照片记录可带缩略图路径', `
+  insert into attachments(checkin_id,path,thumb_path,width,height,bytes)
+  select id,'u/1.jpg','u/1_t.jpg',1280,960,80000 from checkins where task_id is not null`);
+
+await expectOk('照片记录不填缩略图也合法（老数据兼容）', `
+  insert into attachments(checkin_id,path)
+  select id,'u/2.jpg' from checkins where task_id is not null`);
+
 await expectOk('级联删打卡时点赞与照片一起走', `
   insert into likes(checkin_id,user_id) select id,'aaaaaaaa-0000-0000-0000-000000000002' from checkins where task_id is not null;
-  insert into attachments(checkin_id,path) select id,'u/1.jpg' from checkins where task_id is not null;
   delete from checkins where task_id is not null;`);
 
 const sentinel = await db.query(
