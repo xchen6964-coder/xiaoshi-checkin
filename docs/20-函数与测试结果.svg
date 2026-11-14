@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1240" height="672" viewBox="0 0 1240 672" font-family="PingFang SC,Hiragino Sans GB,Microsoft YaHei,sans-serif">
+  <defs>
+    <pattern id="p-dot" width="22" height="22" patternUnits="userSpaceOnUse">
+      <circle cx="1" cy="1" r="1" fill="#D7E0EC"/>
+    </pattern>
+  </defs>
+  <rect width="1240" height="672" fill="#F1F4F9"/>
+  <rect width="1240" height="672" fill="url(#p-dot)" opacity="0.8"/>
+
+  <text x="70" y="50" font-size="25" font-weight="700" fill="#0F172A">第 3 步 · 16 个函数写完，三套测试 89 项全过</text>
+  <text x="70" y="76" font-size="13" fill="#64748B">建组 / 加入 / 教师加入 / 切组 / 设负责人 / 交接 / 豁免 / 改打卡状态 / 到点提醒，全部在本地按四种身份跑过。</text>
+
+  <!-- 左：抓到的两个 bug -->
+  <rect x="70" y="98" width="596" height="286" rx="14" fill="#FFFFFF" stroke="#E3E9F2"/>
+  <text x="94" y="126" font-size="14" font-weight="700" fill="#0F172A">写的时候被测试抓到两个真 bug</text>
+
+  <rect x="94" y="142" width="548" height="108" rx="10" fill="#FFF7F7" stroke="#F3D6D8"/>
+  <text x="108" y="164" font-size="12.5" font-weight="700" fill="#B42318">① 切组必崩：一条 UPDATE 里同时关旧开新</text>
+  <text x="108" y="186" font-size="11.5" fill="#7A2A2A">users 上有「每个账号只能有一行是当前组」的唯一索引。</text>
+  <text x="108" y="204" font-size="11.5" fill="#7A2A2A">单条 UPDATE 中途会同时出现两行 true，直接撞索引报 23505。</text>
+  <text x="108" y="226" font-size="11.5" fill="#256B57">→ 改成两步：先把所有行关掉，再打开目标行。</text>
+  <text x="108" y="242" font-size="11.5" fill="#94A3B8">影响面：一人多组的人点「切换」就报错，单组用户碰不到。</text>
+
+  <rect x="94" y="262" width="548" height="108" rx="10" fill="#FFF7F7" stroke="#F3D6D8"/>
+  <text x="108" y="284" font-size="12.5" font-weight="700" fill="#B42318">② 停用再恢复 = 永久踢出</text>
+  <text x="108" y="306" font-size="11.5" fill="#7A2A2A">我最初在停用时顺手把 is_current 也关了，恢复时没人再打开。</text>
+  <text x="108" y="324" font-size="11.5" fill="#7A2A2A">这个人之后登录查不到身份，只能看到引导页，等于踢出。</text>
+  <text x="108" y="346" font-size="11.5" fill="#256B57">→ 改成只动 active，is_current 一律不碰。</text>
+  <text x="108" y="362" font-size="11.5" fill="#94A3B8">不写测试的话，这个坑要等真的停用过一个人再恢复才会暴露。</text>
+
+  <!-- 右：测试 -->
+  <rect x="686" y="98" width="484" height="286" rx="14" fill="#0F172A" stroke="#0F172A"/>
+  <text x="710" y="126" font-size="14" font-weight="700" fill="#E2E8F0">三套测试，89 项</text>
+  <text x="710" y="146" font-size="10.5" fill="#7C8DA6">全部在本地真 PostgreSQL（WASM）跑，退出码 0 = 全过</text>
+
+  <text x="710" y="176" font-size="11.5" font-family="Consolas,monospace" fill="#6EE7B7">verify.mjs       23 项  表结构 / 约束</text>
+  <text x="710" y="198" font-size="11.5" font-family="Consolas,monospace" fill="#6EE7B7">verify-rls.mjs   25 项  四种身份的行级权限</text>
+  <text x="710" y="220" font-size="11.5" font-family="Consolas,monospace" fill="#6EE7B7">verify-fn.mjs    41 项  16 个函数的完整流程</text>
+
+  <rect x="710" y="236" width="436" height="1" fill="#243044"/>
+  <text x="710" y="260" font-size="11" font-family="Consolas,monospace" fill="#94A3B8">· 错码/重名/重复加入 → 各自报对文案</text>
+  <text x="710" y="280" font-size="11" font-family="Consolas,monospace" fill="#94A3B8">· 教师码进教师、邀请码被拒</text>
+  <text x="710" y="300" font-size="11" font-family="Consolas,monospace" fill="#94A3B8">· 交接：发起方降 member、接受方升 leader</text>
+  <text x="710" y="320" font-size="11" font-family="Consolas,monospace" fill="#94A3B8">· 站长删不掉自己；教师不能被设负责人</text>
+  <text x="710" y="340" font-size="11" font-family="Consolas,monospace" fill="#94A3B8">· 提醒去重：同人同任务当天只发一条</text>
+  <text x="710" y="360" font-size="11" font-family="Consolas,monospace" fill="#94A3B8">· 教师不收打卡提醒</text>
+
+  <!-- 下一步 -->
+  <rect x="70" y="400" width="1100" height="118" rx="14" fill="#FFFFFF" stroke="#8FD9C9" stroke-width="1.6"/>
+  <text x="94" y="428" font-size="14" font-weight="700" fill="#0F172A">你只要再跑一个文件</text>
+  <text x="94" y="456" font-size="12.5" fill="#334155">SQL Editor → New query → 粘 <tspan font-family="Consolas,monospace">sql/03-functions.sql</tspan> 全文 → Run（01、02 你已跑过，不用重跑）</text>
+  <text x="94" y="480" font-size="11.5" fill="#B42318">如果提示函数已存在也没关系，脚本里都是 create or replace；报别的错就把红字发我。</text>
+  <text x="94" y="504" font-size="11.5" fill="#64748B">跑完这一步，数据库就完整了：表 + 权限 + 16 个函数。剩下的是换前端 SDK。</text>
+
+  <rect x="70" y="534" width="1100" height="80" rx="14" fill="#FFFBF5" stroke="#F0DFC6"/>
+  <text x="94" y="560" font-size="13" font-weight="700" fill="#B45309">一个已知缺口，先说清楚</text>
+  <text x="94" y="582" font-size="11.5" fill="#8A5A12">被停用的成员登录时会看到「建组/加入」引导页（因为查不到身份），而不是「你已被停用」的提示。功能上踢得出去，体验上会让人以为数据丢了。</text>
+  <text x="94" y="602" font-size="11.5" fill="#8A5A12">这要在前端加一句判断，属于 app.js 的活；要不要现在做，你说。</text>
+
+  <text x="70" y="642" font-size="11.5" fill="#64748B">文件：sql/03-functions.sql（16 个函数）、sql/verify-fn.mjs（41 项测试）。提交在 migrate/cloud，main 与线上均未动。</text>
+</svg>
