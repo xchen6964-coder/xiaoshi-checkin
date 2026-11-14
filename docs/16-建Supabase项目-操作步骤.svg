@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1240" height="664" viewBox="0 0 1240 664" font-family="PingFang SC,Hiragino Sans GB,Microsoft YaHei,sans-serif">
+  <defs>
+    <pattern id="p-dot" width="22" height="22" patternUnits="userSpaceOnUse">
+      <circle cx="1" cy="1" r="1" fill="#D7E0EC"/>
+    </pattern>
+  </defs>
+  <rect width="1240" height="664" fill="#F1F4F9"/>
+  <rect width="1240" height="664" fill="url(#p-dot)" opacity="0.8"/>
+
+  <text x="70" y="52" font-size="25" font-weight="700" fill="#0F172A">你要做的：建一个 Supabase 项目</text>
+  <text x="70" y="78" font-size="13" fill="#64748B">大约 5 分钟，不用信用卡。建完只要把两条值发我，后面的建表、权限、函数都由我来写。</text>
+
+  <!-- 面板 1 -->
+  <rect x="70" y="102" width="360" height="404" rx="14" fill="#FFFFFF" stroke="#E3E9F2"/>
+  <circle cx="96" cy="132" r="12" fill="#0F172A"/>
+  <text x="96" y="137" font-size="12" font-weight="700" fill="#FFFFFF" text-anchor="middle">1</text>
+  <text x="118" y="137" font-size="14" font-weight="700" fill="#0F172A">建项目时这样填</text>
+
+  <text x="94" y="170" font-size="11" fill="#94A3B8">Organization（组织，第一次会让你建）</text>
+  <rect x="94" y="178" width="312" height="26" rx="7" fill="#F7FAFF" stroke="#E3EEF8"/>
+  <text x="106" y="196" font-size="12" fill="#334155">名字随你 → Type 选 Personal → Plan 选 Free</text>
+
+  <text x="94" y="226" font-size="11" fill="#94A3B8">Project name（项目名）</text>
+  <rect x="94" y="234" width="312" height="26" rx="7" fill="#F7FAFF" stroke="#E3EEF8"/>
+  <text x="106" y="252" font-size="12" font-family="Consolas,monospace" fill="#0F172A">xiaoshi-checkin</text>
+
+  <text x="94" y="282" font-size="11" fill="#94A3B8">Database Password（数据库密码）</text>
+  <rect x="94" y="290" width="312" height="26" rx="7" fill="#FFFBF2" stroke="#F0DFC6"/>
+  <text x="106" y="308" font-size="12" fill="#334155">点 Generate，存进备忘录 —— 别丢</text>
+
+  <text x="94" y="338" font-size="11" fill="#94A3B8">Region（区域，越近越快）</text>
+  <rect x="94" y="346" width="312" height="26" rx="7" fill="#F1FBF7" stroke="#BFE7D8"/>
+  <text x="106" y="364" font-size="12" font-weight="700" fill="#0F6B52">Southeast Asia (Singapore)</text>
+
+  <text x="94" y="394" font-size="11" fill="#94A3B8">Plan</text>
+  <rect x="94" y="402" width="312" height="26" rx="7" fill="#F7FAFF" stroke="#E3EEF8"/>
+  <text x="106" y="420" font-size="12" fill="#334155">Free（免费额度够 9 人天天用）</text>
+
+  <rect x="94" y="446" width="312" height="40" rx="8" fill="#F8FAFC" stroke="#E9EDF2"/>
+  <text x="106" y="463" font-size="11" fill="#64748B">建完要等 1–3 分钟，状态变成绿色 Active</text>
+  <text x="106" y="478" font-size="11" fill="#64748B">才算建好，中途别刷新。</text>
+
+  <!-- 面板 2 -->
+  <rect x="450" y="102" width="420" height="404" rx="14" fill="#FFFFFF" stroke="#8FD9C9" stroke-width="1.6"/>
+  <circle cx="476" cy="132" r="12" fill="#0E9C8E"/>
+  <text x="476" y="137" font-size="12" font-weight="700" fill="#FFFFFF" text-anchor="middle">2</text>
+  <text x="498" y="137" font-size="14" font-weight="700" fill="#0F172A">两条值从哪拿</text>
+
+  <text x="474" y="168" font-size="12" fill="#334155">① 项目里点右上角 <tspan font-weight="700">Connect</tspan> 按钮，弹窗里直接有</text>
+  <text x="474" y="190" font-size="12" fill="#334155">② 或点左侧最下面 <tspan font-weight="700">Settings → API Keys</tspan></text>
+
+  <text x="474" y="224" font-size="11" font-weight="700" fill="#94A3B8">要复制第 1 条：Project URL</text>
+  <rect x="474" y="232" width="372" height="32" rx="8" fill="#F1FBF7" stroke="#BFE7D8"/>
+  <text x="486" y="253" font-size="12" font-family="Consolas,monospace" fill="#0F6B52">https://xxxxxxx.supabase.co</text>
+
+  <text x="474" y="290" font-size="11" font-weight="700" fill="#94A3B8">要复制第 2 条：Publishable key</text>
+  <rect x="474" y="298" width="372" height="32" rx="8" fill="#F1FBF7" stroke="#BFE7D8"/>
+  <text x="486" y="319" font-size="12" font-family="Consolas,monospace" fill="#0F6B52">sb_publishable_………………</text>
+
+  <rect x="474" y="346" width="372" height="60" rx="8" fill="#F8FAFC" stroke="#E9EDF2"/>
+  <text x="486" y="365" font-size="11.5" fill="#334155">老教程会让你复制 <tspan font-family="Consolas,monospace">anon key</tspan>（eyJ 开头那串长的）</text>
+  <text x="486" y="383" font-size="11.5" fill="#334155">—— 也对，这两种现在是并存的，都能用，</text>
+  <text x="486" y="399" font-size="11.5" fill="#334155">年底前旧的那套会被淘汰，能用新的就用新的。</text>
+
+  <text x="474" y="430" font-size="11.5" fill="#64748B">这两条都是给浏览器用的公开值，发我不算泄露。</text>
+  <text x="474" y="450" font-size="11.5" fill="#64748B">真正管权限的是我后面写的行级策略，不是这把钥匙。</text>
+  <text x="474" y="476" font-size="11" fill="#94A3B8">直接贴文字给我就行，别截图（截图我读不全反而要问）。</text>
+
+  <!-- 面板 3 -->
+  <rect x="890" y="102" width="280" height="404" rx="14" fill="#FFF7F7" stroke="#F3D6D8"/>
+  <circle cx="916" cy="132" r="12" fill="#B42318"/>
+  <text x="916" y="137" font-size="12" font-weight="700" fill="#FFFFFF" text-anchor="middle">!</text>
+  <text x="938" y="137" font-size="14" font-weight="700" fill="#B42318">这条别发我</text>
+
+  <text x="914" y="172" font-size="12" font-weight="700" fill="#7A2A2A">Secret key（sb_secret_…）</text>
+  <text x="914" y="192" font-size="12" fill="#7A2A2A">或旧的 service_role key</text>
+
+  <text x="914" y="222" font-size="11.5" fill="#7A2A2A">它绕过全部权限，等于数据库</text>
+  <text x="914" y="240" font-size="11.5" fill="#7A2A2A">总钥匙。任何人拿到它，能读写</text>
+  <text x="914" y="258" font-size="11.5" fill="#7A2A2A">所有小组的全部数据。</text>
+
+  <rect x="914" y="276" width="232" height="1" fill="#F0D6D8"/>
+  <text x="914" y="300" font-size="11.5" fill="#7A2A2A">正确做法：它只待在你自己的</text>
+  <text x="914" y="318" font-size="11.5" fill="#7A2A2A">后台里。这个项目是纯前端，</text>
+  <text x="914" y="336" font-size="11.5" fill="#7A2A2A">根本用不到它，别生成也行。</text>
+
+  <rect x="914" y="356" width="232" height="46" rx="8" fill="#FFFFFF" stroke="#F0D6D8"/>
+  <text x="926" y="374" font-size="11" fill="#B42318">我需要的只有上面那两条。</text>
+  <text x="926" y="391" font-size="11" fill="#B42318">多给的我会假装没看见。</text>
+
+  <text x="914" y="430" font-size="11" fill="#94A3B8">同理：Database Password 也</text>
+  <text x="914" y="448" font-size="11" fill="#94A3B8">不必发我。</text>
+
+  <!-- 底部：网址 -->
+  <rect x="70" y="524" width="1100" height="108" rx="14" fill="#FFFFFF" stroke="#E3E9F2"/>
+  <text x="94" y="552" font-size="13" font-weight="700" fill="#0F172A">网址（点开就行）</text>
+
+  <rect x="94" y="562" width="336" height="40" rx="8" fill="#F7FBFF" stroke="#CFE3F2"/>
+  <text x="106" y="578" font-size="11" fill="#94A3B8">注册 / 登录</text>
+  <text x="106" y="595" font-size="12" font-family="Consolas,monospace" fill="#0F172A">supabase.com/dashboard/sign-up</text>
+
+  <rect x="446" y="562" width="336" height="40" rx="8" fill="#F7FBFF" stroke="#CFE3F2"/>
+  <text x="458" y="578" font-size="11" fill="#94A3B8">已有账号直接进控制台</text>
+  <text x="458" y="595" font-size="12" font-family="Consolas,monospace" fill="#0F172A">supabase.com/dashboard</text>
+
+  <text x="800" y="580" font-size="11" fill="#64748B">免费版限制：最多 2 个项目；连续 7 天没有任何请求会</text>
+  <text x="800" y="597" font-size="11" fill="#64748B">自动休眠，控制台点一下就能唤醒，数据不丢。这个组</text>
+  <text x="800" y="617" font-size="11" fill="#64748B">天天打卡，不会触发休眠。</text>
+</svg>
