@@ -1,0 +1,107 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1240" height="800" viewBox="0 0 1240 800" font-family="PingFang SC,Hiragino Sans GB,Microsoft YaHei,sans-serif">
+  <defs>
+    <pattern id="p-dot" width="22" height="22" patternUnits="userSpaceOnUse">
+      <circle cx="1" cy="1" r="1" fill="#D7E0EC"/>
+    </pattern>
+  </defs>
+  <rect width="1240" height="800" fill="#F1F4F9"/>
+  <rect width="1240" height="800" fill="url(#p-dot)" opacity="0.8"/>
+
+  <text x="70" y="54" font-size="26" font-weight="700" fill="#0F172A">迁移第 1 步 · 新库表结构已跑通</text>
+  <text x="70" y="82" font-size="13.5" fill="#64748B">表结构这一步两条路线（Supabase / 腾讯云）都要用，所以先做它，不必等你定平台。</text>
+
+  <!-- 隔离说明 -->
+  <rect x="70" y="102" width="1100" height="62" rx="12" fill="#F1FBF7" stroke="#BFE7D8"/>
+  <text x="94" y="126" font-size="13" font-weight="700" fill="#0F6B52">动过的东西只有两处，另一个工作台零影响</text>
+  <text x="94" y="148" font-size="12" fill="#256B57">① 新建 git 分支 <tspan font-family="Consolas,monospace">migrate/cloud</tspan>（main 原样不动，Codex 那边的 UI 改动不受影响）　② 新增 <tspan font-family="Consolas,monospace">sql/01-schema.sql</tspan> 与临时校验目录</text>
+  <text x="856" y="126" font-size="11.5" fill="#256B57">没碰：cxj1528 环境</text>
+  <text x="856" y="146" font-size="11.5" fill="#256B57">没碰：星禾工作台目录 / app.js</text>
+
+  <!-- 左：建了什么 -->
+  <rect x="70" y="182" width="556" height="368" rx="14" fill="#FFFFFF" stroke="#E3E9F2"/>
+  <text x="94" y="212" font-size="15" font-weight="700" fill="#0F172A">建了 10 张表 · 5 个枚举 · 28 个索引</text>
+
+  <rect x="94" y="228" width="248" height="26" rx="7" fill="#F7FAFF" stroke="#E3EEF8"/>
+  <text x="106" y="246" font-size="11.5" fill="#334155"><tspan font-family="Consolas,monospace">groups</tspan> 组</text>
+  <rect x="356" y="228" width="248" height="26" rx="7" fill="#F7FAFF" stroke="#E3EEF8"/>
+  <text x="368" y="246" font-size="11.5" fill="#334155"><tspan font-family="Consolas,monospace">users</tspan> 成员（一人可多组）</text>
+
+  <rect x="94" y="260" width="248" height="26" rx="7" fill="#F7FAFF" stroke="#E3EEF8"/>
+  <text x="106" y="278" font-size="11.5" fill="#334155"><tspan font-family="Consolas,monospace">tasks</tspan> 固定任务</text>
+  <rect x="356" y="260" width="248" height="26" rx="7" fill="#F7FAFF" stroke="#E3EEF8"/>
+  <text x="368" y="278" font-size="11.5" fill="#334155"><tspan font-family="Consolas,monospace">checkins</tspan> 打卡（task_id 可空）</text>
+
+  <rect x="94" y="292" width="248" height="26" rx="7" fill="#F7FAFF" stroke="#E3EEF8"/>
+  <text x="106" y="310" font-size="11.5" fill="#334155"><tspan font-family="Consolas,monospace">attachments</tspan> 照片</text>
+  <rect x="356" y="292" width="248" height="26" rx="7" fill="#F7FAFF" stroke="#E3EEF8"/>
+  <text x="368" y="310" font-size="11.5" fill="#334155"><tspan font-family="Consolas,monospace">likes</tspan> 点赞</text>
+
+  <rect x="94" y="324" width="248" height="26" rx="7" fill="#F7FAFF" stroke="#E3EEF8"/>
+  <text x="106" y="342" font-size="11.5" fill="#334155"><tspan font-family="Consolas,monospace">handovers</tspan> 交接</text>
+  <rect x="356" y="324" width="248" height="26" rx="7" fill="#F7FAFF" stroke="#E3EEF8"/>
+  <text x="368" y="342" font-size="11.5" fill="#334155"><tspan font-family="Consolas,monospace">notifications</tspan> 通知</text>
+
+  <rect x="94" y="356" width="248" height="26" rx="7" fill="#F7FAFF" stroke="#E3EEF8"/>
+  <text x="106" y="374" font-size="11.5" fill="#334155"><tspan font-family="Consolas,monospace">summaries</tspan> 周报存档</text>
+  <rect x="356" y="356" width="248" height="26" rx="7" fill="#FAFAFB" stroke="#E9EDF2"/>
+  <text x="368" y="374" font-size="11.5" fill="#94A3B8"><tspan font-family="Consolas,monospace">group_secrets</tspan> 废弃但保留</text>
+
+  <text x="94" y="410" font-size="12.5" font-weight="700" fill="#334155">四条容易做错的约束，按原库行为还原</text>
+  <circle cx="100" cy="430" r="3" fill="#0E9C8E"/>
+  <text x="112" y="434" font-size="11.5" fill="#334155">同人·同任务·同一天只有一条；自定义小事（task_id 为空）可多条</text>
+  <circle cx="100" cy="454" r="3" fill="#0E9C8E"/>
+  <text x="112" y="458" font-size="11.5" fill="#334155">组内昵称唯一；同一 auth_uid 只能在一个组「当前」</text>
+  <circle cx="100" cy="478" r="3" fill="#0E9C8E"/>
+  <text x="112" y="482" font-size="11.5" fill="#334155">角色枚举含 teacher（11-09 才加的，PRD 里还没写）</text>
+  <circle cx="100" cy="502" r="3" fill="#0E9C8E"/>
+  <text x="112" y="506" font-size="11.5" fill="#334155">到点提醒按 Asia/Shanghai 划天去重，一人一任务一天一条</text>
+
+  <rect x="94" y="520" width="510" height="18" rx="6" fill="#FFFBF2"/>
+  <text x="102" y="533" font-size="10.5" fill="#B45309">这张表是「反推」出来的：PRD §6 定框架，app.js 实际读写定字段，两者不一致处以代码为准。</text>
+
+  <!-- 右：测试结果 -->
+  <rect x="650" y="182" width="520" height="368" rx="14" fill="#0F172A" stroke="#0F172A"/>
+  <text x="674" y="212" font-size="14" font-weight="700" fill="#E2E8F0">在真 PostgreSQL 里跑了一遍</text>
+  <text x="674" y="232" font-size="11" fill="#7C8DA6">WASM 版 Postgres（PGlite），不是你机器上的模拟</text>
+
+  <text x="674" y="262" font-size="11.5" font-family="Consolas,monospace" fill="#6EE7B7">PASS  建表脚本整体执行</text>
+  <text x="674" y="284" font-size="11.5" font-family="Consolas,monospace" fill="#6EE7B7">PASS  public 下建表数量 = 10</text>
+  <text x="674" y="306" font-size="11.5" font-family="Consolas,monospace" fill="#6EE7B7">PASS  枚举类型 = 5</text>
+  <text x="674" y="328" font-size="11.5" font-family="Consolas,monospace" fill="#6EE7B7">PASS  组内昵称重复被拦 → duplicate key</text>
+  <text x="674" y="350" font-size="11.5" font-family="Consolas,monospace" fill="#6EE7B7">PASS  跨组两行 is_current 被拦 → users_one_current_idx</text>
+  <text x="674" y="372" font-size="11.5" font-family="Consolas,monospace" fill="#6EE7B7">PASS  同人同任务同日重复打卡被拦</text>
+  <text x="674" y="394" font-size="11.5" font-family="Consolas,monospace" fill="#6EE7B7">PASS  自定义小事可多条（3 条并存）</text>
+  <text x="674" y="416" font-size="11.5" font-family="Consolas,monospace" fill="#6EE7B7">PASS  提醒提前量超 240 被拦</text>
+  <text x="674" y="438" font-size="11.5" font-family="Consolas,monospace" fill="#6EE7B7">PASS  当天第二条定时提醒被拦</text>
+  <text x="674" y="460" font-size="11.5" font-family="Consolas,monospace" fill="#6EE7B7">PASS  删打卡级联清掉点赞与照片</text>
+
+  <rect x="674" y="476" width="472" height="1" fill="#243044"/>
+  <text x="674" y="500" font-size="12.5" font-family="Consolas,monospace" fill="#FDE68A">合计 21 项，失败 0 项</text>
+  <text x="674" y="524" font-size="11" fill="#8FA3BD">中途改过一个测试：原本「两行 is_current」被另一条</text>
+  <text x="674" y="540" font-size="11" fill="#8FA3BD">唯一键先拦住，等于没测到目标索引。改成跨组后才真命中。</text>
+
+  <!-- 下一步 -->
+  <rect x="70" y="566" width="1100" height="164" rx="14" fill="#FFFFFF" stroke="#E3E9F2"/>
+  <text x="94" y="594" font-size="15" font-weight="700" fill="#0F172A">接着走，需要你一件事</text>
+
+  <rect x="94" y="610" width="338" height="100" rx="10" fill="#F7FBFF" stroke="#CFE3F2"/>
+  <text x="108" y="632" font-size="13" font-weight="700" fill="#0F172A">你做：建个 Supabase 项目</text>
+  <text x="108" y="653" font-size="11.5" fill="#334155">注册 → New project → 区域选 Singapore</text>
+  <text x="108" y="671" font-size="11.5" fill="#334155">→ 把 Project URL 和 anon key 给我</text>
+  <text x="108" y="694" font-size="11" fill="#94A3B8">免费额度够 9 人日用；链接我发你，不用你找</text>
+
+  <rect x="448" y="610" width="338" height="100" rx="10" fill="#F8FAFC" stroke="#E3E9F2"/>
+  <text x="462" y="632" font-size="13" font-weight="700" fill="#0F172A">我做：RLS + 16 个函数</text>
+  <text x="462" y="653" font-size="11.5" fill="#334155">24 条行级权限策略，按权限矩阵逐条落</text>
+  <text x="462" y="671" font-size="11.5" fill="#334155">16 个 RPC 逐个对照 app.js 的行为重写</text>
+  <text x="462" y="694" font-size="11" fill="#94A3B8">这是最大一块工作量，也是唯一会改业务语义的地方</text>
+
+  <rect x="802" y="610" width="344" height="100" rx="10" fill="#FFFBF5" stroke="#F0DFC6"/>
+  <text x="816" y="632" font-size="13" font-weight="700" fill="#0F172A">已知会卡住的一处</text>
+  <text x="816" y="653" font-size="11.5" fill="#334155">原库身份是文本 <tspan font-family="Consolas,monospace">auth_uid</tspan>，Supabase</text>
+  <text x="816" y="671" font-size="11.5" fill="#334155">的 <tspan font-family="Consolas,monospace">auth.uid()</tspan> 是 uuid，策略里要显式转换</text>
+  <text x="816" y="694" font-size="11" fill="#B45309">不影响表结构，写在策略层解决</text>
+
+  <text x="70" y="762" font-size="11.5" fill="#64748B">文件位置：<tspan font-family="Consolas,monospace">D:\WorkBuddy\小事打卡社区\sql\01-schema.sql</tspan>　分支 <tspan font-family="Consolas,monospace">migrate/cloud</tspan>　未提交、未发布</text>
+  <text x="70" y="782" font-size="11.5" fill="#64748B">建议：RLS 与 16 个函数这一块可以另开一个会话并行做，与本会话不冲突——要不要开，你说。</text>
+</svg>
