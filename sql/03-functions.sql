@@ -71,7 +71,11 @@ begin
             from users m join groups g on g.id = m.group_id
            where m.auth_uid = uid and m.active
         ) x
-    ), '[]'::jsonb)
+    ), '[]'::jsonb),
+    -- 有账号但被停用：前端据此提示「你已被停用」，而不是把人当成新人拉去建组
+    'inactive', (u.id is null and exists (
+      select 1 from users m where m.auth_uid = uid and not m.active
+    ))
   );
 end $$;
 

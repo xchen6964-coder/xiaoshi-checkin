@@ -13,10 +13,15 @@ const http = require('http');
 const https = require('https');
 const fs = require('fs');
 const path = require('path');
+const zlib = require('zlib');
 
 const PORT = process.env.PORT || 3000;
 const UPSTREAM = process.env.SUPABASE_HOST || 'mtkuieogemgpdvacphhs.supabase.co';
 const ROOT = __dirname;
+
+// 文本资源 gzip 缓存：手机流量慢的时候，400KB 的脚本压到 100KB 出头差别很大
+const gzCache = new Map();
+const TEXT_EXT = ['.html', '.js', '.css', '.json', '.svg', '.map'];
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -53,6 +58,10 @@ function proxy(req, res) {
       const h = Object.assign({}, ur.headers);
       delete h['content-length'];
       delete h['transfer-encoding'];
+      // 签名链接 1 小时有效，让浏览器自己缓存一会儿，别每次刷墙都重下一遍照片
+      if (req.method === 'GET' && target.startsWith('/storage/v1/')) {
+        h['cache-control'] = 'private, max-age=1800';
+      }
       res.writeHead(ur.statusCode || 502, h);
       ur.pipe(res);
     }
@@ -86,6 +95,24 @@ function serveStatic(req, res) {
     const cache = ext === '.html' || ext === '.js' || ext === '.css'
       ? 'no-cache'
       : 'public, max-age=86400';
+
+    const wantsGzip = /\bgzip\b/.test(String(req.headers['accept-encoding'] || ''));
+    if (wantsGzip && TEXT_EXT.indexOf(ext) >= 0) {
+      let hit = gzCache.get(full);
+      if (!hit || hit.mtime !== st.mtimeMs) {
+        hit = { mtime: st.mtimeMs, data: zlib.gzipSync(fs.readFileSync(full), { level: 6 }) };
+        gzCache.set(full, hit);
+      }
+      res.writeHead(200, {
+        'content-type': type,
+        'content-encoding': 'gzip',
+        'cache-control': cache,
+        'content-length': hit.data.length,
+        vary: 'Accept-Encoding'
+      });
+      return res.end(hit.data);
+    }
+
     res.writeHead(200, { 'content-type': type, 'cache-control': cache, 'content-length': st.size });
     fs.createReadStream(full).pipe(res);
   });

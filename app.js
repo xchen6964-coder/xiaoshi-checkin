@@ -185,7 +185,11 @@
       console.error('[context]', error);
       return renderLogin('读取身份失败：' + (error.message || '未知错误'));
     }
-    if (!data || !data.group) return renderOnboarding();
+    if (!data || !data.group) {
+      // 停用的人以前会看到「建组/加入」引导页，像数据丢了；现在给一句明确的话
+      if (data && data.inactive) return renderLogin('这个账号已被停用。要继续用，找站长在「成员」里恢复。');
+      return renderOnboarding();
+    }
     state.me = data.user;
     state.group = data.group;
     state.groups = data.groups || [];
@@ -1009,9 +1013,10 @@
     const photos = (state.pendingPhotos || []).slice(0, 3);
     if (!photos.length) return { uploaded: 0, failed: 0 };
     const uid = (state.session && state.session.user && state.session.user.id) || state.me.auth_uid;
-    let uploaded = 0, failed = 0;
-    for (let i = 0; i < photos.length; i++) {
-      const p = photos[i];
+
+    // 三张并发：原来是串行，移动网络下一张 200KB 要等前一张传完，
+    // 三张就要排队两倍时间。每张各自 try，单张失败不影响其他两张。
+    const results = await Promise.all(photos.map(async (p, i) => {
       try {
         const path = cloud.storage.sharedPath(uid, `checkins/${todayStr()}/${checkinId}/${i + 1}.jpg`);
         const up = await cloud.storage.upload(path, p.blob, { contentType: 'image/jpeg', cacheControl: '3600' });
@@ -1026,13 +1031,14 @@
           bytes: p.blob.size || null
         });
         if (error) throw error;
-        uploaded += 1;
+        return true;
       } catch (err) {
         console.error('[upload]', err);
-        failed += 1;
+        return false;
       }
-    }
-    return { uploaded, failed };
+    }));
+
+    return { uploaded: results.filter(Boolean).length, failed: results.filter((x) => !x).length };
   }
 
   async function submitCheckin(taskId) {
@@ -1107,9 +1113,22 @@
     }
   }
 
+  // 全屏看图：盖在弹层之上，点任意位置关闭。不再复用 openSheet，
+  // 否则会把「打卡详情」的内容顶掉，关掉后回不到那一层。
   function openPhoto(src) {
     if (!src) return;
-    openSheet('照片', `<img src="${src}" style="width:100%;border-radius:12px;display:block" alt="">`);
+    const old = document.getElementById('photo-view');
+    if (old) old.remove();
+    const box = document.createElement('div');
+    box.id = 'photo-view';
+    box.style.cssText = 'position:fixed;inset:0;z-index:80;background:rgba(0,0,0,.88);display:flex;align-items:center;justify-content:center;padding:16px;cursor:zoom-out';
+    const img = document.createElement('img');
+    img.src = src;
+    img.alt = '';
+    img.style.cssText = 'max-width:100%;max-height:100%;object-fit:contain;border-radius:8px;box-shadow:0 8px 40px rgba(0,0,0,.5)';
+    box.appendChild(img);
+    box.addEventListener('click', () => box.remove());
+    document.body.appendChild(box);
   }
 
   function openCustomSheet() {
@@ -1433,7 +1452,7 @@
     const names = (state.likes || []).filter((l) => l.checkin_id === c.id).map((l) => memberName(l.user_id));
     const mine = c.user_id === state.me.id;
     openSheet(noteTitle(c), `
-      ${photos.length ? `<div class="post-photos">${photos.map((p) => `<img src="${p.url}" alt="">`).join('')}</div>` : ''}
+      ${photos.length ? `<div class="post-photos">${photos.map((p) => `<img src="${p.url}" data-act="view-photo" data-src="${p.url}" alt="">`).join('')}</div>` : ''}
       ${c.note ? `<div class="post-body">${esc(c.note)}</div>` : ''}
       <div class="post-meta">${esc(memberName(c.user_id))} · ${fmtDateCn(c.date)} ${timeOf(c.done_at)}${c.status === 'late' ? ' · 补记' : ''}</div>
       <div class="post-likes">${names.length ? '♡ ' + names.map(esc).join('、') : '还没有人点赞'}</div>
