@@ -207,7 +207,27 @@ const teach = (await db.query(`select count(*)::int n from notifications n join 
 if (teach === 0) ok('教师不会收到打卡提醒');
 else bad('教师收到提醒了', `= ${teach}`);
 
-try { await db.close(); } catch (e) {}
+try { // ---------- 14. 定时任务分支（无 JWT 跑全组） ----------
+await reset();
+await db.exec(`delete from notifications where kind = 'task_reminder'`);
+await db.exec(`update tasks set reminder_offset = 30,
+  deadline_time = ((now() at time zone 'Asia/Shanghai')::time + interval '5 min')::time`);
+// 第二个组也放一条同窗口的任务，验证定时任务会跨组处理
+await db.exec(`insert into groups(id,name,invite_code,owner_id)
+  values ('33333333-3333-3333-3333-333333333333','定时组','TIME01','${ua}')`);
+// 组里得有人，否则不该有提醒（提醒是发给人的）
+await db.exec(`insert into users(group_id,auth_uid,nickname,role,is_current)
+  values ('33333333-3333-3333-3333-333333333333','uid-time','定时组员','member',true)`);
+await db.exec(`insert into tasks(group_id,title,deadline_time,reminder_offset,position)
+  values ('33333333-3333-3333-3333-333333333333','定时组的事',
+          ((now() at time zone 'Asia/Shanghai')::time + interval '5 min')::time, 30, 1)`);
+await db.query(`select set_config('request.jwt.claims','',false)`);
+const cronRun = await expectOk('无身份（定时任务）跑全组提醒', () => call('enqueue_due_reminders'), (v) => v && v.enqueued > 0);
+const groups = (await db.query(`select count(distinct group_id)::int n from notifications where kind = 'task_reminder'`)).rows[0].n;
+if (groups >= 2) ok('定时任务跨组生效', '覆盖 ' + groups + ' 个组'); else bad('定时任务跨组', '只覆盖 ' + groups + ' 个组');
+await as('uid-ghost');
+await expectOk('登录但还没进组：不替所有组生成提醒', () => call('enqueue_due_reminders'), (v) => v && v.enqueued === 0);
+await db.close(); } catch (e) {}
 console.log(out.join('\n'));
 const fails = out.filter((l) => l.startsWith('FAIL')).length;
 console.log(`\n合计 ${out.length} 项，失败 ${fails} 项`);

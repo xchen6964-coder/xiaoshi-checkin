@@ -387,17 +387,24 @@ begin
 end $$;
 
 -- ============ 16. enqueue_due_reminders ============
--- 前端每次打开通知面板都会调一次。到点前 reminder_offset 分钟为提醒窗口，
+-- 两种调用方式：
+--   ① 前端打开通知面板时调（带 JWT）→ 只处理自己所在的组
+--   ② pg_cron 每分钟调（无 JWT）  → 处理所有组，见 06-cron.sql
 -- 同一任务同一人当天只发一条（靠 notifications 的唯一索引兜底）。
 create or replace function public.enqueue_due_reminders() returns jsonb
 language plpgsql volatile security definer set search_path = public, pg_temp
 as $$
-declare me users%rowtype; d date := public.today_cn();
+declare uid text := public.jwt_uid();
+        v_group uuid;
+        d date := public.today_cn();
         t_time time := (now() at time zone 'Asia/Shanghai')::time;
         n int := 0;
 begin
-  select * into me from users where auth_uid = public.jwt_uid() and is_current and active limit 1;
-  if me.id is null then raise exception 'not_authenticated'; end if;
+  if uid is not null then
+    v_group := public.my_group();
+    -- 登录了但不在任何组（刚注册还没进组）：什么都不做，避免顺手替所有组生成提醒
+    if v_group is null then return jsonb_build_object('enqueued', 0); end if;
+  end if;
 
   insert into notifications(group_id, user_id, kind, title, body, task_id, channel)
   select tk.group_id, u.id, 'task_reminder',
@@ -406,7 +413,7 @@ begin
          tk.id, 'inapp'
     from tasks tk
     join users u on u.group_id = tk.group_id and u.active and u.role <> 'teacher'
-   where tk.group_id = me.group_id
+   where (v_group is null or tk.group_id = v_group)
      and not tk.archived
      and tk.reminder_offset > 0
      and t_time >= (tk.deadline_time - make_interval(mins => tk.reminder_offset))

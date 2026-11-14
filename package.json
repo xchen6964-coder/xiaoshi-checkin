@@ -1,0 +1,12 @@
+{
+  "name": "xiaoshi-checkin",
+  "private": true,
+  "description": "仅供本地测试：站点本身没有构建步骤，vendor/ 里的文件是直接发布的。npm i 后可跑 node sql/verify*.mjs 与无头 Chrome 的 tests/adapter-test.html",
+  "scripts": {
+    "test:sql": "node sql/verify.mjs && node sql/verify-rls.mjs && node sql/verify-fn.mjs"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.5.16",
+    "@supabase/supabase-js": "^2.119.0"
+  }
+}
