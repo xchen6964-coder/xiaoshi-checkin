@@ -432,6 +432,38 @@ begin
   return jsonb_build_object('enqueued', n);
 end $$;
 
+-- ============ 17. nudge_members（管理页的「催一下」） ============
+-- 原来前端直接 insert notifications，但客户端没有（也不该有）通知表的写权限；
+-- 而且它带了一个不存在的 notify_date 列。改成函数：服务端算谁没交，服务端写。
+create or replace function public.nudge_members() returns jsonb
+language plpgsql volatile security definer set search_path = public, pg_temp
+as $$
+declare me users%rowtype; d date := public.today_cn(); n int := 0;
+begin
+  select * into me from users where auth_uid = public.jwt_uid() and is_current and active limit 1;
+  if me.id is null then raise exception 'not_authenticated'; end if;
+  if me.role not in ('owner', 'leader', 'teacher') then raise exception 'not_admin'; end if;
+
+  insert into notifications(group_id, user_id, kind, title, body, channel)
+  select me.group_id, m.id, 'manual', '该打卡了', '负责人提醒你完成今天的打卡', 'inapp'
+    from users m
+   where m.group_id = me.group_id
+     and m.active
+     and m.role <> 'teacher'
+     and m.id <> me.id
+     and exists (
+       select 1 from tasks tk
+        where tk.group_id = me.group_id and not tk.archived
+          and not exists (
+            select 1 from checkins c
+             where c.user_id = m.id and c.task_id = tk.id and c.date = d
+          )
+     );
+
+  get diagnostics n = row_count;
+  return jsonb_build_object('notified', n);
+end $$;
+
 -- ============ 授权 ============
 grant execute on function
   public.my_context(),
@@ -449,7 +481,8 @@ grant execute on function
   public.set_excused_today(uuid, boolean),
   public.regenerate_invite(),
   public.regenerate_teacher_code(),
-  public.enqueue_due_reminders()
+  public.enqueue_due_reminders(),
+  public.nudge_members()
 to authenticated;
 
 revoke execute on function public.join_group_impl(text, text, boolean) from public, anon, authenticated;

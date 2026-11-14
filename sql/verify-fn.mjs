@@ -225,6 +225,20 @@ await db.query(`select set_config('request.jwt.claims','',false)`);
 const cronRun = await expectOk('无身份（定时任务）跑全组提醒', () => call('enqueue_due_reminders'), (v) => v && v.enqueued > 0);
 const groups = (await db.query(`select count(distinct group_id)::int n from notifications where kind = 'task_reminder'`)).rows[0].n;
 if (groups >= 2) ok('定时任务跨组生效', '覆盖 ' + groups + ' 个组'); else bad('定时任务跨组', '只覆盖 ' + groups + ' 个组');
+// ---------- 15. 催一下（nudge_members） ----------
+await as('uid-b');
+await expectErr('普通成员催人被拒', () => call('nudge_members'), 'not_admin');
+await reset();
+await db.exec(`delete from notifications where kind = 'manual'`);
+await as('uid-a');
+const nd = await expectOk('站长催一下：给未完成的人写通知', () => call('nudge_members'), (v) => v && v.notified > 0);
+const mn = (await db.query(`select count(*)::int n from notifications where kind = 'manual'`)).rows[0].n;
+if (mn === (nd && nd.notified)) ok('通知条数与返回一致', '= ' + mn);
+else bad('通知条数', mn + ' vs ' + (nd && nd.notified));
+const toTeacher = (await db.query(`select count(*)::int n from notifications n join users u on u.id = n.user_id where n.kind = 'manual' and u.role = 'teacher'`)).rows[0].n;
+if (toTeacher === 0) ok('催人不会催教师');
+else bad('催到教师了', '= ' + toTeacher);
+
 await as('uid-ghost');
 await expectOk('登录但还没进组：不替所有组生成提醒', () => call('enqueue_due_reminders'), (v) => v && v.enqueued === 0);
 await db.close(); } catch (e) {}

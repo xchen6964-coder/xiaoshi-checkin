@@ -1562,19 +1562,12 @@
   async function remind() {
     const missing = state.members.filter((m) => !state.tasks.every((t) => state.todayCheckins.some((c) => c.user_id === m.id && c.task_id === t.id)));
     if (!missing.length) { toast('今天大家都做完了'); return; }
-    const rows = missing.map((m) => ({
-      group_id: state.group.id,
-      user_id: m.id,
-      kind: 'manual',
-      title: '该打卡了',
-      body: '负责人提醒你完成今天的打卡',
-      channel: 'inapp',
-      notify_date: todayStr()
-    }));
-    const { error } = await cloud.database.from('notifications').insert(rows);
+    // 通知由服务端函数写：客户端没有 notifications 的插入权限（也不该有）
+    const { data, error } = await cloud.database.rpc('nudge_members');
     if (error) { toast(error.message || '发送失败'); return; }
     const pushed = pushWecom(missing);
-    toast(pushed ? `已提醒 ${missing.length} 人，并同步到企微群` : `已提醒 ${missing.length} 人`);
+    const n = (data && data.notified) || missing.length;
+    toast(pushed ? `已提醒 ${n} 人，并同步到企微群` : `已提醒 ${n} 人`);
   }
 
   // 浏览器直接发给企微机器人。no-cors 只能发不能读回执，
@@ -2327,9 +2320,9 @@
 
       <div class="card">
         <div class="card-head"><h2>总结</h2>
-          <button class="btn ghost small" data-act="gen-summary" ${r.busy ? 'disabled' : ''}>${r.summary ? '重新生成' : (r.busy ? '生成中…' : '用模型写一段')}</button>
+          <button class="btn ghost small" data-act="gen-summary" ${r.busy ? 'disabled' : ''}>${r.summary ? '重新生成' : (r.busy ? '生成中…' : '生成文字总结')}</button>
         </div>
-        ${r.summary ? `<div class="summary-box">${esc(r.summary)}</div>${r.modelLabel ? `<p class="hint" style="margin-top:8px">由 ${esc(r.modelLabel)} 生成</p>` : ''}` : '<p class="rail-empty">不生成也能导出，只是文档里少一段文字总结。</p>'}
+        ${r.summary ? `<div class="summary-box">${esc(r.summary)}</div>` : '<p class="rail-empty">不生成也能导出，只是文档里少一段文字总结。</p>'}
       </div>
 
       <div class="card">
@@ -2526,97 +2519,41 @@
     };
   }
 
-  function factsForModel(p) {
+  // 迁到自有 Supabase 后不再有平台模型（见 AGENTS.md）。总结改成前端按同一套口径拼出来：
+  // 只用已经算好的数字，不评价、不排名、不推算 —— 这条约束来自原来的系统提示。
+  function buildSummaryText(p) {
     const m = p.metrics;
-    const lines = [
-      `小组：${p.meta.groupName}`,
-      `区间：${p.meta.rangeStart} 至 ${p.meta.rangeEnd}，共 ${p.meta.days} 天`,
-      `成员 ${p.meta.members} 人，任务 ${p.meta.tasks} 项`,
-      `应完成 ${m.expected} 条，按时 ${m.onTime} 条，补记 ${m.late} 条，豁免 ${m.excused} 条，未完成 ${m.missing} 条`,
-      `按时率 ${pctText(m.rateOnTime)}，完成率 ${pctText(m.rateDone)}`,
-      '成员明细：' + m.perMember.map((x) => `${x.name} 应完成${x.expected}按时${x.done}未完成${x.missing}`).join('；'),
-      '任务明细：' + m.perTask.map((x) => `${x.title} 完成率${pctText(x.rate)}`).join('；')
-    ];
-    return lines.join('\n');
-  }
+    const meta = p.meta;
+    const out = [];
+    out.push(`${meta.rangeStart} 至 ${meta.rangeEnd} 共 ${meta.days} 天，${meta.members} 人、${meta.tasks} 项任务，应完成 ${m.expected} 条：按时 ${m.onTime} 条、补记 ${m.late} 条、豁免 ${m.excused} 条、未完成 ${m.missing} 条。`);
+    out.push(`按时率 ${pctText(m.rateOnTime)}，完成率 ${pctText(m.rateDone)}。`);
 
-  const SUMMARY_SYSTEM_PROMPT = [
-    '你是打卡小组的数据记录员。用户会给你一组已经算好的统计数字，你要把它写成一段给组内成员看的中文说明。',
-    '',
-    '口径（必须遵守，不要自己重算）：',
-    '- 应完成 = 区间内每天的生效任务数 × 成员数 − 豁免数。',
-    '- 按时率 = 按时数 ÷ 应完成；完成率 = (按时 + 补记) ÷ 应完成。',
-    '- 「补记」只进完成率，不进按时率；「豁免」两边都不计。',
-    '',
-    '写作要求：',
-    '1. 只用输入里出现的数字和人名，不推算、不补全、不编造。',
-    '2. 先写整体：区间、成员与任务数、应完成条数、按时率、完成率。',
-    '3. 再点出最需要留意的 1–2 处事实，例如某成员连续未完成、某项任务完成率偏低。',
-    '4. 只陈述事实。禁止评价（如「态度不积极」「值得表扬」）、禁止排名、禁止比较谁比谁好、禁止鼓励或批评。',
-    '5. 不用比喻、不用感叹号、不用「大家」「加油」这类口语。',
-    '6. 分 2–3 句，总长 230 字以内，简体中文。',
-    '7. 某项为 0 或缺失就直接略过，不要写「数据缺失」。',
-    '8. 只输出这一段话本身，不要标题、不要列表符号、不要 Markdown。'
-  ].join('\n');
-
-  const FREE_MODEL_IDS = ['hy4free', 'hy3'];
-
-  function pickFreeModel(list) {
-    const usable = (list || []).filter((m) => m && m.disabled !== true && m.enabled !== false);
-    for (const id of FREE_MODEL_IDS) {
-      const hit = usable.find((m) => m.id === id);
-      if (hit) return hit;
+    const byMissing = m.perMember.slice().sort((a, b) => b.missing - a.missing)[0];
+    if (byMissing && byMissing.missing > 0) {
+      out.push(`${byMissing.name} 未完成 ${byMissing.missing} 条，是这个区间里最多的。`);
     }
-    const zero = usable.find((m) => /x?0(\.0+)?\s*credits?/i.test(String(m.credits || '')));
-    return zero || usable.find((m) => m.id === 'auto') || usable[0] || null;
-  }
-
-  function llmErrorText(err) {
-    const code = (err && err.error && err.error.code) || '';
-    if (String(code).indexOf('quota_') === 0) return '本月 AI 额度已用完。报告和导出照常可用，只是少这段文字。';
-    if (String(code).indexOf('gateway_') === 0 || String(code).indexOf('model_') === 0) return '模型服务暂时不可用，过会儿再试，或直接导出。';
-    if (String(code).indexOf('auth_') === 0) return 'AI 通道鉴权失败，需要重新开通云服务。';
-    return (err && err.message) || '生成失败，可以直接导出';
+    const byRate = m.perTask.slice().sort((a, b) => a.rate - b.rate)[0];
+    if (byRate && byRate.rate < 1) {
+      out.push(`${byRate.title} 的完成率 ${pctText(byRate.rate)}，是各项任务里最低的。`);
+    } else if (m.missing === 0) {
+      out.push('区间内没有未完成的记录。');
+    }
+    return out.join('');
   }
 
   async function generateSummary() {
     const r = reportState();
     if (!r.payload) return;
-    r.busy = true; r.error = '';
+    r.busy = true; r.error = ''; r.summary = ''; r.modelLabel = '';
     paintReportBody();
     try {
-      const models = await cloud.llm.models.list();
-      const list = Array.isArray(models) ? models : (models && models.data) || [];
-      const model = pickFreeModel(list);
-      if (!model) throw new Error('这个应用没有可用模型');
-      r.modelLabel = model.name || model.id;
-      let text = '';
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 90000);
-      try {
-        for await (const chunk of cloud.llm.chat.completions.create({
-          model: model.id,
-          messages: [
-            { role: 'system', content: SUMMARY_SYSTEM_PROMPT },
-            { role: 'user', content: factsForModel(r.payload) }
-          ],
-          stream: true,
-          signal: controller.signal
-        })) {
-          const d = chunk.choices[0] && chunk.choices[0].delta && chunk.choices[0].delta.content;
-          if (d) text += d;
-        }
-      } catch (e) {
-        if (e && e.name === 'AbortError') throw new Error('模型超过 90 秒没写完，已中断。可以重试，或直接导出。');
-        throw e;
-      } finally {
-        clearTimeout(timer);
-      }
-      r.summary = text.trim() || '';
-      if (!r.summary) throw new Error('模型没有返回内容');
+      // 纯本地计算，留一帧让「生成中…」显示出来
+      await new Promise((res) => setTimeout(res, 80));
+      r.summary = buildSummaryText(r.payload);
+      if (!r.summary) throw new Error('empty');
     } catch (err) {
       console.error('[summary]', err);
-      r.error = llmErrorText(err);
+      r.error = '生成失败，可以直接导出';
     }
     r.busy = false;
     paintReportBody();
