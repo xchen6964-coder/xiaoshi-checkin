@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1240" height="620" viewBox="0 0 1240 620" font-family="PingFang SC,Hiragino Sans GB,Microsoft YaHei,sans-serif">
+  <defs>
+    <pattern id="p-dot" width="22" height="22" patternUnits="userSpaceOnUse">
+      <circle cx="1" cy="1" r="1" fill="#D7E0EC"/>
+    </pattern>
+  </defs>
+  <rect width="1240" height="620" fill="#F1F4F9"/>
+  <rect width="1240" height="620" fill="url(#p-dot)" opacity="0.8"/>
+
+  <text x="70" y="50" font-size="25" font-weight="700" fill="#0F172A">A 方案已落地：缩略图 + 压缩参数</text>
+  <text x="70" y="76" font-size="13" fill="#64748B">Codex 已停，改在 <tspan font-family="Consolas,monospace">migrate/cloud</tspan> 分支，没碰 main。app.js 版本升到 v42。</text>
+
+  <!-- 改了什么 -->
+  <rect x="70" y="98" width="536" height="266" rx="14" fill="#FFFFFF" stroke="#E3E9F2"/>
+  <text x="94" y="126" font-size="14" font-weight="700" fill="#0F172A">改了四处，都在 app.js</text>
+
+  <circle cx="102" cy="152" r="3.5" fill="#0E9C8E"/>
+  <text x="116" y="156" font-size="12" fill="#334155"><tspan font-family="Consolas,monospace">compressImage</tspan> 默认值 1600 / 0.82 → <tspan font-weight="700">1280 / 0.72</tspan></text>
+
+  <circle cx="102" cy="182" r="3.5" fill="#0E9C8E"/>
+  <text x="116" y="186" font-size="12" fill="#334155">新增 <tspan font-family="Consolas,monospace">thumbBlob()</tspan>：同一张图再出一张 400px 缩略图</text>
+
+  <circle cx="102" cy="212" r="3.5" fill="#0E9C8E"/>
+  <text x="116" y="216" font-size="12" fill="#334155">新增 <tspan font-family="Consolas,monospace">uploadThumb()</tspan>：传 <tspan font-family="Consolas,monospace">1_t.jpg</tspan>，失败不算整条失败</text>
+
+  <circle cx="102" cy="242" r="3.5" fill="#0E9C8E"/>
+  <text x="116" y="246" font-size="12" fill="#334155">打卡提交、编辑补图两处都写上 <tspan font-family="Consolas,monospace">thumb_path</tspan></text>
+
+  <circle cx="102" cy="272" r="3.5" fill="#0E9C8E"/>
+  <text x="116" y="276" font-size="12" fill="#334155">签名地址批量签原图+缩略图，每条附件多带一个 <tspan font-family="Consolas,monospace">thumbUrl</tspan></text>
+
+  <circle cx="102" cy="302" r="3.5" fill="#0E9C8E"/>
+  <text x="116" y="306" font-size="12" fill="#334155">今日页最近打卡、墙便签改用缩略图；点开仍是<b>原图</b></text>
+
+  <rect x="94" y="320" width="488" height="30" rx="8" fill="#F8FAFC" stroke="#E9EDF2"/>
+  <text x="106" y="339" font-size="11" fill="#64748B">老照片没有 thumb_path，自动退回原图 —— 不会破图。</text>
+
+  <!-- 基准 -->
+  <rect x="626" y="98" width="544" height="266" rx="14" fill="#0F172A" stroke="#0F172A"/>
+  <text x="650" y="126" font-size="14" font-weight="700" fill="#E2E8F0">实测：同一张图压三种规格</text>
+  <text x="650" y="145" font-size="10.5" fill="#7C8DA6">源图 3000×4000，带高频噪点（模拟实拍细节，属于偏大的情形）</text>
+
+  <text x="650" y="176" font-size="11.5" font-family="Consolas,monospace" fill="#94A3B8">改前  1200×1600  q0.82</text>
+  <rect x="880" y="167" width="200" height="12" rx="6" fill="#334155"/><rect x="880" y="167" width="200" height="12" rx="6" fill="#E5484D"/>
+  <text x="1092" y="177" font-size="11.5" font-family="Consolas,monospace" fill="#FCA5A5">461 KB</text>
+
+  <text x="650" y="208" font-size="11.5" font-family="Consolas,monospace" fill="#94A3B8">改后   960×1280  q0.72</text>
+  <rect x="880" y="199" width="200" height="12" rx="6" fill="#334155"/><rect x="880" y="199" width="94" height="12" rx="6" fill="#D97706"/>
+  <text x="1092" y="209" font-size="11.5" font-family="Consolas,monospace" fill="#FCD34D">218 KB</text>
+
+  <text x="650" y="240" font-size="11.5" font-family="Consolas,monospace" fill="#94A3B8">缩略   300×400   q0.70</text>
+  <rect x="880" y="231" width="200" height="12" rx="6" fill="#334155"/><rect x="880" y="231" width="8" height="12" rx="4" fill="#34D399"/>
+  <text x="1092" y="241" font-size="11.5" font-family="Consolas,monospace" fill="#6EE7B7">18 KB</text>
+
+  <rect x="650" y="258" width="496" height="1" fill="#243044"/>
+  <text x="650" y="282" font-size="12" font-family="Consolas,monospace" fill="#E2E8F0">原图体积降到 47%　缩略图只有原图的 3.9%</text>
+  <text x="650" y="304" font-size="12" font-family="Consolas,monospace" fill="#FDE68A">今日页 6 张：2767 KB → 107 KB（约 1/25）</text>
+  <text x="650" y="330" font-size="11" fill="#8FA3BD">这组数字是合成图跑的，真实照片请以上线后 Usage 页为准。</text>
+  <text x="650" y="348" font-size="11" fill="#8FA3BD">基准页留在 .workbuddy/tmp/bench.html，可复跑。</text>
+
+  <!-- 验证 -->
+  <rect x="70" y="382" width="536" height="150" rx="14" fill="#FFFFFF" stroke="#E3E9F2"/>
+  <text x="94" y="410" font-size="14" font-weight="700" fill="#0F172A">验证到哪一步</text>
+  <text x="94" y="436" font-size="12" fill="#166534">✓ node --check app.js 通过</text>
+  <text x="94" y="458" font-size="12" fill="#166534">✓ data-act 对齐 55 / 55，无孤立按钮</text>
+  <text x="94" y="480" font-size="12" fill="#166534">✓ 压缩基准实跑（上面的数字都是真跑出来的）</text>
+  <text x="94" y="502" font-size="12" fill="#B42318">✗ 未验证：登录后的列表渲染 —— 静态页没有登录态，要真机看</text>
+
+  <rect x="626" y="382" width="544" height="150" rx="14" fill="#FFFBF5" stroke="#F0DFC6"/>
+  <text x="650" y="410" font-size="14" font-weight="700" fill="#0F172A">还没做</text>
+  <text x="650" y="436" font-size="12" fill="#334155">① 90 天清理：删附件行 + 删 storage 文件，依赖迁移后的定时能力</text>
+  <text x="650" y="458" font-size="12" fill="#334155">② 老照片补缩略图：目前只能等它们被清掉，不做回填</text>
+  <text x="650" y="480" font-size="12" fill="#334155">③ 迁移本身：等你建好 Supabase 项目给那两条值</text>
+  <text x="650" y="508" font-size="11" fill="#94A3B8">④ 未提交到 main、未发布 —— 需要你点头</text>
+
+  <text x="70" y="566" font-size="11.5" fill="#64748B">改动位置：app.js 1128（压缩参数）、1160 附近（thumbBlob / uploadThumb）、1180 与 1390（两处上传写 thumb_path）、310（签名）、1064 与 1489（列表渲染）。</text>
+  <text x="70" y="586" font-size="11.5" fill="#64748B">index.html 里 app.js 版本 v41 → v42。styles.css 没动，不用升。</text>
+</svg>

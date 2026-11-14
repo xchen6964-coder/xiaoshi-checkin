@@ -307,13 +307,15 @@
     if (!ids.length) return;
     const { data, error } = await cloud.database
       .from('attachments')
-      .select('id,checkin_id,path,width,height')
+      .select('id,checkin_id,path,thumb_path,width,height')
       .in('checkin_id', ids);
     if (error || !data || !data.length) return;
 
     const urlMap = {};
     try {
-      const res = await cloud.storage.createSignedUrls(data.map((r) => r.path), 3600);
+      const paths = [];
+      data.forEach((r) => { paths.push(r.path); if (r.thumb_path) paths.push(r.thumb_path); });
+      const res = await cloud.storage.createSignedUrls(paths, 3600);
       const arr = Array.isArray(res && res.data) ? res.data : ((res && res.data && res.data.data) || []);
       arr.forEach((x) => {
         const key = x.path || x.name;
@@ -323,7 +325,11 @@
       console.error('[signed-url]', err);
     }
     data.forEach((r) => {
-      (state.attachments[r.checkin_id] = state.attachments[r.checkin_id] || []).push({ ...r, url: urlMap[r.path] || '' });
+      (state.attachments[r.checkin_id] = state.attachments[r.checkin_id] || []).push({
+        ...r,
+        url: urlMap[r.path] || '',
+        thumbUrl: (r.thumb_path && urlMap[r.thumb_path]) || ''
+      });
     });
   }
 
@@ -1061,7 +1067,11 @@
               <div><b>${esc(who)}</b> ${esc(task || c.title || '小事')}</div>
               ${c.note ? `<div class="feed-note">${esc(c.note)}</div>` : ''}
             </div>
-            ${(state.attachments[c.id] || []).length && state.attachments[c.id][0].url ? `<img class="feed-shot" src="${state.attachments[c.id][0].url}" data-act="view-photo" data-src="${state.attachments[c.id][0].url}" alt="">` : ''}
+            ${(() => {
+              const ph = (state.attachments[c.id] || [])[0];
+              if (!ph || !ph.url) return '';
+              return `<img class="feed-shot" src="${ph.thumbUrl || ph.url}" data-act="view-photo" data-src="${ph.url}" alt="">`;
+            })()}
             <span class="feed-time">${isToday ? timeOf(c.done_at) : `${d.getMonth() + 1}/${d.getDate()}`}</span>
           </div>`;
         }).join('')}
@@ -1125,7 +1135,7 @@
       + (photos.length < 3 ? `<label class="shot-add" for="ck-file">＋</label>` : '');
   }
 
-  async function compressImage(file, maxEdge = 1600, quality = 0.82) {
+  async function compressImage(file, maxEdge = 1280, quality = 0.72) {
     let bitmap;
     try {
       bitmap = await createImageBitmap(file);
@@ -1150,6 +1160,44 @@
     return blob;
   }
 
+  // 列表里只显示 40px / 104px 的图，却一直拉原图 —— 单独存一张 400px 缩略图，列表用它、点开仍看原图。
+  async function thumbBlob(blob, maxEdge = 400, quality = 0.7) {
+    let bitmap;
+    try {
+      bitmap = await createImageBitmap(blob);
+    } catch (e) {
+      bitmap = await new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = reject;
+        img.src = URL.createObjectURL(blob);
+      });
+    }
+    const scale = Math.min(1, maxEdge / Math.max(bitmap.width, bitmap.height));
+    const w = Math.round(bitmap.width * scale), h = Math.round(bitmap.height * scale);
+    const canvas = document.createElement('canvas');
+    canvas.width = w; canvas.height = h;
+    canvas.getContext('2d').drawImage(bitmap, 0, 0, w, h);
+    const out = await new Promise((res) => canvas.toBlob(res, 'image/jpeg', quality));
+    if (bitmap.close) bitmap.close();
+    if (!out) throw new Error('thumb failed');
+    return out;
+  }
+
+  // 上传原图后补一张缩略图；缩略图失败不算整条失败，列表退回原图即可
+  async function uploadThumb(path, blob) {
+    try {
+      const tb = await thumbBlob(blob);
+      const tp = path.replace(/\.jpg$/, '_t.jpg');
+      const up = await cloud.storage.upload(tp, tb, { contentType: 'image/jpeg', cacheControl: '3600' });
+      if (up && up.error) throw up.error;
+      return tp;
+    } catch (err) {
+      console.error('[thumb]', err);
+      return null;
+    }
+  }
+
   async function uploadPhotos(checkinId) {
     const photos = (state.pendingPhotos || []).slice(0, 3);
     if (!photos.length) return { uploaded: 0, failed: 0 };
@@ -1161,9 +1209,11 @@
         const path = cloud.storage.sharedPath(uid, `checkins/${todayStr()}/${checkinId}/${i + 1}.jpg`);
         const up = await cloud.storage.upload(path, p.blob, { contentType: 'image/jpeg', cacheControl: '3600' });
         if (up && up.error) throw up.error;
+        const thumbPath = await uploadThumb(path, p.blob);
         const { error } = await cloud.database.from('attachments').insert({
           checkin_id: checkinId,
           path,
+          thumb_path: thumbPath,
           width: p.blob.width || null,
           height: p.blob.height || null,
           bytes: p.blob.size || null
@@ -1384,8 +1434,9 @@
         const path = cloud.storage.sharedPath(uid, `checkins/${todayStr()}/${e.id}/${Date.now()}-${i + 1}.jpg`);
         const up = await cloud.storage.upload(path, p.blob, { contentType: 'image/jpeg', cacheControl: '3600' });
         if (up && up.error) throw up.error;
+        const thumbPath = await uploadThumb(path, p.blob);
         const r = await cloud.database.from('attachments').insert({
-          checkin_id: e.id, path, width: p.blob.width || null, height: p.blob.height || null, bytes: p.blob.size || null
+          checkin_id: e.id, path, thumb_path: thumbPath, width: p.blob.width || null, height: p.blob.height || null, bytes: p.blob.size || null
         });
         if (r.error) throw r.error;
       } catch (err) { console.error('[edit-upload]', err); failed += 1; }
@@ -1486,7 +1537,7 @@
     const photo = (state.attachments[c.id] || [])[0];
     return `
       <div class="note" data-act="open-post" data-checkin="${c.id}">
-        ${photo && photo.url ? `<img class="note-img" src="${photo.url}" alt="">` : ''}
+        ${photo && photo.url ? `<img class="note-img" src="${photo.thumbUrl || photo.url}" alt="">` : ''}
         <div class="n-title">${esc(noteTitle(c))}</div>
         ${c.note ? `<div class="n-body">${esc(c.note)}</div>` : ''}
         <div class="n-foot">
