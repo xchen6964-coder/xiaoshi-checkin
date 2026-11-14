@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1240" height="600" viewBox="0 0 1240 600" font-family="PingFang SC,Hiragino Sans GB,Microsoft YaHei,sans-serif">
+  <defs>
+    <pattern id="p-dot" width="22" height="22" patternUnits="userSpaceOnUse">
+      <circle cx="1" cy="1" r="1" fill="#D7E0EC"/>
+    </pattern>
+  </defs>
+  <rect width="1240" height="600" fill="#F1F4F9"/>
+  <rect width="1240" height="600" fill="url(#p-dot)" opacity="0.8"/>
+
+  <text x="70" y="50" font-size="25" font-weight="700" fill="#0F172A">最后一个决定：9 个人以后怎么登录</text>
+  <text x="70" y="76" font-size="13" fill="#64748B">换平台时唯一迁不走的东西就是登录。原来那套邮箱验证码是 WorkBuddy 平台的能力，Supabase 有，但免费额度撑不住。</text>
+
+  <!-- A -->
+  <rect x="70" y="98" width="352" height="330" rx="14" fill="#FFFFFF" stroke="#8FD9C9" stroke-width="1.6"/>
+  <rect x="70" y="98" width="352" height="4" rx="2" fill="#0E9C8E"/>
+  <text x="94" y="132" font-size="15" font-weight="700" fill="#0F172A">A · 邮箱 + 密码</text>
+  <text x="94" y="154" font-size="11.5" fill="#0E9C8E">推荐</text>
+
+  <text x="94" y="184" font-size="12" fill="#334155">成员第一次：填邮箱 + 设密码 = 注册</text>
+  <text x="94" y="204" font-size="12" fill="#334155">以后：填邮箱 + 密码直接进</text>
+
+  <rect x="94" y="222" width="304" height="66" rx="8" fill="#F1FBF7" stroke="#BFE7D8"/>
+  <text x="106" y="243" font-size="11.5" font-weight="700" fill="#0F6B52">好处</text>
+  <text x="106" y="262" font-size="11.5" fill="#256B57">不要验证码，不收邮件，没有频率限制；</text>
+  <text x="106" y="279" font-size="11.5" fill="#256B57">9 个人当天就能全部进来。</text>
+
+  <text x="94" y="312" font-size="11.5" fill="#B45309">代价：要在 Supabase 关掉「邮箱确认」</text>
+  <text x="94" y="330" font-size="11.5" fill="#B45309">（一个开关，我给你截图位置）</text>
+  <text x="94" y="356" font-size="11.5" fill="#B45309">代价：邮箱不再校验真实性，</text>
+  <text x="94" y="374" font-size="11.5" fill="#B45309">填错就进不去，得找站长改</text>
+  <text x="94" y="402" font-size="11.5" fill="#64748B">我要改：登录页去掉「获取验证码」那条路</text>
+
+  <!-- B -->
+  <rect x="444" y="98" width="352" height="330" rx="14" fill="#FFFFFF" stroke="#E3E9F2"/>
+  <rect x="444" y="98" width="352" height="4" rx="2" fill="#D97706"/>
+  <text x="468" y="132" font-size="15" font-weight="700" fill="#0F172A">B · 保留邮箱验证码</text>
+  <text x="468" y="154" font-size="11.5" fill="#B45309">照现在的交互，但会卡死</text>
+
+  <text x="468" y="184" font-size="12" fill="#334155">成员：填邮箱 → 收 6 位码 → 登录</text>
+
+  <rect x="468" y="222" width="304" height="66" rx="8" fill="#FFF7F7" stroke="#F3D6D8"/>
+  <text x="480" y="243" font-size="11.5" font-weight="700" fill="#B42318">关键限制</text>
+  <text x="480" y="262" font-size="11.5" fill="#7A2A2A">Supabase 自带邮件服务：全项目每小时</text>
+  <text x="480" y="279" font-size="11.5" fill="#7A2A2A">只能发 2 封。9 个人注册要 5 小时。</text>
+
+  <text x="468" y="312" font-size="11.5" fill="#B45309">要用就得接自己的发件服务（阿里云/腾讯</text>
+  <text x="468" y="330" font-size="11.5" fill="#B45309">企业邮之类），要域名、要配置、要验证</text>
+  <text x="468" y="356" font-size="11.5" fill="#B45309">还会进垃圾箱。</text>
+  <text x="468" y="382" font-size="11.5" fill="#64748B">除非你已经有企业邮箱，否则不建议</text>
+  <text x="468" y="402" font-size="11.5" fill="#64748B">为了 9 个人折腾这套</text>
+
+  <!-- C -->
+  <rect x="818" y="98" width="352" height="330" rx="14" fill="#FFFFFF" stroke="#E3E9F2"/>
+  <rect x="818" y="98" width="352" height="4" rx="2" fill="#94A3B8"/>
+  <text x="842" y="132" font-size="15" font-weight="700" fill="#0F172A">C · 手机号验证码</text>
+  <text x="842" y="154" font-size="11.5" fill="#94A3B8">最符合国内习惯，但最贵</text>
+
+  <text x="842" y="184" font-size="12" fill="#334155">成员：填手机号 → 收短信 → 登录</text>
+
+  <rect x="842" y="222" width="304" height="66" rx="8" fill="#FFFBF5" stroke="#F0DFC6"/>
+  <text x="854" y="243" font-size="11.5" font-weight="700" fill="#B45309">代价</text>
+  <text x="854" y="262" font-size="11.5" fill="#8A5A12">要签短信服务商（腾讯云/阿里云），</text>
+  <text x="854" y="279" font-size="11.5" fill="#8A5A12">模板与签名要报备审核，按条计费。</text>
+
+  <text x="842" y="312" font-size="11.5" fill="#B45309">9 个人一年登录费用很低，但前期审核</text>
+  <text x="842" y="330" font-size="11.5" fill="#B45309">要跑几天，还可能因为用途被拒。</text>
+  <text x="842" y="356" font-size="11.5" fill="#64748B">好处：不会填错，也不用记密码。</text>
+  <text x="842" y="382" font-size="11.5" fill="#64748B">如果以后人多了、要正式运营，再换到</text>
+  <text x="842" y="400" font-size="11.5" fill="#64748B">这条也不迟，登录方式可以后加。</text>
+
+  <!-- 底部 -->
+  <rect x="70" y="448" width="1100" height="112" rx="14" fill="#FFFFFF" stroke="#E3E9F2"/>
+  <text x="94" y="476" font-size="14" font-weight="700" fill="#0F172A">选 A 之后，我这边要动的四处</text>
+  <text x="94" y="500" font-size="12" fill="#334155">① 登录页砍掉验证码流程，留「邮箱 + 密码」两个输入框和一个按钮（注册与登录合一，第一次自动注册）</text>
+  <text x="94" y="522" font-size="12" fill="#334155">② 写 <tspan font-family="Consolas,monospace">vendor/cloud-adapter.js</tspan>：把现在的 cloud.auth / database / storage 转成 Supabase，app.js 其余部分一行不动</text>
+  <text x="94" y="544" font-size="12" fill="#334155">③ 改 <tspan font-family="Consolas,monospace">config.js</tspan> 两条值 + 换掉 vendor 里那个 WorkBuddy SDK + 升版本号　④ 本地起服务真跑一遍登录与打卡</text>
+
+  <text x="70" y="584" font-size="11.5" fill="#64748B">成员侧的操作：打开链接 → 填邮箱和密码 → 点一次按钮。没有欢迎邮件、没有验证码、不用等你发码。</text>
+</svg>
