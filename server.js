@@ -103,9 +103,9 @@ function serveStatic(req, res) {
     }
     const ext = path.extname(full).toLowerCase();
     const type = MIME[ext] || 'application/octet-stream';
-    const cache = ext === '.html' || ext === '.js' || ext === '.css'
-      ? 'no-cache'
-      : 'public, max-age=86400';
+    // 页面与脚本一律 no-store：微信内置浏览器会自己留一份离线缓存，
+    // 光靠 ?v=N 有时拿不到新脚本（踩过：手机还在跑旧版，报「连不上服务器」）。
+    const cache = ext === '.html' || ext === '.js' || ext === '.css' ? 'no-store' : 'public, max-age=86400';
 
     const wantsGzip = /\bgzip\b/.test(String(req.headers['accept-encoding'] || ''));
     if (wantsGzip && TEXT_EXT.indexOf(ext) >= 0) {
