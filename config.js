@@ -1,6 +1,8 @@
-/* 云服务公开配置：可安全放在前端（服务端按 Origin 校验） */
+/* 云端公开配置：这两条都是给浏览器用的公开值，可以放在前端。
+ * 权限由数据库的行级策略决定，不靠这把钥匙保密。
+ * 千万不要把 secret key（sb_secret_…）写进任何前端文件。
+ */
 window.APP_CONFIG = {
-  endpoint: "https://xiaoshi-checkin.app.workbuddy.host",
-  oauthRelayBaseUrl: "https://www.workbuddy.cn/v2/as/genie-baas/oauth",
-  publishableKey: "wbpk_jEnLgK2Qgw4V4yfcJpyUPT_IUsqKF3E29S3zzTMrQ2XkEHMQIN1I994"
+  supabaseUrl: "https://mtkuieogemgpdvacphhs.supabase.co",
+  supabaseKey: "sb_publishable_QBzcGeWwShrZFZlrCq0KmQ_85oe3uWK"
 };

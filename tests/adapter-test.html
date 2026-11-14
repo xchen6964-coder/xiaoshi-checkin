@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>adapter contract test</title></head>
+<body><pre id="out">running…</pre>
+<script>
+/* 用假的 supabase 客户端跑一遍 vendor/cloud-adapter.js，
+   验证它把 app.js 的调用翻译成了正确的 Supabase 调用链。
+   运行：chrome --headless --dump-dom tests/adapter-test.html */
+
+const rec = { tables: [], storage: [], auth: [], rpc: [] };
+
+function builder(table) {
+  const r = { table, ops: [] };
+  const self = {
+    select(c) { r.ops.push(['select', c]); return self; },
+    insert(o) { r.ops.push(['insert', o]); return self; },
+    update(o) { r.ops.push(['update', o]); return self; },
+    delete() { r.ops.push(['delete']); return self; },
+    eq(k, v) { r.ops.push(['eq', k, v]); return self; },
+    in(k, a) { r.ops.push(['in', k, a]); return self; },
+    gte(k, v) { r.ops.push(['gte', k, v]); return self; },
+    lte(k, v) { r.ops.push(['lte', k, v]); return self; },
+    order(k, o) { r.ops.push(['order', k, o]); return self; },
+    limit(n) { r.ops.push(['limit', n]); return self; },
+    then(ok, err) { rec.tables.push(r); return Promise.resolve({ data: [{ id: 'x' }], error: null }).then(ok, err); }
+  };
+  return self;
+}
+
+window.supabase = {
+  createClient(url, key, opts) {
+    rec.client = { url, key, opts: opts && opts.auth };
+    return {
+      from: builder,
+      rpc(name, params) { rec.rpc.push([name, params]); return Promise.resolve({ data: { ok: true }, error: null }); },
+      storage: {
+        from(bucket) {
+          return {
+            upload(path, blob, o) { rec.storage.push(['upload', bucket, path, !!blob, o]); return Promise.resolve({ data: { path }, error: null }); },
+            download(path) { rec.storage.push(['download', bucket, path]); return Promise.resolve({ data: new Blob(['x']), error: null }); },
+            remove(paths) { rec.storage.push(['remove', bucket, paths]); return Promise.resolve({ data: [], error: null }); },
+            createSignedUrls(paths, ttl) {
+              rec.storage.push(['createSignedUrls', bucket, paths, ttl]);
+              return Promise.resolve({ data: paths.map((p) => ({ path: p, signedUrl: 'https://signed/' + p })), error: null });
+            }
+          };
+        }
+      },
+      auth: {
+        getSession() { rec.auth.push(['getSession']); return Promise.resolve({ data: { session: { user: { id: 'u1' }, access_token: 't' } } }); },
+        signUp(p) { rec.auth.push(['signUp', p]); return Promise.resolve({ data: { session: { user: { id: 'u2' } } } }); },
+        signInWithPassword(p) { rec.auth.push(['signInWithPassword', p]); return Promise.resolve({ data: { session: { user: { id: 'u1' } } } }); },
+        signOut() { rec.auth.push(['signOut']); return Promise.resolve({ error: null }); },
+        resetPasswordForEmail(e) { rec.auth.push(['resetPasswordForEmail', e]); return Promise.resolve({ data: {}, error: null }); }
+      }
+    };
+  }
+};
+</script>
+<script src="../vendor/cloud-adapter.js"></script>
+<script>
+const out = [];
+const ok = (n, c, extra) => out.push((c ? 'PASS  ' : 'FAIL  ') + n + (extra ? '  ' + extra : ''));
+
+(async () => {
+  const cloud = window.SupabaseAdapter.createClient({ url: 'https://x.supabase.co', key: 'sb_publishable_k' });
+
+  ok('客户端拿到 url', rec.client.url === 'https://x.supabase.co');
+  ok('持久化会话已开', rec.client.opts && rec.client.opts.persistSession === true);
+
+  // 1. 链式查询
+  await cloud.database.from('tasks').select('id,title').eq('group_id', 'g1').eq('archived', false).order('position', { ascending: true }).limit(10);
+  const q1 = rec.tables.pop();
+  ok('select 列透传', JSON.stringify(q1.ops[0]) === JSON.stringify(['select', 'id,title']));
+  ok('eq 两次 + order + limit', q1.ops.length === 5 && q1.ops[1][0] === 'eq' && q1.ops[2][0] === 'eq' && q1.ops[3][0] === 'order' && q1.ops[4][0] === 'limit',
+    JSON.stringify(q1.ops.map((o) => o[0])));
+
+  // 2. in / gte / lte
+  await cloud.database.from('checkins').select('*').in('checkin_id', ['a', 'b']).gte('date', '2026-11-01').lte('date', '2026-11-30');
+  const q2 = rec.tables.pop();
+  ok('in/gte/lte 都在', q2.ops.map((o) => o[0]).join(',') === 'select,in,gte,lte');
+
+  // 3. insert 不带 select
+  await cloud.database.from('likes').insert({ checkin_id: 'c1', user_id: 'u1' });
+  const q3 = rec.tables.pop();
+  ok('insert 不追加 select', q3.ops.length === 1 && q3.ops[0][0] === 'insert');
+
+  // 4. update 带 select（要拿回显）
+  await cloud.database.from('users').update({ nickname: '小明' }).eq('id', 'u1').select();
+  const q4 = rec.tables.pop();
+  ok('update 后追加 select', q4.ops[0][0] === 'update' && q4.ops.some((o) => o[0] === 'select'),
+    JSON.stringify(q4.ops.map((o) => o[0])));
+
+  // 5. delete 带 select
+  await cloud.database.from('checkins').delete().eq('id', 'c1').select();
+  const q5 = rec.tables.pop();
+  ok('delete 后追加 select', q5.ops[0][0] === 'delete' && q5.ops.some((o) => o[0] === 'select'));
+
+  // 6. rpc
+  const r = await cloud.database.rpc('my_context');
+  ok('rpc 透传名字', rec.rpc[0][0] === 'my_context' && r.data.ok === true);
+  await cloud.database.rpc('set_leader', { p_user_id: 'u2' });
+  ok('rpc 透传参数', JSON.stringify(rec.rpc[1][1]) === JSON.stringify({ p_user_id: 'u2' }));
+
+  // 7. storage 路径与调用
+  ok('sharedPath 去掉 shared 前缀', cloud.storage.sharedPath('uid-1', 'checkins/2026-11-14/a.jpg') === 'uid-1/checkins/2026-11-14/a.jpg');
+  await cloud.storage.upload('uid-1/a.jpg', new Blob(['x']), { contentType: 'image/jpeg' });
+  const up = rec.storage.pop();
+  ok('upload 进 shared 桶且 upsert', up[0] === 'upload' && up[1] === 'shared' && up[4].upsert === true);
+
+  const urls = await cloud.storage.createSignedUrls(['uid-1/a.jpg', 'uid-1/a_t.jpg'], 3600);
+  ok('createSignedUrls 返回 path + signedUrl', urls.data.length === 2 && urls.data[0].signedUrl === 'https://signed/uid-1/a.jpg');
+
+  const blob = await cloud.storage.download('uid-1/a.jpg');
+  ok('download 直接返回 Blob', blob instanceof Blob);
+
+  // 8. auth
+  const s1 = await cloud.auth.signInWithPassword({ email: 'a@b.co', password: '123456' });
+  ok('signInWithPassword 返回 session', s1.data && s1.data.user.id === 'u1');
+  const s2 = await cloud.auth.signUp({ email: 'a@b.co', password: '123456' });
+  ok('signUp 返回 session（关掉邮箱确认时）', s2.data && s2.data.user.id === 'u2');
+  const s3 = await cloud.auth.getSession();
+  ok('getSession 返回 session 而不是包装对象', s3.data && s3.data.user.id === 'u1');
+
+  document.getElementById('out').textContent = out.join('\n') + '\n\n合计 ' + out.length + ' 项，失败 ' +
+    out.filter((l) => l.startsWith('FAIL')).length + ' 项';
+})();
+</script>
+</body></html>
