@@ -40,3 +40,6 @@ pnpm-debug.log*
 # 设计图渲染预览（由 SVG 生成，不入库）
 docs/preview-*.png
 docs/shot-*.png
+
+# 发布平台的应用标记文件（内部用，不入库）
+.wbapp_*.genie
