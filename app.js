@@ -402,7 +402,15 @@
       return fail(reg.error.message || '进不去，稍后再试');
     }
     if (!reg.data || !reg.data.session) {
-      return fail('账号建好了，但还差邮箱确认这一步。请站长在 Supabase 的 Auth → Providers → Email 里关掉 Confirm email。');
+      // 注册成功但没给会话：通常意味着项目还开着「邮箱确认」。
+      // 但库里可能已经把这号标成已确认（见 sql/05-autoconfirm.sql），所以再登一次试试。
+      const retry = await cloud.auth.signInWithPassword({ email, password: pwd });
+      if (!retry.error && retry.data && retry.data.user) {
+        state.session = retry.data;
+        await enterApp();
+        return;
+      }
+      return fail('账号建好了，但还没被放行。请站长跑一次 sql/05-autoconfirm.sql，然后回来直接点「进入」。');
     }
     state.session = reg.data;
     await enterApp();
