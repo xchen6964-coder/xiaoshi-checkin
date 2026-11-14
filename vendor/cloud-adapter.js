@@ -24,9 +24,42 @@
     const cfg = opts || {};
     if (!cfg.url || !cfg.key) throw new Error('缺少 supabaseUrl / supabaseKey');
 
+    /* 走同源反代时，平台 Edge 会动 Authorization 头（实测：同一次登录拿到的 JWT
+       回传后连 Auth 自己都验不过签名）→ 改成用自定义头 x-sb-auth 携带，
+       由 server.js 还原成 Authorization 再转给 Supabase。直连时这个包装等于没做事。 */
+    const wrappedFetch = function (input, init) {
+      try {
+        const req = input instanceof Request ? input : new Request(input, init);
+        const h = new Headers(req.headers);
+        const auth = h.get('authorization');
+        if (!auth) return fetch(req);
+        h.delete('authorization');
+        h.set('x-sb-auth', auth);
+        return fetch(new Request(req, { headers: h }));
+      } catch (e) {
+        return fetch(input, init);
+      }
+    };
+
     const sb = window.supabase.createClient(cfg.url, cfg.key, {
-      auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false }
+      auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false },
+      global: { fetch: wrappedFetch }
     });
+
+    // cfg.url 形如 https://站点/sb 时，把 Supabase 返回的绝对地址改写成同源地址
+    const proxyBase = /\/sb$/.test(String(cfg.url)) ? String(cfg.url) : '';
+    const proxyOrigin = (function () {
+      if (!proxyBase) return '';
+      try { return new URL(proxyBase).origin; } catch (e) { return ''; }
+    })();
+    function rewrite(u) {
+      if (!u || !proxyBase) return u;
+      try {
+        const x = new URL(u);
+        if (proxyOrigin && x.origin === proxyOrigin) return u;   // 已经是本站
+        return proxyBase + x.pathname + x.search;
+      } catch (e) { return u; }
+    }
 
     /* ---------------- database ---------------- */
     function from(table) {
@@ -117,7 +150,8 @@
       async createSignedUrls(paths, ttl) {
         if (!paths || !paths.length) return { data: [], error: null };
         const { data, error } = await sb.storage.from(BUCKET).createSignedUrls(paths, ttl || 3600);
-        return { data: data || [], error: error || null };
+        // 走同源反代时，Supabase 回的仍是它自己的绝对地址，手机上加载会失败，这里改回本站。
+        return { data: (data || []).map((x) => Object.assign({}, x, { signedUrl: rewrite(x.signedUrl) })), error: error || null };
       }
     };
 
