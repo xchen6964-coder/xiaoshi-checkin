@@ -133,9 +133,10 @@ node --check app.js && node --check server.js
 
 | 事 | 说明 |
 |---|---|
-| 90 天照片清理 | 删 storage 里的文件需要 service key，不能只删数据库行。1 GB 免费额度按现在用量够 8–10 个月，不急 |
-| 老照片补缩略图 | 不做回填，等它们被清理 |
+| 老照片补缩略图 | 不做回填，等它们被 90 天清理带走 |
 | 手机端排版微调 | 390 宽下的挤压，需要真机反馈 |
+
+照片 90 天清理已实现：`sql/07-retention.sql`，service key 存 Vault，pg_cron 每天 04:10（CST）跑 `purge_old_photos(90, 200)`，删 Storage 文件后再删 `attachments` 行，每次记一行 `purge_log`。**只删照片，打卡文字记录保留。**
 
 ## 八、历史决定（别推翻）
 

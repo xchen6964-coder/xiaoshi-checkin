@@ -10,6 +10,15 @@
 | 4 | `04-storage.sql` | 照片桶 `shared` + storage 策略 | 桶或照片权限改了 |
 | 5 | `05-autoconfirm.sql` | 注册即确认（触发器 + 回填） | 控制台 Confirm email 又变回开启时 |
 | 6 | `06-cron.sql` | pg_cron 每分钟跑提醒 | 定时任务丢了或改了频率 |
+| 7 | `07-retention.sql` | 90 天前的照片自动清理（Vault 存 service key + pg_net 调 Storage） | 想改保留天数，或清理任务被删 |
+
+`07` 有额外前置：先把 service key 存进 Vault（只需一次）
+
+```sql
+select vault.create_secret('你的 sb_secret_… 或 service_role JWT', 'service_role_key', '清理 90 天前照片用');
+```
+
+存完把编辑器内容清掉。函数从 Vault 读，密钥不会出现在任何表字段里。
 
 ## 本地验证
 
