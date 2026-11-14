@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1240" height="660" viewBox="0 0 1240 660" font-family="PingFang SC,Hiragino Sans GB,Microsoft YaHei,sans-serif">
+  <defs>
+    <pattern id="p-dot" width="22" height="22" patternUnits="userSpaceOnUse">
+      <circle cx="1" cy="1" r="1" fill="#D7E0EC"/>
+    </pattern>
+  </defs>
+  <rect width="1240" height="660" fill="#F1F4F9"/>
+  <rect width="1240" height="660" fill="url(#p-dot)" opacity="0.8"/>
+
+  <text x="70" y="50" font-size="25" font-weight="700" fill="#0F172A">第 2 步 · 权限锁好，25 项测试全过</text>
+  <text x="70" y="76" font-size="13" fill="#64748B">表结构 + 行级权限都写完了，在本地真 PostgreSQL 里按四种身份跑过。还差 16 个函数。</text>
+
+  <!-- 三层 -->
+  <rect x="70" y="98" width="612" height="300" rx="14" fill="#FFFFFF" stroke="#E3E9F2"/>
+  <text x="94" y="126" font-size="14" font-weight="700" fill="#0F172A">权限不是一层，是三层，缺一层就漏</text>
+
+  <rect x="94" y="142" width="564" height="62" rx="10" fill="#F7FBFF" stroke="#CFE3F2"/>
+  <text x="108" y="164" font-size="12.5" font-weight="700" fill="#0F172A">① 表级授权　<tspan font-weight="400" fill="#475569">能不能碰这张表</tspan></text>
+  <text x="108" y="186" font-size="11.5" fill="#334155">新项目关掉了「自动暴露新表」，所以每张表都要显式 grant；没授权的表连报错都读不到数据。</text>
+
+  <rect x="94" y="212" width="564" height="62" rx="10" fill="#F8FAFC" stroke="#E3E9F2"/>
+  <text x="108" y="234" font-size="12.5" font-weight="700" fill="#0F172A">② 列级授权　<tspan font-weight="400" fill="#475569">能改哪几个字段</tspan></text>
+  <text x="108" y="256" font-size="11.5" fill="#334155">update 一律按列给：成员只能改昵称/头像，改不动自己的 role —— 否则能自封站长。</text>
+
+  <rect x="94" y="282" width="564" height="62" rx="10" fill="#F1FBF7" stroke="#BFE7D8"/>
+  <text x="108" y="304" font-size="12.5" font-weight="700" fill="#0F172A">③ 行级策略　<tspan font-weight="400" fill="#475569">能看到/改到哪几行</tspan></text>
+  <text x="108" y="326" font-size="11.5" fill="#256B57">10 张表全部开 RLS，按站长 / 负责人 / 教师 / 成员四种角色分别写。</text>
+
+  <text x="94" y="372" font-size="11.5" fill="#B45309">踩到的真坑：整表 update 会盖掉列级授权，成员一度能把自己升成 owner —— 已改为只给列级。</text>
+  <text x="94" y="390" font-size="11.5" fill="#64748B">身份不写死 auth.uid()，改读 JWT claims，本地不装 Supabase 也能跑同一套策略。</text>
+
+  <!-- 测试结果 -->
+  <rect x="702" y="98" width="468" height="300" rx="14" fill="#0F172A" stroke="#0F172A"/>
+  <text x="726" y="126" font-size="14" font-weight="700" fill="#E2E8F0">本地按四种身份实跑</text>
+  <text x="726" y="146" font-size="10.5" fill="#7C8DA6">node sql/verify-rls.mjs　退出码 0 = 全过</text>
+
+  <text x="726" y="174" font-size="11" font-family="Consolas,monospace" fill="#6EE7B7">PASS  anon 读 users 被拒（permission denied）</text>
+  <text x="726" y="196" font-size="11" font-family="Consolas,monospace" fill="#6EE7B7">PASS  成员只看到本组 4 人，看不到别组</text>
+  <text x="726" y="218" font-size="11" font-family="Consolas,monospace" fill="#6EE7B7">PASS  改自己昵称 1 行 / 改别人 0 行</text>
+  <text x="726" y="240" font-size="11" font-family="Consolas,monospace" fill="#6EE7B7">PASS  自封站长被列级权限拦住</text>
+  <text x="726" y="262" font-size="11" font-family="Consolas,monospace" fill="#6EE7B7">PASS  成员建任务被拒 / 站长建成功</text>
+  <text x="726" y="284" font-size="11" font-family="Consolas,monospace" fill="#6EE7B7">PASS  教师打卡被拒 / 替别人打卡被拒</text>
+  <text x="726" y="306" font-size="11" font-family="Consolas,monospace" fill="#6EE7B7">PASS  删别人打卡 0 行 / 站长删 1 行</text>
+  <text x="726" y="328" font-size="11" font-family="Consolas,monospace" fill="#6EE7B7">PASS  通知只看到自己的 + 全组公告</text>
+  <text x="726" y="350" font-size="11" font-family="Consolas,monospace" fill="#6EE7B7">PASS  外组看不到别组照片记录</text>
+  <text x="726" y="372" font-size="11" font-family="Consolas,monospace" fill="#FDE68A">合计 25 项，失败 0 项</text>
+
+  <!-- 下一步 -->
+  <rect x="70" y="414" width="1100" height="128" rx="14" fill="#FFFFFF" stroke="#8FD9C9" stroke-width="1.6"/>
+  <text x="94" y="442" font-size="14" font-weight="700" fill="#0F172A">现在轮到你：把两个文件跑上去</text>
+
+  <text x="94" y="470" font-size="12" fill="#334155">① SQL Editor → New query → 粘 <tspan font-family="Consolas,monospace">sql/01-schema.sql</tspan> 全文 → Run → 看到 Success 再继续</text>
+  <text x="94" y="492" font-size="12" fill="#334155">② 同一个窗口清空 → 粘 <tspan font-family="Consolas,monospace">sql/02-rls.sql</tspan> 全文 → Run</text>
+  <text x="94" y="518" font-size="11.5" fill="#B42318">报错就把红字整段发我，别自己改 SQL —— 改一处可能连带三处。</text>
+
+  <rect x="760" y="430" width="386" height="96" rx="10" fill="#F8FAFC" stroke="#E9EDF2"/>
+  <text x="774" y="452" font-size="12" font-weight="700" fill="#0F172A">我这边连不上你的项目</text>
+  <text x="774" y="472" font-size="11" fill="#475569">沙箱只放行部分域名，supabase.co 的 TLS</text>
+  <text x="774" y="489" font-size="11" fill="#475569">握手被拦。所以 SQL 只能你在控制台跑，</text>
+  <text x="774" y="506" font-size="11" fill="#475569">我负责写和本地验证。你的浏览器能开，</text>
+  <text x="774" y="522" font-size="11" fill="#475569">说明你这边网络没问题。</text>
+
+  <text x="70" y="580" font-size="12" font-weight="700" fill="#0F172A">接着我写：</text>
+  <text x="150" y="580" font-size="12" fill="#334155">16 个函数（建组、加入、教师加入、切组、设负责人、交接、豁免、改打卡状态、到点提醒…）—— 这块最大，也是唯一会影响业务语义的地方，写完同样在本地按角色跑一遍。</text>
+  <text x="70" y="606" font-size="11.5" fill="#64748B">文件：sql/02-rls.sql（策略）、sql/verify-rls.mjs（测试）。提交在 migrate/cloud，main 未动。</text>
+  <text x="70" y="626" font-size="11.5" fill="#64748B">兼容性说明：密钥用的是 publishable key，策略里读 JWT claims 而不是写死 auth.uid()，两代密钥都适用。</text>
+</svg>
