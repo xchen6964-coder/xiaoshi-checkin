@@ -4,9 +4,9 @@
 
 ## 技术形态
 
-纯静态站：原生 HTML / CSS / JS，无框架、无构建、无 npm 依赖。外部依赖只有 `vendor/` 下的三份：云 SDK、docx、xlsx。
+原生 HTML / CSS / JS，无框架、无构建。运行时没有 npm 依赖，`package.json` 里的依赖只给测试用。外部依赖只有 `vendor/` 下的三份：Supabase SDK、docx、xlsx。
 
-数据存在 WorkBuddy 云开发（PostgreSQL，9 张表，RLS 全开），前端通过 `cloud.database` 直连。
+数据存在自建 Supabase（PostgreSQL，10 张表，RLS 全开）。浏览器不直连 Supabase：请求一律打到本站的 `/sb/*`，由 `server.js` 反代转发——Supabase 域名在国内移动网络经常连不上。所以这个站是**单端口 Node 服务**，不是纯静态站，`server.js` 是部署入口。
 
 ## 目录
 
@@ -94,3 +94,19 @@ console.log('有处理无按钮:',[...js].filter(x=>!html.has(x)).join(' ')||'�
 - 颜色只用 `:root` 令牌，不写十六进制魔法值（`paper` 主题靠覆盖令牌实现）
 - 按钮统一走 `data-act` + 全局事件委托，不写 inline onclick
 - 断点固定三档：`<1024` / `≥1024` / `≥1280`
+
+## 派生与复用
+
+欢迎以本项目为基础做自己的打卡工具：fork、改、改名、自行部署都可以，不用事先打招呼。
+
+本仓库没有单独的 LICENSE 文件，本节即为派生授权说明。
+
+派生时有三处必须各用各的，共用会两边一起坏：
+
+| 不要共用 | 原因 |
+|---|---|
+| 数据库 | 本项目的数据与权限策略只服务于「小事打卡社区」。派生项目请自建 Supabase 项目，并按 `sql/README.md` 的顺序重跑 `sql/01`~`07`，少跑一步前端就会报错 |
+| 发布目标 | 发布时新建自己的 App ID 与域名前缀，复用本项目的会互相覆盖 |
+| 服务端密钥 | `sb_secret_…` / `service_role` 只在服务器端，前端只留 `config.js` 里的 publishable key |
+
+另外：派生出去的项目请用自己的名字对外，不要以「小事打卡社区」的名义宣传或收集数据。
