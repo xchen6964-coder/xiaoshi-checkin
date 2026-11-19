@@ -54,7 +54,7 @@
 # 1. 语法
 node --check app.js
 
-# 2. 事件对齐（按钮与处理器数量必须相等，当前 49 / 49）
+# 2. 事件对齐（按钮与处理器数量必须相等，当前 55 / 55）
 node -e "
 const fs=require('fs');const s=fs.readFileSync('app.js','utf8');
 const html=new Set([...s.matchAll(/data-act=\"([^\"]+)\"/g)].map(m=>m[1]));
