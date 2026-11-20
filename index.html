@@ -33,13 +33,19 @@
   <script src="export.js?v=10"></script>
   <script src="app.js?v=47"></script>
   <script>
-    // 兜底：脚本没加载成功时不要一直转圈
+    // 兜底：只在脚本真的没下来时提示网络问题；
+    // 脚本都到了但还在等服务器，说明是在唤醒，把话说清楚，不要催人重载。
     setTimeout(function () {
       var b = document.querySelector('.boot');
       if (!b) return;
-      b.innerHTML = '<p style="font-size:13px;color:#64748B;margin:0 0 12px">加载超过 12 秒，可能是网络卡住了</p>'
+      if (window.SupabaseAdapter && window.APP_CONFIG) {
+        var p = b.querySelector('p');
+        if (p) p.textContent = '服务器在唤醒，最多再等二十几秒…';
+        return;
+      }
+      b.innerHTML = '<p style="font-size:13px;color:#64748B;margin:0 0 12px">加载超过 20 秒，可能是网络卡住了</p>'
         + '<button onclick="location.reload()" style="height:40px;padding:0 20px;border:none;border-radius:12px;background:#12B5A5;color:#fff;font-size:14px">重新加载</button>';
-    }, 12000);
+    }, 20000);
   </script>
 </body>
 </html>

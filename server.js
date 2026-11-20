@@ -103,9 +103,14 @@ function serveStatic(req, res) {
     }
     const ext = path.extname(full).toLowerCase();
     const type = MIME[ext] || 'application/octet-stream';
-    // 页面与脚本一律 no-store：微信内置浏览器会自己留一份离线缓存，
-    // 光靠 ?v=N 有时拿不到新脚本（踩过：手机还在跑旧版，报「连不上服务器」）。
-    const cache = ext === '.html' || ext === '.js' || ext === '.css' ? 'no-store' : 'public, max-age=86400';
+    // 页面一律 no-store：否则拿不到新的版本号，改了也看不到（踩过：手机还在跑旧版）。
+    // 带 ?v= 的脚本和样式反过来要长缓存——版本号一变 URL 就变，浏览器自然会重下。
+    // 之前这里对所有 js/css 都用 no-store，代价是每次打开都要重下 100KB 左右，弱网下十几秒出不来。
+    const hasVer = /[?&]v=/.test(req.url || '');
+    let cache;
+    if (ext === '.html') cache = 'no-store';
+    else if (ext === '.js' || ext === '.css') cache = hasVer ? 'public, max-age=604800' : 'public, max-age=3600';
+    else cache = 'public, max-age=86400';
 
     const wantsGzip = /\bgzip\b/.test(String(req.headers['accept-encoding'] || ''));
     if (wantsGzip && TEXT_EXT.indexOf(ext) >= 0) {
