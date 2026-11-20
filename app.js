@@ -146,18 +146,42 @@
   }
 
   /* ---------- 启动 ---------- */
+  function showBootHint(text) {
+    const el = document.querySelector('.boot p');
+    if (el) el.textContent = text;
+  }
+
+  // 免费版 Supabase 闲置后会休眠，唤醒要十几秒。这段时间里报错会让人以为站坏了，
+  // 其实等一会儿或刷新一次就通。所以给足时间，并且自动重试一次。
+  async function waitSession() {
+    for (let i = 0; i < 2; i++) {
+      const warn = setTimeout(() => showBootHint('服务器在唤醒，最多再等二十几秒…'), 6000);
+      try {
+        const { data } = await withTimeout(cloud.auth.getSession(), 25000, 'session');
+        clearTimeout(warn);
+        return data;
+      } catch (err) {
+        clearTimeout(warn);
+        console.error('[boot] getSession 第 ' + (i + 1) + ' 次失败', err);
+        if (i === 1) throw err;
+        showBootHint('还在唤醒，重试一次…');
+        await new Promise((r) => setTimeout(r, 1500));
+      }
+    }
+  }
+
   async function boot() {
     applyTheme(currentTheme());
     if (!cloud) return renderFatal('核心脚本没加载成功，可能是网络被挡了');
     try {
-      const { data: session } = await withTimeout(cloud.auth.getSession(), 10000, 'session');
+      const session = await waitSession();
       if (!session) return renderLogin();
       state.session = session;
       await enterApp();
     } catch (err) {
       console.error('[boot]', err);
       const timedOut = err && /timeout/.test(err.message || '');
-      renderLogin(timedOut ? '连不上服务器，检查一下网络再刷新' : '打开失败，请刷新重试');
+      renderLogin(timedOut ? '服务器还没醒，过一会儿再刷新' : '打开失败，请刷新重试');
     }
   }
 

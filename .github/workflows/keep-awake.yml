@@ -1,0 +1,21 @@
+name: 保持 Supabase 唤醒
+
+# 免费版 Supabase 在长时间无人访问后会休眠，首次请求要十几秒才回。
+# 定时打一次健康检查，让它保持唤醒，避免手机上打开时撞上冷启动。
+on:
+  schedule:
+    # 每 30 分钟一次。注意：cron 用 UTC，这里不涉及时刻，只关心间隔。
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 请求 auth 健康检查
+        run: |
+          code=$(curl -s -o /dev/null -w '%{http_code}' \
+            -H "apikey: sb_publishable_QBzcGeWwShrZFZlrCq0KmQ_85oe3uWK" \
+            https://mtkuieogemgpdvacphhs.supabase.co/auth/v1/health)
+          echo "HTTP $code"
+          [ "$code" = "200" ] || exit 1
