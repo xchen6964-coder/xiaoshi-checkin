@@ -18,6 +18,7 @@ const zlib = require('zlib');
 const PORT = process.env.PORT || 3000;
 const UPSTREAM = process.env.SUPABASE_HOST || 'mtkuieogemgpdvacphhs.supabase.co';
 const ROOT = __dirname;
+const upstreamAgent = new https.Agent({ keepAlive: true, keepAliveMsecs: 30000, maxSockets: 32 });
 
 // 文本资源 gzip 缓存：手机流量慢的时候，400KB 的脚本压到 100KB 出头差别很大
 const gzCache = new Map();
@@ -53,7 +54,7 @@ function proxy(req, res) {
   headers.host = UPSTREAM;
 
   const upstream = https.request(
-    { host: UPSTREAM, port: 443, path: target, method: req.method, headers: headers },
+    { host: UPSTREAM, port: 443, path: target, method: req.method, headers: headers, agent: upstreamAgent },
     (ur) => {
       const h = Object.assign({}, ur.headers);
       delete h['content-length'];
@@ -67,7 +68,9 @@ function proxy(req, res) {
     }
   );
 
+  upstream.setTimeout(30000, () => upstream.destroy(new Error('upstream timeout')));
   upstream.on('error', (err) => {
+    if (res.headersSent) return res.destroy(err);
     res.writeHead(502, { 'content-type': 'application/json; charset=utf-8' });
     res.end(JSON.stringify({ error: 'proxy_failed', message: err.message }));
   });
