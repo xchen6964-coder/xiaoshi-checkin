@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1240" height="660" viewBox="0 0 1240 660" font-family="PingFang SC,Hiragino Sans GB,Microsoft YaHei,sans-serif">
+  <defs>
+    <pattern id="p-dot" width="22" height="22" patternUnits="userSpaceOnUse">
+      <circle cx="1" cy="1" r="1" fill="#D7E0EC"/>
+    </pattern>
+  </defs>
+  <rect width="1240" height="660" fill="#F1F4F9"/>
+  <rect width="1240" height="660" fill="url(#p-dot)" opacity="0.8"/>
+
+  <text x="70" y="50" font-size="25" font-weight="700" fill="#0F172A">以前那两套验证码登录，是怎么实现的</text>
+  <text x="70" y="76" font-size="13" fill="#64748B">关键点只有一个：<tspan font-family="Consolas,monospace">前端不生成也不校验验证码</tspan>，它只负责把平台的票据原样递回去。短信和邮件都是 WorkBuddy 平台发的。</text>
+
+  <!-- 手机号 -->
+  <rect x="70" y="98" width="536" height="330" rx="14" fill="#FFFFFF" stroke="#E3E9F2"/>
+  <text x="94" y="128" font-size="15" font-weight="700" fill="#0F172A">① 手机号 + 短信验证码</text>
+  <text x="94" y="150" font-size="11.5" fill="#94A3B8">登录页第一个 tab（默认）</text>
+
+  <rect x="94" y="166" width="488" height="44" rx="9" fill="#F7FBFF" stroke="#CFE3F2"/>
+  <text x="108" y="185" font-size="11" fill="#94A3B8">第 1 步　输入 11 位手机号，正则 ^1\d{10}$ 先挡一遍</text>
+  <text x="108" y="202" font-size="11.5" font-family="Consolas,monospace" fill="#0F172A">cloud.auth.sendOtp({ phone })</text>
+
+  <rect x="94" y="220" width="488" height="44" rx="9" fill="#F7FBFF" stroke="#CFE3F2"/>
+  <text x="108" y="239" font-size="11" fill="#94A3B8">第 2 步　平台发短信，返回一张票据</text>
+  <text x="108" y="256" font-size="11.5" font-family="Consolas,monospace" fill="#0F172A">{ verificationId, isExistingUser }</text>
+
+  <rect x="94" y="274" width="488" height="44" rx="9" fill="#F1FBF7" stroke="#BFE7D8"/>
+  <text x="108" y="293" font-size="11" fill="#0E9C8E">第 3 步　按钮变成 60 秒倒计时（setInterval，纯前端）</text>
+  <text x="108" y="310" font-size="11.5" fill="#334155">这期间用户去手机上收那 6 位数字</text>
+
+  <rect x="94" y="328" width="488" height="44" rx="9" fill="#F7FBFF" stroke="#CFE3F2"/>
+  <text x="108" y="347" font-size="11" fill="#94A3B8">第 4 步　把票据 + 用户输入的码一起递回去</text>
+  <text x="108" y="364" font-size="11.5" font-family="Consolas,monospace" fill="#0F172A">verifyOtp({ verificationId, token, phone })</text>
+
+  <rect x="94" y="382" width="488" height="32" rx="9" fill="#0F172A"/>
+  <text x="108" y="403" font-size="11.5" font-family="Consolas,monospace" fill="#6EE7B7">→ 返回 session，写进 state.session，进 App</text>
+
+  <!-- 邮箱 -->
+  <rect x="634" y="98" width="536" height="330" rx="14" fill="#FFFFFF" stroke="#E3E9F2"/>
+  <text x="658" y="128" font-size="15" font-weight="700" fill="#0F172A">② 邮箱 + 邮件验证码</text>
+  <text x="658" y="150" font-size="11.5" fill="#94A3B8">第二个 tab；流程同手机号，多了「设密码」的分支</text>
+
+  <rect x="658" y="166" width="488" height="44" rx="9" fill="#F7FBFF" stroke="#CFE3F2"/>
+  <text x="672" y="185" font-size="11" fill="#94A3B8">第 1 步　输入邮箱</text>
+  <text x="672" y="202" font-size="11.5" font-family="Consolas,monospace" fill="#0F172A">cloud.auth.sendOtp({ email })</text>
+
+  <rect x="658" y="220" width="488" height="44" rx="9" fill="#FFFBF2" stroke="#F0DFC6"/>
+  <text x="672" y="239" font-size="11" fill="#B45309">第 2 步　票子里多一个布尔值，前端据此决定界面</text>
+  <text x="672" y="256" font-size="11.5" fill="#334155">isExistingUser = false → 多显示一个「密码（选填）」框</text>
+
+  <rect x="658" y="274" width="488" height="44" rx="9" fill="#F7FBFF" stroke="#CFE3F2"/>
+  <text x="672" y="293" font-size="11" fill="#94A3B8">第 3 步　只有新用户才会把密码一起递上去</text>
+  <text x="672" y="310" font-size="11.5" font-family="Consolas,monospace" fill="#0F172A">verifyOtp({ verificationId, token, email, password? })</text>
+
+  <rect x="658" y="328" width="488" height="44" rx="9" fill="#FFF7F7" stroke="#F3D6D8"/>
+  <text x="672" y="347" font-size="11" fill="#B42318">平台的一条硬规则：密码只能在新用户注册那一次设</text>
+  <text x="672" y="364" font-size="11.5" fill="#7A2A2A">老账号想补设密码没入口，管理端也没有重置接口</text>
+
+  <rect x="658" y="382" width="488" height="32" rx="9" fill="#0F172A"/>
+  <text x="672" y="403" font-size="11.5" font-family="Consolas,monospace" fill="#6EE7B7">→ 同样返回 session，进 App</text>
+
+  <!-- 为什么没了 -->
+  <rect x="70" y="448" width="1100" height="104" rx="14" fill="#FFFFFF" stroke="#F3D6D8"/>
+  <text x="94" y="476" font-size="14" font-weight="700" fill="#B42318">为什么迁移后没了 —— 这两个能力属于平台，不属于代码</text>
+  <text x="94" y="500" font-size="12" fill="#7A2A2A">短信：Supabase 不自带短信通道，要签腾讯云/阿里云短信，模板与签名得报备审核，按条计费。邮箱：自带 SMTP 每小时只能发 2 封，9 个人当天收不齐。</text>
+  <text x="94" y="522" font-size="12" fill="#7A2A2A">前端那 60 秒倒计时、票据传递都还在（git 里翻得到），缺的是「谁去发那条短信/邮件」这一环 —— 这一环迁不走。</text>
+  <text x="94" y="542" font-size="11.5" fill="#64748B">所以 11-14 换成了邮箱 + 密码：不发信、不限流、注册即用。</text>
+
+  <!-- 现在 -->
+  <rect x="70" y="566" width="1100" height="72" rx="14" fill="#F1FBF7" stroke="#BFE7D8"/>
+  <text x="94" y="592" font-size="13" font-weight="700" fill="#0F6B52">现在的做法（对照着看）</text>
+  <text x="94" y="614" font-size="12" fill="#256B57">一个表单：邮箱 + 密码 → 先当老用户 signInWithPassword，失败再当新用户 signUp；注册不需要点邮件（sql/05 的触发器直接标成已确认）→ 拿到 session 进 App。</text>
+  <text x="94" y="632" font-size="11.5" fill="#64748B">少了「发验证码 — 等码 — 输码」三步，多了「记住密码」这一个负担。</text>
+</svg>
