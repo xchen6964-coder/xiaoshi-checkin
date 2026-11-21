@@ -40,6 +40,7 @@
     teachers: [],
     avatarUrls: {},
     loadError: '',
+    syncing: false,
     wallTab: 'today',
     unread: 0,
     pendingPhotos: [],
@@ -218,8 +219,14 @@
     state.group = data.group;
     state.groups = data.groups || [];
     state.view = 'today';
-    await loadAll();
+    state.syncing = true;
     renderShell();
+    loadAll().then(() => renderShell()).catch((err) => {
+      console.error('[initial-load]', err);
+      state.syncing = false;
+      state.loadError = '连接较慢或暂时不可用，请点重试';
+      renderShell();
+    });
   }
 
   async function switchGroup(groupId) {
@@ -257,14 +264,18 @@
   async function loadAll() {
     const gid = state.group.id;
     const day = todayStr();
+    state.syncing = true;
+    state.loadError = '';
+    const guard = (promise, label) => withTimeout(promise, 12000, label).catch((error) => ({ data: null, error }));
     const [tasksRes, membersRes, inactiveRes, todayRes, weekRes] = await Promise.all([
-      cloud.database.from('tasks').select('*').eq('group_id', gid).eq('archived', false).order('position', { ascending: true }),
-      cloud.database.from('users').select('id,nickname,role,active,created_at,avatar_url').eq('group_id', gid).eq('active', true).order('created_at', { ascending: true }),
-      cloud.database.from('users').select('id,nickname,role,avatar_url').eq('group_id', gid).eq('active', false).order('created_at', { ascending: false }).limit(50),
-      cloud.database.from('checkins').select('*').eq('group_id', gid).eq('date', day),
-      cloud.database.from('checkins').select('*').eq('group_id', gid).gte('date', weekStart()).order('done_at', { ascending: false })
+      guard(cloud.database.from('tasks').select('*').eq('group_id', gid).eq('archived', false).order('position', { ascending: true }), 'tasks'),
+      guard(cloud.database.from('users').select('id,nickname,role,active,created_at,avatar_url').eq('group_id', gid).eq('active', true).order('created_at', { ascending: true }), 'members'),
+      guard(cloud.database.from('users').select('id,nickname,role,avatar_url').eq('group_id', gid).eq('active', false).order('created_at', { ascending: false }).limit(50), 'inactive'),
+      guard(cloud.database.from('checkins').select('*').eq('group_id', gid).eq('date', day), 'today'),
+      guard(cloud.database.from('checkins').select('*').eq('group_id', gid).gte('date', weekStart()).order('done_at', { ascending: false }), 'week')
     ]);
-    const failed = [tasksRes, membersRes, inactiveRes, todayRes, weekRes].filter((r) => r && r.error);
+    const core = [tasksRes, membersRes, inactiveRes, todayRes, weekRes];
+    const failed = core.filter((r) => r && r.error);
     state.loadError = failed.length ? (failed[0].error.message || '数据没读出来') : '';
     if (failed.length) console.error('[loadAll]', failed.map((r) => r.error));
     state.tasks = tasksRes.data || [];
@@ -275,23 +286,30 @@
     state.inactive = inactiveRes.data || [];
     state.todayCheckins = todayRes.data || [];
     state.weekCheckins = weekRes.data || [];
+    renderShell();
     const ids = state.weekCheckins.map((c) => c.id);
-    if (ids.length) {
-      const { data: likesData, error: likesErr } = await cloud.database.from('likes').select('*').in('checkin_id', ids);
-      if (likesErr) console.error('[likes]', likesErr);
-      state.likes = likesData || [];
-    } else {
-      state.likes = [];
+    const extras = await Promise.allSettled([
+      ids.length ? guard(cloud.database.from('likes').select('*').in('checkin_id', ids), 'likes') : Promise.resolve({ data: [] }),
+      guard(loadAttachmentUrls([...state.todayCheckins, ...state.weekCheckins]), 'attachments'),
+      guard(cloud.database.from('handovers').select('*').eq('group_id', gid).eq('status', 'pending'), 'handovers'),
+      guard(cloud.database.from('checkins').select('date,status').eq('group_id', gid).eq('user_id', state.me.id), 'mycheckins'),
+      guard(loadAvatarUrls(), 'avatars'),
+      guard(refreshNotifications(), 'notifications')
+    ]);
+    const valueAt = (index) => extras[index].status === 'fulfilled' ? extras[index].value : null;
+    const likesRes = valueAt(0);
+    const handoversRes = valueAt(2);
+    const mineRes = valueAt(3);
+    state.likes = (likesRes && likesRes.data) || [];
+    state.handovers = (handoversRes && handoversRes.data) || [];
+    state.myCheckins = (mineRes && mineRes.data) || [];
+    const extraErrors = extras.map((x) => x.status === 'rejected' ? x.reason : (x.value && x.value.error)).filter(Boolean);
+    if (!state.loadError && extraErrors.length) state.loadError = '部分内容加载失败，请重试';
+    state.syncing = false;
+    if (failed.length) {
+      renderShell();
+      throw failed[0].error;
     }
-    await loadAttachmentUrls([...state.todayCheckins, ...state.weekCheckins]);
-    const { data: hData, error: hErr } = await cloud.database.from('handovers').select('*').eq('group_id', gid).eq('status', 'pending');
-    if (hErr) console.error('[handovers]', hErr);
-    state.handovers = hData || [];
-    const { data: mineData, error: mineErr } = await cloud.database.from('checkins').select('date,status').eq('group_id', gid).eq('user_id', state.me.id);
-    if (mineErr) console.error('[mycheckins]', mineErr);
-    state.myCheckins = mineData || [];
-    await loadAvatarUrls();
-    await refreshNotifications();
   }
 
   async function loadAvatarUrls() {
@@ -310,7 +328,8 @@
     }
   }
 
-  async function refreshNotifications() {
+  function refreshNotifications() {
+    return (async () => {
     try {
       await cloud.database.rpc('enqueue_due_reminders');
     } catch (err) {
@@ -324,6 +343,7 @@
       .limit(20);
     state.notifications = data || [];
     state.unread = state.notifications.filter((n) => !n.read_at).length;
+    })();
   }
 
   async function loadAttachmentUrls(checkins) {
@@ -683,6 +703,7 @@
     else if (state.view === 'admin') renderAdmin(view);
     else if (state.view === 'report') renderReport(view);
     else renderToday(view);
+    if (state.syncing) view.insertAdjacentHTML('afterbegin', '<div class="sync-status" role="status">正在同步数据…</div>');
     if (state.loadError) view.insertAdjacentHTML('afterbegin', loadFailHTML());
   }
 
@@ -1310,7 +1331,13 @@
   }
 
   async function refresh() {
-    await loadAll();
+    try {
+      await loadAll();
+    } catch (err) {
+      console.error('[refresh]', err);
+      state.syncing = false;
+      state.loadError = state.loadError || '连接较慢或暂时不可用，请重试';
+    }
     renderShell();
   }
 
@@ -1372,8 +1399,15 @@
   }
 
   async function retryLoad() {
-    await refresh();
-    toast(state.loadError ? '还是读不出来，稍后再点一次' : '已恢复');
+    try {
+      await refresh();
+      toast(state.loadError ? '部分内容仍未加载，请稍后重试' : '已恢复');
+    } catch (err) {
+      console.error('[retry-load]', err);
+      state.syncing = false;
+      state.loadError = '连接较慢或暂时不可用，请稍后重试';
+      renderShell();
+    }
   }
 
   /* ---------- 打卡墙 ---------- */
@@ -2729,7 +2763,7 @@
 
   /* ---------- 定时刷新 ---------- */
   setInterval(async () => {
-    if (document.hidden || !state.me || !cloud) return;
+    if (document.hidden || !state.me || !cloud || state.syncing) return;
     if (!sheetEl.hidden) return;
     const ae = document.activeElement;
     if (ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)) return;
